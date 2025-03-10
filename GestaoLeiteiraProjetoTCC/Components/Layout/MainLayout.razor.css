@@ -1,7 +1,7 @@
 ﻿.page {
     position: relative;
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
 }
 
 main {
@@ -35,4 +35,3 @@ main {
             overflow: hidden;
             text-overflow: ellipsis;
         }
-}
