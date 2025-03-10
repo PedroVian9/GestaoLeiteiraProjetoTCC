@@ -59,14 +59,20 @@
 
     <ItemGroup>
       <MauiImage Remove="Resources\Images\cow.png" />
+      <MauiImage Remove="Resources\Images\drink128.png" />
     </ItemGroup>
 
     <ItemGroup>
       <None Remove="Resources\Images\cow.png" />
+      <None Remove="Resources\Images\drink128.png" />
     </ItemGroup>
 
     <ItemGroup>
       <Content Include="Resources\Images\cow.png">
+        <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      </Content>
+      <Content Include="Resources\Images\drink128.png">
         <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
         <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
       </Content>
@@ -79,6 +85,12 @@
         <PackageReference Include="Microsoft.Maui.Controls.Compatibility" Version="$(MauiVersion)" />
         <PackageReference Include="Microsoft.AspNetCore.Components.WebView.Maui" Version="$(MauiVersion)" />
         <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="8.0.0" />
+    </ItemGroup>
+
+   
+
+    <ItemGroup>
+      <Folder Include="wwwroot\NovaPasta\" />
     </ItemGroup>
 
 </Project>

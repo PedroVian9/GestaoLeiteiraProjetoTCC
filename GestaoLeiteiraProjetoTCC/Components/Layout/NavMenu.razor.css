@@ -54,6 +54,14 @@
     background-image: url("/milk.png");
 }
 
+.bi-plus-square-historico{
+    background-image: url("/history.png");
+}
+
+.bi-list-nested-nav-config {
+    background-image: url("/setting.png");
+}
+
 .nav-item {
     font-size: 0.9rem;
     padding-bottom: 0.5rem;
