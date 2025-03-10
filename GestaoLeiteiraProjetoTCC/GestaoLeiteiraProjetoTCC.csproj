@@ -58,10 +58,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <None Remove="Components\Layout\MainLayout.razor.css" />
-    </ItemGroup>
-
-    <ItemGroup>
       <Content Include="Components\Layout\MainLayout.razor.css" />
     </ItemGroup>
 
