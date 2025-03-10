@@ -58,8 +58,21 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Content Include="Components\Layout\MainLayout.razor.css" />
+      <MauiImage Remove="Resources\Images\cow.png" />
     </ItemGroup>
+
+    <ItemGroup>
+      <None Remove="Resources\Images\cow.png" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Content Include="Resources\Images\cow.png">
+        <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      </Content>
+    </ItemGroup>
+
+   
 
     <ItemGroup>
         <PackageReference Include="Microsoft.Maui.Controls" Version="$(MauiVersion)" />
