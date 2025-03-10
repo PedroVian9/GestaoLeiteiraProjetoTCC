@@ -58,6 +58,16 @@
     </ItemGroup>
 
     <ItemGroup>
+      <None Remove="Components\Layout\MainLayout.razor.css" />
+      <None Remove="Components\NavMenu.razor.css" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Content Include="Components\Layout\MainLayout.razor.css" />
+      <Content Include="Components\Layout\NavMenu.razor.css" />
+    </ItemGroup>
+
+    <ItemGroup>
         <PackageReference Include="Microsoft.Maui.Controls" Version="$(MauiVersion)" />
         <PackageReference Include="Microsoft.Maui.Controls.Compatibility" Version="$(MauiVersion)" />
         <PackageReference Include="Microsoft.AspNetCore.Components.WebView.Maui" Version="$(MauiVersion)" />
