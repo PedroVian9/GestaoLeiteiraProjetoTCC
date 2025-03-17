@@ -1,4 +1,6 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using GestaoLeiteiraProjetoTCC.Services;
+using GestaoLeiteiraProjetoTCC.Services.Interfaces;
+using Microsoft.Extensions.Logging;
 
 namespace GestaoLeiteiraProjetoTCC
 {
@@ -15,9 +17,12 @@ namespace GestaoLeiteiraProjetoTCC
                 });
 
             builder.Services.AddMauiBlazorWebView();
+            string databasePath = Path.Combine(FileSystem.AppDataDirectory, "gestaoleiteira.db");
+            builder.Services.AddSingleton<IPropriedadeService>(provider =>
+                new PropriedadeService(databasePath));
 
 #if DEBUG
-    		builder.Services.AddBlazorWebViewDeveloperTools();
+            builder.Services.AddBlazorWebViewDeveloperTools();
     		builder.Logging.AddDebug();
 #endif
 

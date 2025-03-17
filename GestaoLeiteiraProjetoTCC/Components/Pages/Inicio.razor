@@ -1,9 +1,69 @@
 ﻿@page "/"
 
-<h3>Essa é a pagina de Inicio</h3>
-<p>Seja bem vindo a pagina de Inicio</p>
+@using GestaoLeiteiraProjetoTCC.Models
+@using GestaoLeiteiraProjetoTCC.Services.Interfaces
+@inject IPropriedadeService PropriedadeService
+
+<h3>Cadastro de Propriedade</h3>
+
+<EditForm Model="propriedade" OnValidSubmit="CadastrarPropriedade">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div>
+        <label for="nomeProprietario">Nome do Proprietário:</label>
+        <InputText id="nomeProprietario" @bind-Value="propriedade.NomeProprietario" />
+        <ValidationMessage For="@(() => propriedade.NomeProprietario)" />
+    </div>
+
+    <div>
+        <label for="nomePropriedade">Nome da Propriedade:</label>
+        <InputText id="nomePropriedade" @bind-Value="propriedade.NomePropriedade" />
+        <ValidationMessage For="@(() => propriedade.NomePropriedade)" />
+    </div>
+
+    <div>
+        <label for="localizacao">Localização:</label>
+        <InputText id="localizacao" @bind-Value="propriedade.Localizacao" />
+        <ValidationMessage For="@(() => propriedade.Localizacao)" />
+    </div>
+
+    <div>
+        <label for="areaTotal">Área Total:</label>
+        <InputNumber id="areaTotal" @bind-Value="propriedade.AreaTotal" />
+        <ValidationMessage For="@(() => propriedade.AreaTotal)" />
+    </div>
+
+    <div>
+        <label for="tipoUnidade">Tipo de Unidade:</label>
+        <InputSelect id="tipoUnidade" @bind-Value="propriedade.TipoUnidade">
+            <option value="1">Tipo 1</option>
+            <option value="2">Tipo 2</option>
+        </InputSelect>
+    </div>
+
+    <div>
+        <label for="senha">Senha:</label>
+        <InputText id="senha" @bind-Value="propriedade.Senha" type="password" />
+        <ValidationMessage For="@(() => propriedade.Senha)" />
+    </div>
+
+    <button type="submit">Cadastrar</button>
+</EditForm>
+
+@if (mensagemSucesso != null)
+{
+    <div>@mensagemSucesso</div>
+}
 
 @code {
-    
-     
+    private Propriedade propriedade = new Propriedade();
+    private string mensagemSucesso;
+
+    private async Task CadastrarPropriedade()
+    {
+        var novaPropriedade = await PropriedadeService.CadastrarPropriedadeAsync(propriedade);
+        mensagemSucesso = "Propriedade cadastrada com sucesso!";
+        propriedade = new Propriedade(); // Reset the form
+    }
 }
