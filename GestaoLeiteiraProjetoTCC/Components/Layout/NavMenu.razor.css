@@ -47,19 +47,19 @@
 }
 
 .bi-plus-square-animais {
-    background-image: url("/cow-face.png");
+    background-image: url("/Icons/cow-face.png");
 }
 
 .bi-plus-square-milk{
-    background-image: url("/milk.png");
+    background-image: url("/Icons/milk.png");
 }
 
-.bi-plus-square-historico{
-    background-image: url("/history.png");
+.bi-plus-square-historico {
+    background-image: url("/Icons/history.png");
 }
 
 .bi-list-nested-nav-config {
-    background-image: url("/setting.png");
+    background-image: url("/Icons/setting.png");
 }
 
 .nav-item {

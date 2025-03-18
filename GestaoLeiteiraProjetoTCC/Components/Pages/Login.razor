@@ -1,49 +1,84 @@
 ﻿@using GestaoLeiteiraProjetoTCC.Models
 @using GestaoLeiteiraProjetoTCC.Services.Interfaces
 @page "/"
-
-
 @inject IPropriedadeService PropriedadeService
 @inject NavigationManager Navigation
 
-<h3>Selecione uma Propriedade</h3>
+<link href="css/login-styles.css" rel="stylesheet" />
 
-@if (propriedades == null)
-{
-    <p>Carregando...</p>
-}
-else if (propriedades.Count == 0)
-{
-    <p>Nenhuma propriedade encontrada.</p>
-    <button @onclick="IrParaCadastro">Cadastrar Propriedade</button>
-}
-else
-{
-    <ul>
-        @foreach (var propriedade in propriedades)
+<div class="container-login">
+    <div class="content-box">
+        <div class="title">
+            <img src="/Icons/drink64.png" />
+        </div>
+        
+
+        @if (mostrarLogin)
         {
-            <li>
-                <button @onclick="() => SelecionarPropriedade(propriedade)">
-                    @propriedade.NomePropriedade
-                </button>
-            </li>
+            <div class="login-section">
+                <div class="header-with-back">
+                    <h4> @propriedadeSelecionada.NomePropriedade</h4>
+                </div>
+
+                <div class="form-group">
+                    <label for="senha">Digite a senha:</label>
+                    <input type="password" id="senha" class="form-control" @bind="senha" @onkeypress="SenhaKeyPress" />
+                </div>
+
+                <div class="message @(mensagemErro ? "error" : "")">
+                    @mensagem
+                </div>
+
+                
+                <div class="buttons">
+                    <button class="back-button" @onclick="VoltarParaSelecao">Voltar</button>
+                    <button class="btn btn-primary" @onclick="ConfirmarLogin">Entrar</button>
+                </div>
+            </div>
         }
-    </ul>
+        else
+        {
+            <h4 class="subtitle">Selecione uma Propriedade</h4>
 
-    @if (propriedadeSelecionada != null)
-    {
-        <h4>Digite a senha para acessar</h4>
-        <input type="password" @bind="senha" />
-        <button @onclick="ConfirmarLogin">Entrar</button>
-    }
+            @if (propriedades == null)
+            {
+                <div class="loading">
+                    <p>Carregando...</p>
+                </div>
+            }
+            else if (propriedades.Count == 0)
+            {
+                <div class="empty-state">
+                    <p class="erroEncontrarPropriedade">Nenhuma propriedade encontrada.</p>
+                    <button class="btn btn-primary" @onclick="IrParaCadastro">Cadastrar Propriedade</button>
+                </div>
+            }
+            else
+            {
+                <div class="propriedades-lista">
+                    @foreach (var propriedade in propriedades)
+                    {
+                        <button class="propriedade-item" @onclick="() => SelecionarPropriedade(propriedade)">
+                            @propriedade.NomePropriedade
+                        </button>
+                    }
+                </div>
 
-    <button @onclick="IrParaCadastro">Cadastrar Nova Propriedade</button>
-}
+                <div class="footer-actions">
+                    <button class="btn btn-secondary" @onclick="IrParaCadastro">Cadastrar Nova Propriedade</button>
+                </div>
+            }
+        }
+    </div>
+</div>
 
 @code {
     private List<Propriedade> propriedades = new();
     private Propriedade propriedadeSelecionada;
     private string senha = string.Empty;
+    private bool mostrarLogin = false;
+    private string mensagem = string.Empty;
+    private bool mensagemErro = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -54,18 +89,50 @@ else
     {
         propriedadeSelecionada = propriedade;
         senha = string.Empty;
+        mensagem = string.Empty;
+        mostrarLogin = true;
+    }
+
+    private void VoltarParaSelecao()
+    {
+        mostrarLogin = false;
+        propriedadeSelecionada = null;
+        senha = string.Empty;
+        mensagem = string.Empty;
     }
 
     private async Task ConfirmarLogin()
     {
-        if (propriedadeSelecionada != null && propriedadeSelecionada.Senha == senha)
+        if (propriedadeSelecionada != null)
         {
-            Navigation.NavigateTo("/producao-leiteira");
+            if (string.IsNullOrWhiteSpace(senha))
+            {
+                mensagem = "Por favor, digite a senha";
+                mensagemErro = true;
+                return;
+            }
+
+            if (propriedadeSelecionada.Senha == senha)
+            {
+                mensagem = "Login realizado com sucesso!";
+                mensagemErro = false;
+                await Task.Delay(500); // Feedback visual
+                Navigation.NavigateTo("/producao-leiteira");
+            }
+            else
+            {
+                mensagem = "Senha incorreta";
+                mensagemErro = true;
+                senha = string.Empty;
+            }
         }
-        else
+    }
+
+    private async Task SenhaKeyPress(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
         {
-            await Task.Delay(500); // Simula feedback ao usuário
-            senha = string.Empty;
+            await ConfirmarLogin();
         }
     }
 

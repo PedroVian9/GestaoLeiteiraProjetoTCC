@@ -5,59 +5,65 @@
 @inject IPropriedadeService PropriedadeService
 @inject NavigationManager Navigation
 
-<h3>Cadastro de Propriedade</h3>
+<link href="css/cadastrar-propriedade-styles.css" rel="stylesheet" />
 
-<EditForm Model="propriedade" OnValidSubmit="CriarPropriedade">
-    <DataAnnotationsValidator />
-    <ValidationSummary />
+<div class="container-cadastro">
+    <div class="content-box">
+        <h3 class="title">Cadastro de Propriedade</h3>
 
-    <div>
-        <label for="nomeProprietario">Nome do Proprietário:</label>
-        <InputText id="nomeProprietario" @bind-Value="propriedade.NomeProprietario" />
-        <ValidationMessage For="@(() => propriedade.NomeProprietario)" />
+        <EditForm Model="propriedade" OnValidSubmit="CriarPropriedade">
+            <DataAnnotationsValidator />
+
+            <div class="form-group">
+                <label for="nomeProprietario">Nome do Proprietário:</label>
+                <InputText id="nomeProprietario" @bind-Value="propriedade.NomeProprietario" class="form-control" autocomplete="off" />
+                <ValidationMessage For="@(() => propriedade.NomeProprietario)" />
+            </div>
+
+            <div class="form-group">
+                <label for="nomePropriedade">Nome da Propriedade:</label>
+                <InputText id="nomePropriedade" @bind-Value="propriedade.NomePropriedade" class="form-control" autocomplete="off" />
+                <ValidationMessage For="@(() => propriedade.NomePropriedade)" />
+            </div>
+
+            <div class="form-group">
+                <label for="localizacao">Localização:</label>
+                <InputText id="localizacao" @bind-Value="propriedade.Localizacao" class="form-control" autocomplete="off" />
+                <ValidationMessage For="@(() => propriedade.Localizacao)" />
+            </div>
+
+            <div class="form-group">
+                <label for="areaTotal">Área Total:</label>
+                <InputNumber id="areaTotal" @bind-Value="propriedade.AreaTotal" class="form-control" autocomplete="off"/>
+                <ValidationMessage For="@(() => propriedade.AreaTotal)" />
+            </div>
+
+            <div class="form-group">
+                <label for="tipoUnidade">Tipo de Unidade:</label>
+                <InputSelect id="tipoUnidade" @bind-Value="propriedade.TipoUnidade" class="form-control">
+                    <option value="1">Hectares</option>
+                    <option value="2">Arrobas</option>
+                </InputSelect>
+            </div>
+
+            <div class="form-group">
+                <label for="senha">Senha:</label>
+                <InputText id="senha" @bind-Value="propriedade.Senha" type="password" class="form-control" />
+                <ValidationMessage For="@(() => propriedade.Senha)" />
+            </div>
+
+            <div class="footer-actions">
+                <button type="button" class="btn btn-secondary" @onclick="Voltar">Voltar</button>
+                <button type="submit" class="btn btn-primary">Cadastrar</button>
+            </div>
+        </EditForm>
+
+        @if (mensagemSucesso != null)
+        {
+            <div class="message success">@mensagemSucesso</div>
+        }
     </div>
-
-    <div>
-        <label for="nomePropriedade">Nome da Propriedade:</label>
-        <InputText id="nomePropriedade" @bind-Value="propriedade.NomePropriedade" />
-        <ValidationMessage For="@(() => propriedade.NomePropriedade)" />
-    </div>
-
-    <div>
-        <label for="localizacao">Localização:</label>
-        <InputText id="localizacao" @bind-Value="propriedade.Localizacao" />
-        <ValidationMessage For="@(() => propriedade.Localizacao)" />
-    </div>
-
-    <div>
-        <label for="areaTotal">Área Total:</label>
-        <InputNumber id="areaTotal" @bind-Value="propriedade.AreaTotal" />
-        <ValidationMessage For="@(() => propriedade.AreaTotal)" />
-    </div>
-
-    <div>
-        <label for="tipoUnidade">Tipo de Unidade:</label>
-        <InputSelect id="tipoUnidade" @bind-Value="propriedade.TipoUnidade">
-            <option value="1">Hectares</option>
-            <option value="2">Arrobas</option>
-        </InputSelect>
-    </div>
-
-    <div>
-        <label for="senha">Senha:</label>
-        <InputText id="senha" @bind-Value="propriedade.Senha" type="password" />
-        <ValidationMessage For="@(() => propriedade.Senha)" />
-    </div>
-
-    <button type="button" @onclick="Voltar">Voltar</button>
-    <button type="submit">Cadastrar</button>
-
-</EditForm>
-
-@if (mensagemSucesso != null)
-{
-    <div>@mensagemSucesso</div>
-}
+</div>
 
 @code {
     private Propriedade propriedade = new Propriedade();

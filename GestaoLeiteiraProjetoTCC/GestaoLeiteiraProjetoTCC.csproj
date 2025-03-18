@@ -66,6 +66,10 @@
     </ItemGroup>
 
     <ItemGroup>
+      <Content Remove="Components\Pages\Login.razor.css.razor" />
+    </ItemGroup>
+
+    <ItemGroup>
       <MauiImage Remove="Resources\Images\cow.png" />
       <MauiImage Remove="Resources\Images\drink128.png" />
     </ItemGroup>
