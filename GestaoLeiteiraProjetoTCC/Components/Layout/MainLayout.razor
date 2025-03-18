@@ -1,17 +1,29 @@
 ﻿@inherits LayoutComponentBase
+@inject NavigationManager Navigation
 
 <div class="page">
-    <div class="sidebar">
-        <NavMenu />
-    </div>
+    @if (Navigation.Uri.EndsWith("/") || Navigation.Uri.EndsWith("/cadastrar-propriedade"))
+    {
+        <main>
+            <article class="content px-4">
+                @Body
+            </article>
+        </main>
+    }
+    else
+    {
+        <div class="sidebar">
+            <NavMenu />
+        </div>
 
-    <main>
-        <article class="content px-4">
-            @Body
-        </article>
+        <main>
+            <article class="content px-4">
+                @Body
+            </article>
 
-        <footer class="footer px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
-        </footer>
-    </main>
+            <footer class="footer px-4">
+                <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
+            </footer>
+        </main>
+    }
 </div>

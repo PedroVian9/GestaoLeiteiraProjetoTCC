@@ -2,75 +2,8 @@
 @using GestaoLeiteiraProjetoTCC.Services.Interfaces
 @page "/configuracoes"
 
-
-@inject IPropriedadeService PropriedadeService
-@inject NavigationManager Navigation
-
-<h3>Selecione uma Propriedade</h3>
-
-@if (propriedades == null)
-{
-    <p>Carregando...</p>
-}
-else if (propriedades.Count == 0)
-{
-    <p>Nenhuma propriedade encontrada.</p>
-    <button @onclick="IrParaCadastro">Cadastrar Propriedade</button>
-}
-else
-{
-    <ul>
-        @foreach (var propriedade in propriedades)
-        {
-            <li>
-                <button @onclick="() => SelecionarPropriedade(propriedade)">
-                    @propriedade.NomePropriedade
-                </button>
-            </li>
-        }
-    </ul>
-
-    @if (propriedadeSelecionada != null)
-    {
-        <h4>Digite a senha para acessar</h4>
-        <input type="password" @bind="senha" />
-        <button @onclick="ConfirmarLogin">Entrar</button>
-    }
-
-    <button @onclick="IrParaCadastro">Cadastrar Nova Propriedade</button>
-}
+<h3>Configurações</h3>
 
 @code {
-    private List<Propriedade> propriedades = new();
-    private Propriedade propriedadeSelecionada;
-    private string senha = string.Empty;
-
-    protected override async Task OnInitializedAsync()
-    {
-        propriedades = await PropriedadeService.ObterTodasPropriedadesAsync();
-    }
-
-    private void SelecionarPropriedade(Propriedade propriedade)
-    {
-        propriedadeSelecionada = propriedade;
-        senha = string.Empty;
-    }
-
-    private async Task ConfirmarLogin()
-    {
-        if (propriedadeSelecionada != null && propriedadeSelecionada.Senha == senha)
-        {
-            Navigation.NavigateTo("/producao-leiteira");
-        }
-        else
-        {
-            await Task.Delay(500); // Simula feedback ao usuário
-            senha = string.Empty;
-        }
-    }
-
-    private void IrParaCadastro()
-    {
-        Navigation.NavigateTo("/cadastrar-propriedade");
-    }
+    
 }
