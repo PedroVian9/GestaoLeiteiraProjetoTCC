@@ -58,10 +58,16 @@
     </ItemGroup>
 
     <ItemGroup>
+      <AndroidResource Remove="Models\Repository\**" />
       <AndroidResource Remove="wwwroot\NovaPasta\**" />
+      <Compile Remove="Models\Repository\**" />
       <Compile Remove="wwwroot\NovaPasta\**" />
+      <Content Remove="Models\Repository\**" />
       <Content Remove="wwwroot\NovaPasta\**" />
+      <EmbeddedResource Remove="Models\Repository\**" />
       <EmbeddedResource Remove="wwwroot\NovaPasta\**" />
+      <MauiXaml Remove="Models\Repository\**" />
+      <None Remove="Models\Repository\**" />
       <None Remove="wwwroot\NovaPasta\**" />
     </ItemGroup>
 
@@ -98,12 +104,6 @@
         <PackageReference Include="Microsoft.AspNetCore.Components.WebView.Maui" Version="$(MauiVersion)" />
         <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="8.0.0" />
         <PackageReference Include="sqlite-net-pcl" Version="1.9.172" />
-    </ItemGroup>
-
-   
-
-    <ItemGroup>
-      <Folder Include="Models\Repository\Interfaces\" />
     </ItemGroup>
 
 </Project>
