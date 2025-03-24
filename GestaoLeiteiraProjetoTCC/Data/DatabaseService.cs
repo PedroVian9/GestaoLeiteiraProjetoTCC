@@ -1,22 +1,51 @@
-﻿using SQLite;
-using GestaoLeiteiraProjetoTCC.Data;
+﻿using GestaoLeiteiraProjetoTCC.Data;
+using SQLite;
 
-namespace GestaoLeiteiraProjetoTCC.Services
+
+public class DatabaseService
 {
-    public class DatabaseService
+    private SQLiteAsyncConnection _database;
+    private bool _initialized = false;
+    private readonly SemaphoreSlim _semaphore = new(1, 1);
+
+    public DatabaseService()
     {
-        private readonly SQLiteAsyncConnection _database;
+        _database = new SQLiteAsyncConnection(Constants.DatabasePath, Constants.Flags);
+    }
 
-        public DatabaseService()
+    public async Task<SQLiteAsyncConnection> GetConnectionAsync()
+    {
+        if (!_initialized)
         {
-            _database = new SQLiteAsyncConnection(Constants.DatabasePath, Constants.Flags);
+            await _semaphore.WaitAsync();
+            try
+            {
+                if (!_initialized) // Double-check locking
+                {
+                    await InitializeAsync();
+                    _initialized = true;
+                }
+            }
+            finally
+            {
+                _semaphore.Release();
+            }
         }
+        return _database;
+    }
 
-        public SQLiteAsyncConnection GetConnection() => _database;
-
-        public async Task InitializeAsync()
+    private async Task InitializeAsync()
+    {
+        try
         {
-            await _database.CreateTableAsync<Models.Propriedade>();
+            await _database.CreateTableAsync<GestaoLeiteiraProjetoTCC.Models.Propriedade>();
+            // Adicione outras tabelas aqui conforme necessário
+            Console.WriteLine($"Banco de dados criado em: {Constants.DatabasePath}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Falha ao criar banco de dados: {ex.Message}");
+            throw;
         }
     }
 }

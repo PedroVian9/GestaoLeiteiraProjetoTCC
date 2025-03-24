@@ -13,7 +13,7 @@ namespace GestaoLeiteiraProjetoTCC.Repositories
 
         public PropriedadeRepository(DatabaseService databaseService)
         {
-            _database = databaseService.GetConnection();
+            _database = databaseService.GetConnectionAsync().Result;
         }
 
         public async Task<Propriedade> CadastrarPropriedadeDb(Propriedade propriedade)
