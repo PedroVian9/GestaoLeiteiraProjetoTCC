@@ -1,41 +1,33 @@
 ﻿using GestaoLeiteiraProjetoTCC.Models;
+using GestaoLeiteiraProjetoTCC.Repositories.Interfaces;
 using GestaoLeiteiraProjetoTCC.Services.Interfaces;
-using SQLite;
-using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace GestaoLeiteiraProjetoTCC.Services
 {
     public class PropriedadeService : IPropriedadeService
     {
-        private readonly SQLiteAsyncConnection _database;
-        private Propriedade _propriedadeAtual;
+        private readonly IPropriedadeRepository _propriedadeRepository;
 
-        public PropriedadeService(string dbPath)
+        public PropriedadeService(IPropriedadeRepository propriedadeRepository)
         {
-            _database = new SQLiteAsyncConnection(dbPath);
-            _database.CreateTableAsync<Propriedade>().Wait();
+            _propriedadeRepository = propriedadeRepository;
         }
 
         public async Task<Propriedade> CadastrarPropriedadeAsync(Propriedade propriedade)
         {
-            propriedade.DataCadastro = DateTime.Now;
-          
-            await _database.InsertAsync(propriedade);
-            _propriedadeAtual = propriedade;
-            return propriedade;
+            return await _propriedadeRepository.CadastrarPropriedadeDb(propriedade);
         }
 
         public async Task<List<Propriedade>> ObterTodasPropriedadesAsync()
         {
-            return await _database.Table<Propriedade>().ToListAsync();
+            return await _propriedadeRepository.ObterTodasPropriedadesDb();
         }
 
         public async Task<Propriedade> ObterPropriedadePorIdAsync(int id)
         {
-            return await _database.FindAsync<Propriedade>(id);
+            return await _propriedadeRepository.ObterPropriedadePorIdDb(id);
         }
     }
 }

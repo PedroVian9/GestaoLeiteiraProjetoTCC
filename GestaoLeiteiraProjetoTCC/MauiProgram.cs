@@ -1,4 +1,6 @@
-﻿using GestaoLeiteiraProjetoTCC.Services;
+﻿using GestaoLeiteiraProjetoTCC.Repositories;
+using GestaoLeiteiraProjetoTCC.Repositories.Interfaces;
+using GestaoLeiteiraProjetoTCC.Services;
 using GestaoLeiteiraProjetoTCC.Services.Interfaces;
 using Microsoft.Extensions.Logging;
 
@@ -17,9 +19,13 @@ namespace GestaoLeiteiraProjetoTCC
                 });
 
             builder.Services.AddMauiBlazorWebView();
-            string databasePath = Path.Combine(FileSystem.AppDataDirectory, "gestaoleiteira.db");
-            builder.Services.AddSingleton<IPropriedadeService>(provider =>
-                new PropriedadeService(databasePath));
+
+            // Registrar DatabaseService como Singleton
+            builder.Services.AddSingleton<DatabaseService>();
+
+            // Registrar PropriedadeService usando o DatabaseService
+            builder.Services.AddSingleton<IPropriedadeRepository, PropriedadeRepository>();
+            builder.Services.AddSingleton<IPropriedadeService, PropriedadeService>();
 
 #if DEBUG
             builder.Services.AddBlazorWebViewDeveloperTools();

@@ -22,6 +22,7 @@ namespace GestaoLeiteiraProjetoTCC.Models
         [Range(0.01, double.MaxValue, ErrorMessage = "A área total deve ser maior que zero")]
         public double AreaTotal { get; set; }
 
+        [Required(ErrorMessage = "A unidade de medida é obrigatória.")]
         public int TipoUnidade { get; set; } 
 
         [Required(ErrorMessage = "A senha é obrigatória")]

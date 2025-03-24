@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace GestaoLeiteiraProjetoTCC.Repositories
+namespace GestaoLeiteiraProjetoTCC.Repositories.Interfaces
 {
     internal class IAnimalRepository
     {
