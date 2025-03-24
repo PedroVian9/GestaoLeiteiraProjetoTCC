@@ -1,4 +1,6 @@
-﻿<div class="top-row ps-3 navbar navbar-dark">
+﻿@inject NavigationManager Navigation
+
+<div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
         <img src="/Icons/drink64.png" width='40' height='40' />
         <a class="navbar-brand" href= "/">Gestão Leiteira</a>
@@ -34,10 +36,17 @@
                 <span class="bi bi-list-nested-nav-config" aria-hidden="true"></span> Configurações
             </NavLink>
         </div>
-        <div class="nav-item px-3 mt-auto">
-            <NavLink class="nav-link" href="/">
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" @onclick="Logout">
                 <span class="bi bi-box-arrow-right" aria-hidden="true"></span> Logout
             </NavLink>
         </div>
     </nav>
 </div>
+
+@code {
+    private void Logout()
+    {
+        Navigation.NavigateTo("/");
+    }
+}

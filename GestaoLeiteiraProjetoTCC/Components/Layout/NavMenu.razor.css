@@ -62,6 +62,10 @@
     background-image: url("/Icons/setting.png");
 }
 
+.bi-box-arrow-right {
+    background-image: url("/Icons/logout.png");
+}
+
 .nav-item {
     font-size: 0.9rem;
     padding-bottom: 0.5rem;
@@ -101,7 +105,9 @@
 .navbar-toggler:checked ~ .nav-scrollable {
     display: block;
 }
-
+.bi bi-box-arrow-right {
+    cursor: pointer;
+}
 @media (min-width: 641px) {
     .navbar-toggler {
         display: none;
