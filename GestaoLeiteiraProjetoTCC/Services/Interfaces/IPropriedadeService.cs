@@ -9,5 +9,8 @@ namespace GestaoLeiteiraProjetoTCC.Services.Interfaces
         Task<Propriedade> CadastrarPropriedadeAsync(Propriedade propriedade);
         Task<List<Propriedade>> ObterTodasPropriedadesAsync();
         Task<Propriedade> ObterPropriedadePorIdAsync(int id);
+        Task<Propriedade> LoginPropriedadeAsync(string nomeProprietario, string senha);
+        Propriedade ObterPropriedadeLogada();
+        Task<List<Animal>> ObterAnimaisDaPropriedadeLogadaAsync();
     }
 }

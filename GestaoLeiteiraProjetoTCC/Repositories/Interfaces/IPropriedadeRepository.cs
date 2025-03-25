@@ -8,6 +8,8 @@ namespace GestaoLeiteiraProjetoTCC.Repositories.Interfaces
     {
         Task<Propriedade> CadastrarPropriedadeDb(Propriedade propriedade);
         Task<List<Propriedade>> ObterTodasPropriedadesDb();
-        Task<Propriedade> ObterPropriedadePorIdDb(int id); 
+        Task<Propriedade> ObterPropriedadePorIdDb(int id);
+        Task<Propriedade> ValidarLoginDb(string nomeProprietario, string senha);
+        Task<List<Animal>> ObterAnimaisPorPropriedadeIdDb(int propriedadeId);
     }
 }

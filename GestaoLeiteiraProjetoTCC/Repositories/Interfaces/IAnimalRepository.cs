@@ -1,12 +1,14 @@
-﻿using System;
+﻿using GestaoLeiteiraProjetoTCC.Models;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace GestaoLeiteiraProjetoTCC.Repositories.Interfaces
 {
-    internal class IAnimalRepository
+    public interface IAnimalRepository
     {
+        Task<List<Animal>> ObterAnimaisPorPropriedadeIdDb(int propriedadeId);
+        Task<Animal> CadastrarAnimalDb(Animal animal);
+        Task<Animal> AtualizarAnimalDb(Animal animal);
+        Task<bool> ExcluirAnimalDb(int id);
     }
 }

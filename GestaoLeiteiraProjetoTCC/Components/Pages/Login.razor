@@ -11,13 +11,12 @@
         <div class="title">
             <img src="/Icons/drink64.png" />
         </div>
-        
 
         @if (mostrarLogin)
         {
             <div class="login-section">
                 <div class="header-with-back">
-                    <h4> @propriedadeSelecionada.NomePropriedade</h4>
+                    <h4>@propriedadeSelecionada.NomePropriedade</h4>
                 </div>
 
                 <div class="form-group">
@@ -28,7 +27,7 @@
                 <div class="message @(mensagemErro ? "error" : "")">
                     @mensagem
                 </div>
-                
+
                 <div class="buttons">
                     <button class="back-button" @onclick="VoltarParaSelecao">Voltar</button>
                     <button class="btn btn-primary" @onclick="ConfirmarLogin">Entrar</button>
@@ -111,18 +110,32 @@
                 return;
             }
 
-            if (propriedadeSelecionada.Senha == senha)
+            try
             {
-                mensagem = "Login realizado com sucesso!";
-                mensagemErro = false;
-                await Task.Delay(500);
-                Navigation.NavigateTo("/inicio");
+                // Usando o novo método de login do serviço
+                var propriedadeLogada = await PropriedadeService.LoginPropriedadeAsync(
+                    propriedadeSelecionada.NomeProprietario,
+                    senha
+                );
+
+                if (propriedadeLogada != null)
+                {
+                    mensagem = "Login realizado com sucesso!";
+                    mensagemErro = false;
+                    await Task.Delay(500);
+                    Navigation.NavigateTo("/inicio");
+                }
+                else
+                {
+                    mensagem = "Credenciais inválidas";
+                    mensagemErro = true;
+                    senha = string.Empty;
+                }
             }
-            else
+            catch (Exception ex)
             {
-                mensagem = "Senha incorreta";
+                mensagem = "Erro ao realizar login: " + ex.Message;
                 mensagemErro = true;
-                senha = string.Empty;
             }
         }
     }

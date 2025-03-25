@@ -1,12 +1,14 @@
-﻿using System;
+﻿using GestaoLeiteiraProjetoTCC.Models;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace GestaoLeiteiraProjetoTCC.Services.Interfaces
 {
-    internal class IAnimalService
+    public interface IAnimalService
     {
+        Task<List<Animal>> ObterAnimaisDaPropriedadeAsync(int propriedadeId);
+        Task<Animal> CadastrarAnimalAsync(Animal animal);
+        Task<Animal> AtualizarAnimalAsync(Animal animal);
+        Task<bool> ExcluirAnimalAsync(int id);
     }
 }

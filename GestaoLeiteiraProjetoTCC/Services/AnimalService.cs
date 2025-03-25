@@ -1,22 +1,47 @@
 ﻿using GestaoLeiteiraProjetoTCC.Models;
-using SQLite;
+using GestaoLeiteiraProjetoTCC.Repositories.Interfaces;
+using GestaoLeiteiraProjetoTCC.Services.Interfaces;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace GestaoLeiteiraProjetoTCC.Services
 {
-    public class AnimalService
+    public class AnimalService : IAnimalService
     {
-        SQLiteAsyncConnection? database;
+        private readonly IAnimalRepository _animalRepository;
+        private readonly IPropriedadeService _propriedadeService;
 
-        public AnimalService(string dbPath)
+        public AnimalService(IAnimalRepository animalRepository, IPropriedadeService propriedadeService)
         {
-            database = new SQLiteAsyncConnection(dbPath);
-            database.CreateTableAsync<Animal>().Wait();
+            _animalRepository = animalRepository;
+            _propriedadeService = propriedadeService;
         }
 
+        public async Task<List<Animal>> ObterAnimaisDaPropriedadeAsync(int propriedadeId)
+        {
+
+            return await _animalRepository.ObterAnimaisPorPropriedadeIdDb(propriedadeId);
+        }
+
+        public async Task<Animal> CadastrarAnimalAsync(Animal animal)
+        {
+            var propriedadeLogada = _propriedadeService.ObterPropriedadeLogada();
+            if (propriedadeLogada == null)
+                throw new InvalidOperationException("Nenhuma propriedade está logada.");
+
+            animal.PropriedadeId = propriedadeLogada.Id;
+            return await _animalRepository.CadastrarAnimalDb(animal);
+        }
+
+        public async Task<Animal> AtualizarAnimalAsync(Animal animal)
+        {
+            return await _animalRepository.AtualizarAnimalDb(animal);
+        }
+
+        public async Task<bool> ExcluirAnimalAsync(int id)
+        {
+            return await _animalRepository.ExcluirAnimalDb(id);
+        }
     }
 }

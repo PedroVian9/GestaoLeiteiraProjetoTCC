@@ -1,7 +1,247 @@
 ﻿@page "/animais"
+@using GestaoLeiteiraProjetoTCC.Models
+@using GestaoLeiteiraProjetoTCC.Services
+@using GestaoLeiteiraProjetoTCC.Services.Interfaces
+@inject IAnimalService AnimalService
+@inject IPropriedadeService PropriedadeService
 
-<h3>Component1</h3>
+<h3>Lista de Animais</h3>
+
+<button class="btn btn-primary" @onclick="AbrirModalNovo">Cadastrar Animal</button>
+
+@if (animais == null)
+{
+    <p>Carregando...</p>
+}
+else if (!animais.Any())
+{
+    <p>Nenhum animal cadastrado.</p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Nº Identificador</th>
+                <th>Nome</th>
+                <th>Raça</th>
+                <th>Sexo</th>
+                <th>Categoria</th>
+                <th>Status</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var animal in animais)
+            {
+                <tr>
+                    <td>@animal.NumeroIdentificador</td>
+                    <td>@animal.NomeAnimal</td>
+                    <td>@animal.Raca</td>
+                    <td>@animal.Sexo</td>
+                    <td>@animal.CategoriaAnimal</td>
+                    <td>@animal.Status</td>
+                    <td>
+                        <button class="btn btn-warning btn-sm" @onclick="() => AbrirModalEditar(animal)">Editar</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+<!-- Modal de Cadastro/Edição -->
+@if (exibirModal)
+{
+    <div class="modal-overlay">
+        <div class="modal-content">
+            <h3>@(animal.Id == 0 ? "Cadastrar Animal" : "Editar Animal")</h3>
+
+            <EditForm Model="animal" OnValidSubmit="SalvarAnimal">
+                <DataAnnotationsValidator />
+
+                <div class="form-group">
+                    <label for="nomeAnimal">Nome do Animal:</label>
+                    <InputText id="nomeAnimal" @bind-Value="animal.NomeAnimal" class="form-control" />
+                    <ValidationMessage For="@(() => animal.NomeAnimal)" />
+                </div>
+
+                <div class="form-group">
+                    <label for="numeroIdentificador">Número Identificador:</label>
+                    <InputText id="numeroIdentificador" @bind-Value="animal.NumeroIdentificador" class="form-control" />
+                    <ValidationMessage For="@(() => animal.NumeroIdentificador)" />
+                </div>
+
+                <div class="form-group">
+                    <label for="raca">Raça:</label>
+                    <InputText id="raca" @bind-Value="animal.Raca" class="form-control" />
+                    <ValidationMessage For="@(() => animal.Raca)" />
+                </div>
+
+                <div class="form-group">
+                    <label for="dataNascimento">Data de Nascimento:</label>
+                    <InputDate id="dataNascimento" @bind-Value="animal.DataNascimento" class="form-control" />
+                </div>
+
+                <div class="form-group">
+                    <label for="sexo">Sexo:</label>
+                    <InputSelect id="sexo" @bind-Value="animal.Sexo" @onchange="(e) => OnSexoChanged(e.Value.ToString())" class="form-control">
+                        <option value="">Selecione...</option>
+                        <option value="Masculino">Masculino</option>
+                        <option value="Feminino">Feminino</option>
+                    </InputSelect>
+                    <ValidationMessage For="@(() => animal.Sexo)" />
+                </div>
+
+                <div class="form-group">
+                    <label for="categoriaAnimal">Categoria:</label>
+                    <InputSelect id="categoriaAnimal" @bind-Value="animal.CategoriaAnimal" @onchange="(e) => OnCategoriaChanged(e.Value.ToString())" class="form-control">
+                        <option value="">Selecione...</option>
+                        <option value="Bezerro">Bezerro</option>
+                        <option value="Novilha">Novilha</option>
+                        <option value="Vaca">Vaca</option>
+                        <option value="Touro">Touro</option>
+                    </InputSelect>
+                    <ValidationMessage For="@(() => animal.CategoriaAnimal)" />
+                </div>
+
+                <div class="form-group" style="@(MostrarEstadoFisiologico ? "" : "display:none;")">
+                    <label for="estadoFisiologico">Estado Fisiológico:</label>
+                    <InputSelect id="estadoFisiologico" @bind-Value="animal.EstadoFisiologico" class="form-control">
+                        <option value="Nenhum">Nenhum</option>
+                        <option value="Lactante">Lactante</option>
+                        <option value="Seca">Seca</option>
+                        <option value="Prenha">Prenha</option>
+                    </InputSelect>
+                </div>
+
+                <div class="form-group">
+                    <label for="status">Status:</label>
+                    <InputSelect id="status" @bind-Value="animal.Status" class="form-control">
+                        <option value="">Selecione...</option>
+                        <option value="Ativo">Ativo</option>
+                        <option value="Inativo">Inativo</option>
+                        <option value="Baixa">Baixa</option>
+                    </InputSelect>
+                    <ValidationMessage For="@(() => animal.Status)" />
+                </div>
+
+                <div class="footer-actions">
+                    <button type="button" class="btn btn-secondary" @onclick="FecharModal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Salvar</button>
+                </div>
+            </EditForm>
+
+            @if (mensagemSucesso != null)
+            {
+                <div class="alert alert-success mt-3">@mensagemSucesso</div>
+            }
+        </div>
+    </div>
+}
 
 @code {
+    private List<Animal> animais;
+    private Animal animal = new Animal();
+    private bool exibirModal = false;
+    private string mensagemSucesso;
+    private int propriedadeId;
 
+    private bool MostrarEstadoFisiologico =>
+        animal.Sexo == "Feminino" &&
+        (animal.CategoriaAnimal == "Vaca" || animal.CategoriaAnimal == "Novilha");
+
+    protected override async Task OnInitializedAsync()
+    {
+        var propriedade = PropriedadeService.ObterPropriedadeLogada();
+        propriedadeId = propriedade.Id;
+        await CarregarAnimais();
+    }
+
+    private async Task CarregarAnimais()
+    {
+        animais = await AnimalService.ObterAnimaisDaPropriedadeAsync(propriedadeId);
+    }
+
+    private void AbrirModalNovo()
+    {
+        animal = new Animal
+            {
+                PropriedadeId = propriedadeId,
+                DataNascimento = DateTime.Today,
+                Status = "Ativo",
+                EstadoFisiologico = "Nenhum"
+            };
+        exibirModal = true;
+    }
+
+    private void AbrirModalEditar(Animal a)
+    {
+        animal = new Animal
+            {
+                Id = a.Id,
+                NomeAnimal = a.NomeAnimal,
+                NumeroIdentificador = a.NumeroIdentificador,
+                Raca = a.Raca,
+                DataNascimento = a.DataNascimento,
+                Sexo = a.Sexo,
+                CategoriaAnimal = a.CategoriaAnimal,
+                EstadoFisiologico = a.EstadoFisiologico ?? "Nenhum",
+                Status = a.Status,
+                PropriedadeId = a.PropriedadeId
+            };
+        exibirModal = true;
+    }
+
+    private async Task SalvarAnimal()
+    {
+        try
+        {
+            // Se não for mostrar estado fisiológico, garantir que está como "Nenhum"
+            if (!MostrarEstadoFisiologico)
+            {
+                animal.EstadoFisiologico = "Nenhum";
+            }
+
+            if (animal.Id == 0)
+                await AnimalService.CadastrarAnimalAsync(animal);
+            else
+                await AnimalService.AtualizarAnimalAsync(animal);
+
+            mensagemSucesso = "Animal salvo com sucesso!";
+            await CarregarAnimais();
+            await Task.Delay(2000);
+            FecharModal();
+        }
+        catch (Exception ex)
+        {
+            mensagemSucesso = $"Erro ao salvar animal: {ex.Message}";
+        }
+    }
+
+    private void OnSexoChanged(string value)
+    {
+        animal.Sexo = value;
+        if (!MostrarEstadoFisiologico)
+        {
+            animal.EstadoFisiologico = "Nenhum";
+        }
+        StateHasChanged();
+    }
+
+    private void OnCategoriaChanged(string value)
+    {
+        animal.CategoriaAnimal = value;
+        if (!MostrarEstadoFisiologico)
+        {
+            animal.EstadoFisiologico = "Nenhum";
+        }
+        StateHasChanged();
+    }
+
+    private void FecharModal()
+    {
+        exibirModal = false;
+        mensagemSucesso = null;
+    }
 }

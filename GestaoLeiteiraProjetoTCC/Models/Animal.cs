@@ -1,7 +1,6 @@
 ﻿using SQLite;
 using System;
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 
 namespace GestaoLeiteiraProjetoTCC.Models
 {
@@ -10,31 +9,33 @@ namespace GestaoLeiteiraProjetoTCC.Models
         [PrimaryKey, AutoIncrement]
         public int Id { get; set; }
 
-        [Required(ErrorMessage = "A espécie é obrigatória.")]
-        public string Especie { get; set; }
+        [Required(ErrorMessage = "A raça é obrigatória.")]
+        public string Raca { get; set; }
 
-        public string? Raca { get; set; }
+        [Required(ErrorMessage = "O nome do animal é obrigatório.")]
+        public string NomeAnimal { get; set; }
 
-        [Required(ErrorMessage = "O nome identificador é obrigatório.")]
-        public string NomeIdentificador { get; set; }
+        [Required(ErrorMessage = "O número identificador é obrigatório.")]
+        public string NumeroIdentificador { get; set; }
 
         public DateTime? DataNascimento { get; set; }
 
-        public string? EstadoFisiologico { get; set; } // Lactante, Seca, Prenha
+        public string Sexo { get; set; } // Masculino ou Feminino
 
+        [Required(ErrorMessage = "A categoria do animal é obrigatória.")]
+        public string CategoriaAnimal { get; set; } // Bezerro, Novilha, Vaca (em lactação ou não), Touro
+
+        public string EstadoFisiologico { get; set; } // Lactante, Seca, Prenha (apenas se for fêmea)
+
+        [Required(ErrorMessage = "O status do animal é obrigatório.")]
+        public string Status { get; set; } // Ativo, Inativo, Baixa
+
+        // Relacionamento com os pais (Auto-relacionamento)
         public int? MaeId { get; set; }
         public int? PaiId { get; set; }
 
-        [ForeignKey("MaeId")]
-        public Animal? Mae { get; set; }
-
-        [ForeignKey("PaiId")]
-        public Animal? Pai { get; set; }
-
+        // Relacionamento com a propriedade
         [Required(ErrorMessage = "O id da propriedade é obrigatório.")]
         public int PropriedadeId { get; set; }
-
-        [ForeignKey("PropriedadeId")]
-        public Propriedade Propriedade { get; set; }
     }
 }

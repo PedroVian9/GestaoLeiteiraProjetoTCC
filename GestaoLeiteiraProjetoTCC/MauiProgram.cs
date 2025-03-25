@@ -23,6 +23,8 @@ public static class MauiProgram
         builder.Services.AddSingleton<DatabaseService>();
         builder.Services.AddSingleton<IPropriedadeRepository, PropriedadeRepository>();
         builder.Services.AddSingleton<IPropriedadeService, PropriedadeService>();
+        builder.Services.AddSingleton<IAnimalRepository, AnimalRepository>();
+        builder.Services.AddSingleton<IAnimalService, AnimalService>();
 
 #if DEBUG
         builder.Services.AddBlazorWebViewDeveloperTools();
