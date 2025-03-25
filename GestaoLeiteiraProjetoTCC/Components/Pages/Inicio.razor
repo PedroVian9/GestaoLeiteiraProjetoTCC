@@ -1,8 +1,88 @@
 ﻿@page "/inicio"
+@using GestaoLeiteiraProjetoTCC.Models
+@using GestaoLeiteiraProjetoTCC.Services.Interfaces
+@inject IPropriedadeService PropriedadeService
+@inject IAnimalService AnimalService
 
+<div class="dashboard-container">
+    @if (propriedade != null)
+    {
+        <div class="welcome-header">
+            <h2>Bem-vindo à @propriedade.NomePropriedade!</h2>
+            <p class="property-owner">Proprietário: @propriedade.NomeProprietario</p>
+        </div>
 
-<h3>Inicio</h3>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-cow"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>Total de Animais</h3>
+                    <p>@totalAnimais</p>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-bottle-water"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>Em Lactação</h3>
+                    <p>@animaisLactantes</p>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-baby"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>Bezerros</h3>
+                    <p>@totalBezerros</p>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-venus"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>Fêmeas</h3>
+                    <p>@totalFemeas</p>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <p>Carregando informações da propriedade...</p>
+    }
+</div>
 
 @code {
- 
+    private Propriedade propriedade;
+    private int totalAnimais = 0;
+    private int animaisLactantes = 0;
+    private int totalBezerros = 0;
+    private int totalFemeas = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CarregarDados();
+    }
+
+    private async Task CarregarDados()
+    {
+        propriedade = PropriedadeService.ObterPropriedadeLogada();
+
+        if (propriedade != null)
+        {
+            var animais = await AnimalService.ObterAnimaisDaPropriedadeAsync(propriedade.Id);
+            totalAnimais = animais.Count;
+            animaisLactantes = animais.Count(a => a.EstadoFisiologico == "Lactante");
+            totalBezerros = animais.Count(a => a.CategoriaAnimal == "Bezerro");
+            totalFemeas = animais.Count(a => a.Sexo == "Feminino");
+        }
+    }
 }

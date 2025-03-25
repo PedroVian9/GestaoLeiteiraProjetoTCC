@@ -5,56 +5,47 @@
 @inject IAnimalService AnimalService
 @inject IPropriedadeService PropriedadeService
 
-<h3>Lista de Animais</h3>
+<h3 class="page-title">Lista de Animais</h3>
 
-<button class="btn btn-primary" @onclick="AbrirModalNovo">Cadastrar Animal</button>
+<div class="animal-actions">
+    <button class="add-button" @onclick="AbrirModalNovo">
+        <span class="plus-icon">+</span> Novo Animal
+    </button>
+</div>
 
 @if (animais == null)
 {
-    <p>Carregando...</p>
+    <p class="loading-message">Carregando...</p>
 }
 else if (!animais.Any())
 {
-    <p>Nenhum animal cadastrado.</p>
+    <p class="empty-message">Nenhum animal cadastrado.</p>
 }
 else
 {
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Nº Identificador</th>
-                <th>Nome</th>
-                <th>Raça</th>
-                <th>Sexo</th>
-                <th>Categoria</th>
-                <th>Status</th>
-                <th>Ações</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var animal in animais)
-            {
-                <tr>
-                    <td>@animal.NumeroIdentificador</td>
-                    <td>@animal.NomeAnimal</td>
-                    <td>@animal.Raca</td>
-                    <td>@animal.Sexo</td>
-                    <td>@animal.CategoriaAnimal</td>
-                    <td>@animal.Status</td>
-                    <td>
-                        <button class="btn btn-warning btn-sm" @onclick="() => AbrirModalEditar(animal)">Editar</button>
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
+    <div class="animal-grid">
+        @foreach (var animal in animais)
+        {
+            <button class="animal-card" @onclick="() => AbrirModalEditar(animal)">
+                <div class="animal-card-header">
+                    <span class="animal-id">@animal.NumeroIdentificador</span>
+                    <span class="animal-status @animal.Status.ToLower()">@animal.Status</span>
+                </div>
+                <div class="animal-name">@animal.NomeAnimal</div>
+                <div class="animal-details">
+                    <span class="animal-breed">@animal.Raca</span>
+                    <span class="animal-category">@animal.CategoriaAnimal</span>
+                </div>
+            </button>
+        }
+    </div>
 }
 
 <!-- Modal de Cadastro/Edição -->
 @if (exibirModal)
 {
-    <div class="modal-overlay">
-        <div class="modal-content">
+    <div class="modal-overlay" @onclick="FecharModal">
+        <div class="modal-content" @onclick:stopPropagation>
             <h3>@(animal.Id == 0 ? "Cadastrar Animal" : "Editar Animal")</h3>
 
             <EditForm Model="animal" OnValidSubmit="SalvarAnimal">
