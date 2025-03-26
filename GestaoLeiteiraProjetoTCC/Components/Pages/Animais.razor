@@ -96,15 +96,15 @@ else
                     <ValidationMessage For="@(() => animal.CategoriaAnimal)" />
                 </div>
 
-                <div class="form-group" style="@(MostrarEstadoFisiologico ? "" : "display:none;")">
-                    <label for="estadoFisiologico">Estado Fisiológico:</label>
-                    <InputSelect id="estadoFisiologico" @bind-Value="animal.EstadoFisiologico" class="form-control">
-                        <option value="Nenhum">Nenhum</option>
-                        <option value="Lactante">Lactante</option>
-                        <option value="Seca">Seca</option>
-                        <option value="Prenha">Prenha</option>
-                    </InputSelect>
-                </div>
+                @if (MostrarOpcoesVaca)
+                {
+                    <div class="form-group">
+                        <div class="form-check">
+                            <InputCheckbox id="prenha" @bind-Value="animal.Prenha" class="form-check-input" />
+                            <label for="prenha" class="form-check-label">Prenha</label>
+                        </div>
+                    </div>
+                }
 
                 <div class="form-group">
                     <label for="status">Status:</label>
@@ -138,9 +138,8 @@ else
     private string mensagemSucesso;
     private int propriedadeId;
 
-    private bool MostrarEstadoFisiologico =>
-        animal.Sexo == "Feminino" &&
-        (animal.CategoriaAnimal == "Vaca" || animal.CategoriaAnimal == "Novilha");
+    private bool MostrarOpcoesVaca =>
+        animal.Sexo == "Feminino" && animal.CategoriaAnimal == "Vaca";
 
     protected override async Task OnInitializedAsync()
     {
@@ -160,8 +159,8 @@ else
             {
                 PropriedadeId = propriedadeId,
                 DataNascimento = DateTime.Today,
-                Status = "Ativo",
-                EstadoFisiologico = "Nenhum"
+                Lactante = false,
+                Prenha = false
             };
         exibirModal = true;
     }
@@ -177,7 +176,8 @@ else
                 DataNascimento = a.DataNascimento,
                 Sexo = a.Sexo,
                 CategoriaAnimal = a.CategoriaAnimal,
-                EstadoFisiologico = a.EstadoFisiologico ?? "Nenhum",
+                Lactante = a.Lactante,
+                Prenha = a.Prenha,
                 Status = a.Status,
                 PropriedadeId = a.PropriedadeId
             };
@@ -188,10 +188,10 @@ else
     {
         try
         {
-            // Se não for mostrar estado fisiológico, garantir que está como "Nenhum"
-            if (!MostrarEstadoFisiologico)
+            // Garantir que só possa ser prenha se for vaca e fêmea
+            if (!MostrarOpcoesVaca)
             {
-                animal.EstadoFisiologico = "Nenhum";
+                animal.Prenha = false;
             }
 
             if (animal.Id == 0)
@@ -213,9 +213,9 @@ else
     private void OnSexoChanged(string value)
     {
         animal.Sexo = value;
-        if (!MostrarEstadoFisiologico)
+        if (!MostrarOpcoesVaca)
         {
-            animal.EstadoFisiologico = "Nenhum";
+            animal.Prenha = false;
         }
         StateHasChanged();
     }
@@ -223,9 +223,9 @@ else
     private void OnCategoriaChanged(string value)
     {
         animal.CategoriaAnimal = value;
-        if (!MostrarEstadoFisiologico)
+        if (!MostrarOpcoesVaca)
         {
-            animal.EstadoFisiologico = "Nenhum";
+            animal.Prenha = false;
         }
         StateHasChanged();
     }

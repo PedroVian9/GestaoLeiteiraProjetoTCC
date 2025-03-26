@@ -1,7 +1,84 @@
 ﻿@page "/producao-leiteira"
+@using GestaoLeiteiraProjetoTCC.Models
+@using GestaoLeiteiraProjetoTCC.Services.Interfaces
+@inject ILactacaoService LactacaoService
+@inject IAnimalService AnimalService
+@inject IPropriedadeService PropriedadeService
+@inject NavigationManager NavigationManager
 
-<h3>Component2</h3>
+<div class="container mt-4">
+    <h3 class="mb-4">Iniciar Nova Lactação</h3>
+    <EditForm Model="@_novaLactacao" OnValidSubmit="CriarLactacao">
+        <DataAnnotationsValidator />
+        <ValidationSummary class="alert alert-danger" />
+        <div class="form-group mb-3">
+            <label for="animalSelect">Selecione o Animal</label>
+            <select id="animalSelect" class="form-control" @bind="_novaLactacao.AnimalId">
+                <option value="0">Selecione um animal</option>
+                @foreach (var animal in _animais)
+                {
+                    <option value="@animal.Id">@animal.NomeAnimal - @animal.NumeroIdentificador</option>
+                }
+            </select>
+            <ValidationMessage For="@(() => _novaLactacao.AnimalId)" />
+        </div>
+        <div class="form-group mb-3">
+            <label for="dataInicio">Data de Início da Lactação</label>
+            <InputDate id="dataInicio" class="form-control" @bind-Value="_novaLactacao.DataInicio" />
+            <ValidationMessage For="@(() => _novaLactacao.DataInicio)" />
+        </div>
+        <button type="submit" class="btn btn-primary">Iniciar Lactação</button>
+    </EditForm>
+</div>
 
 @code {
+    private Lactacao _novaLactacao = new Lactacao();
+    private List<Animal> _animais = new List<Animal>();
 
+    protected override async Task OnInitializedAsync()
+    {
+        // Obter animais que podem entrar em lactação (fêmeas, não lactantes)
+        var propriedadeId = await ObterPropriedadeLogada();
+        _animais = (await AnimalService.ObterAnimaisDaPropriedadeAsync(propriedadeId))
+            .Where(a => a.Sexo == "Feminino" && !a.Lactante &&
+                        (a.CategoriaAnimal == "Vaca" || a.CategoriaAnimal == "Novilha"))
+            .ToList();
+    }
+
+    private async Task<int> ObterPropriedadeLogada()
+    {
+        var propriedadeLogada = PropriedadeService.ObterPropriedadeLogada();
+        if (propriedadeLogada == null)
+        {
+            throw new InvalidOperationException("Nenhuma propriedade está logada.");
+        }
+        return propriedadeLogada.Id;
+    }
+
+    private async Task CriarLactacao()
+    {
+        if (_novaLactacao.AnimalId == 0)
+        {
+            // Validação manual para garantir que um animal foi selecionado
+            return;
+        }
+
+        try
+        {
+            _novaLactacao.DataInicio = DateTime.Now;
+            await LactacaoService.CriarLactacaoAsync(_novaLactacao);
+
+            // Atualizar status do animal para lactante
+            var animal = _animais.First(a => a.Id == _novaLactacao.AnimalId);
+            animal.Lactante = true;
+            await AnimalService.AtualizarAnimalAsync(animal);
+
+            NavigationManager.NavigateTo("/producao-leiteira");
+        }
+        catch (Exception ex)
+        {
+            // Implementar tratamento de erro
+            Console.WriteLine($"Erro ao criar lactação: {ex.Message}");
+        }
+    }
 }

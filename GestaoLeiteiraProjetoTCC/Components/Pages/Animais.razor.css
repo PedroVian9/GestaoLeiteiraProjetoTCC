@@ -1,196 +1,229 @@
 ﻿.page-title {
-    color: #023047;
-    text-align: center;
-    margin: 20px 0;
-}
-
-.animal-actions {
-    text-align: right;
-    margin: 0 20px 20px 0;
-}
-
-.add-button {
-    background-color: #3a7ca5;
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 16px;
-    transition: all 0.3s ease;
-}
-
-    .add-button:hover {
-        background-color: #2c6284;
-        transform: translateY(-2px);
+        color: #023047;
+        text-align: center;
+        margin: 20px 0;
     }
 
-.plus-icon {
-    margin-right: 8px;
-    font-weight: bold;
-}
-
-.animal-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-    gap: 20px;
-    padding: 20px;
-}
-
-.animal-card {
-    background: white;
-    border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    padding: 15px;
-    text-align: left;
-    border: none;
-    cursor: pointer;
-    transition: all 0.3s ease;
-}
-
-    .animal-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+    .animal-actions {
+        text-align: right;
+        margin: 0 20px 20px 0;
     }
 
-.animal-card-header {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 10px;
-}
+    .add-button {
+        background-color: #3a7ca5;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 16px;
+        transition: all 0.3s ease;
+    }
 
-.animal-id {
-    font-weight: bold;
-    color: #023047;
-}
+        .add-button:hover {
+            background-color: #2c6284;
+            transform: translateY(-2px);
+        }
 
-.animal-status {
-    font-size: 12px;
-    padding: 3px 10px;
-    border-radius: 20px;
-    font-weight: bold;
-}
+    .plus-icon {
+        margin-right: 8px;
+        font-weight: bold;
+    }
 
-    .animal-status.ativo {
-        background-color: #4CAF50;
+    .animal-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 20px;
+        padding: 20px;
+    }
+
+    .animal-card {
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        padding: 15px;
+        text-align: left;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+        .animal-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+
+    .animal-card-header {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 10px;
+    }
+
+    .animal-id {
+        font-weight: bold;
+        color: #023047;
+    }
+
+    .animal-status {
+        font-size: 12px;
+        padding: 3px 10px;
+        border-radius: 20px;
+        font-weight: bold;
+    }
+
+        .animal-status.ativo {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        .animal-status.inativo {
+            background-color: #F44336;
+            color: white;
+        }
+
+        .animal-status.baixa {
+            background-color: #FF9800;
+            color: white;
+        }
+
+    .animal-name {
+        font-size: 18px;
+        font-weight: bold;
+        margin: 5px 0;
+        color: #333;
+    }
+
+    .animal-details {
+        display: flex;
+        justify-content: space-between;
+        color: #666;
+        font-size: 14px;
+    }
+
+    .animal-status-info {
+        margin-top: 10px;
+        display: flex;
+        gap: 5px;
+    }
+
+    .status-badge {
+        font-size: 12px;
+        padding: 3px 8px;
+        border-radius: 20px;
+        font-weight: bold;
+    }
+
+    .status-badge.lactante {
+        background-color: #2196F3;
         color: white;
     }
 
-    .animal-status.inativo {
-        background-color: #F44336;
+    .status-badge.prenha {
+        background-color: #9C27B0;
         color: white;
     }
 
-    .animal-status.baixa {
-        background-color: #FF9800;
-        color: white;
+    .loading-message, .empty-message {
+        text-align: center;
+        color: #666;
+        margin: 40px 0;
     }
 
-.animal-name {
-    font-size: 18px;
-    font-weight: bold;
-    margin: 5px 0;
-    color: #333;
-}
-
-.animal-details {
-    display: flex;
-    justify-content: space-between;
-    color: #666;
-    font-size: 14px;
-}
-
-.loading-message, .empty-message {
-    text-align: center;
-    color: #666;
-    margin: 40px 0;
-}
-
-/* Adicione estes estilos ao seu arquivo CSS */
-.modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: rgba(0, 0, 0, 0.5);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-    backdrop-filter: blur(5px);
-}
-
-.modal-content {
-    background-color: white;
-    padding: 30px;
-    border-radius: 10px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-    width: 90%;
-    max-width: 600px;
-    max-height: 90vh;
-    overflow-y: auto;
-    animation: modalFadeIn 0.3s ease-out;
-}
-
-@keyframes modalFadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(-20px);
+    /* Modal styles */
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+        backdrop-filter: blur(5px);
     }
 
-    to {
-        opacity: 1;
-        transform: translateY(0);
+    .modal-content {
+        background-color: white;
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        width: 90%;
+        max-width: 600px;
+        max-height: 90vh;
+        overflow-y: auto;
+        animation: modalFadeIn 0.3s ease-out;
     }
-}
 
-/* Ajustes para os botões dentro do modal */
-.modal-content .btn {
-    padding: 10px 20px;
-    margin: 0 10px;
-}
+    @keyframes modalFadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(-20px);
+        }
 
-.modal-content .btn-primary {
-    background-color: #3a7ca5;
-    border: none;
-}
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
 
-.modal-content .btn-secondary {
-    background-color: #6c757d;
-    border: none;
-}
+    /* Form styles */
+    .modal-content .btn {
+        padding: 10px 20px;
+        margin: 0 10px;
+    }
 
-/* Ajuste para os grupos de formulário */
-.modal-content .form-group {
-    margin-bottom: 20px;
-}
+    .modal-content .btn-primary {
+        background-color: #3a7ca5;
+        border: none;
+    }
 
-.modal-content label {
-    display: block;
-    margin-bottom: 5px;
-    font-weight: 500;
-}
+    .modal-content .btn-secondary {
+        background-color: #6c757d;
+        border: none;
+    }
 
-.modal-content .form-control {
-    width: 100%;
-    padding: 10px;
-    border: 1px solid #ced4da;
-    border-radius: 4px;
-}
+    .modal-content .form-group {
+        margin-bottom: 20px;
+    }
 
-/* Ajuste para o título do modal */
-.modal-content h3 {
-    margin-top: 0;
-    color: #023047;
-    padding-bottom: 15px;
-    border-bottom: 1px solid #eee;
-    margin-bottom: 20px;
-}
+    .modal-content label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: 500;
+    }
 
-/* Ajuste para mensagem de sucesso */
-.modal-content .alert-success {
-    margin-top: 20px;
-    padding: 10px;
-    border-radius: 4px;
-}
+    .modal-content .form-control {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+    }
+
+    .modal-content h3 {
+        margin-top: 0;
+        color: #023047;
+        padding-bottom: 15px;
+        border-bottom: 1px solid #eee;
+        margin-bottom: 20px;
+    }
+
+    .modal-content .alert-success {
+        margin-top: 20px;
+        padding: 10px;
+        border-radius: 4px;
+    }
+
+    .form-check {
+        display: flex;
+        align-items: center;
+    }
+
+    .form-check-input {
+        margin-right: 10px;
+    }
+
+    .form-check-label {
+        margin-bottom: 0;
+    }
