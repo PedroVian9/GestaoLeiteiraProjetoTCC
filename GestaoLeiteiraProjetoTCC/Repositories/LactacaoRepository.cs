@@ -1,4 +1,5 @@
-﻿using GestaoLeiteiraProjetoTCC.Models;
+﻿using GestaoLeiteiraProjetoTCC.Data;
+using GestaoLeiteiraProjetoTCC.Models;
 using GestaoLeiteiraProjetoTCC.Repositories.Interfaces;
 using SQLite;
 using System.Collections.Generic;
@@ -8,35 +9,39 @@ namespace GestaoLeiteiraProjetoTCC.Repositories
 {
     public class LactacaoRepository : ILactacaoRepository
     {
-        private readonly SQLiteAsyncConnection _database;
+        private readonly DatabaseService _databaseService;
 
-        public LactacaoRepository(SQLiteAsyncConnection database)
+        public LactacaoRepository(DatabaseService databaseService)
         {
-            _database = database;
+            _databaseService = databaseService;
         }
 
         public async Task<int> CriarLactacaoDb(Lactacao lactacao)
         {
-            return await _database.InsertAsync(lactacao);
+            var db = await _databaseService.GetConnectionAsync();
+            return await db.InsertAsync(lactacao);
         }
 
         public async Task<List<Lactacao>> ObterLactacoesPorAnimalDb(int animalId)
         {
-            return await _database.Table<Lactacao>()
+            var db = await _databaseService.GetConnectionAsync();
+            return await db.Table<Lactacao>()
                 .Where(l => l.AnimalId == animalId)
                 .ToListAsync();
         }
 
         public async Task<Lactacao> ObterLactacaoPorIdDb(int id)
         {
-            return await _database.Table<Lactacao>()
+            var db = await _databaseService.GetConnectionAsync();
+            return await db.Table<Lactacao>()
                 .Where(l => l.Id == id)
                 .FirstOrDefaultAsync();
         }
 
         public async Task AtualizarLactacaoDb(Lactacao lactacao)
         {
-            await _database.UpdateAsync(lactacao);
+            var db = await _databaseService.GetConnectionAsync();
+            await db.UpdateAsync(lactacao);
         }
     }
 }

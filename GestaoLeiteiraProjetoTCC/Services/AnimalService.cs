@@ -1,9 +1,6 @@
 ﻿using GestaoLeiteiraProjetoTCC.Models;
 using GestaoLeiteiraProjetoTCC.Repositories.Interfaces;
 using GestaoLeiteiraProjetoTCC.Services.Interfaces;
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 
 namespace GestaoLeiteiraProjetoTCC.Services
 {

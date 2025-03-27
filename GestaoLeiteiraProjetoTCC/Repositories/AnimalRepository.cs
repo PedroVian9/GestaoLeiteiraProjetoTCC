@@ -1,10 +1,5 @@
-﻿using GestaoLeiteiraProjetoTCC.Data;
-using GestaoLeiteiraProjetoTCC.Models;
+﻿using GestaoLeiteiraProjetoTCC.Models;
 using GestaoLeiteiraProjetoTCC.Repositories.Interfaces;
-using SQLite;
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 
 namespace GestaoLeiteiraProjetoTCC.Repositories
 {

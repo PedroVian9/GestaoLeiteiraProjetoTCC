@@ -1,22 +1,15 @@
-﻿using GestaoLeiteiraProjetoTCC.Models;
-using GestaoLeiteiraProjetoTCC.Repositories.Interfaces;
+﻿using GestaoLeiteiraProjetoTCC.Repositories.Interfaces;
 using GestaoLeiteiraProjetoTCC.Services.Interfaces;
-using SQLite;
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 
 namespace GestaoLeiteiraProjetoTCC.Services
 {
     public class LactacaoService : ILactacaoService
     {
         private readonly ILactacaoRepository _lactacaoRepository;
-        private readonly SQLiteAsyncConnection _database;
 
-        public LactacaoService(ILactacaoRepository lactacaoRepository, SQLiteAsyncConnection database)
+        public LactacaoService(ILactacaoRepository lactacaoRepository)
         {
             _lactacaoRepository = lactacaoRepository;
-            _database = database;
         }
 
         public async Task<int> CriarLactacaoAsync(Lactacao lactacao)

@@ -1,27 +1,27 @@
 ﻿using GestaoLeiteiraProjetoTCC.Models;
 using GestaoLeiteiraProjetoTCC.Repositories.Interfaces;
-using SQLite;
-using System.Threading.Tasks;
 
 namespace GestaoLeiteiraProjetoTCC.Repositories
 {
     public class ProducaoLeiteiraRepository : IProducaoLeiteiraRepository
     {
-        private readonly SQLiteAsyncConnection _database;
+        private readonly DatabaseService _databaseService;
 
-        public ProducaoLeiteiraRepository(SQLiteAsyncConnection database)
+        public ProducaoLeiteiraRepository(DatabaseService databaseService)
         {
-            _database = database;
+            _databaseService = databaseService;
         }
 
         public async Task<int> CriarProducaoLeiteiraDb(ProducaoLeiteira producaoLeiteira)
         {
-            return await _database.InsertAsync(producaoLeiteira);
+            var db = await _databaseService.GetConnectionAsync();
+            return await db.InsertAsync(producaoLeiteira);
         }
 
         public async Task AtualizarProducaoLeiteiraDb(ProducaoLeiteira producaoLeiteira)
         {
-            await _database.UpdateAsync(producaoLeiteira);
+            var db = await _databaseService.GetConnectionAsync();
+            await db.UpdateAsync(producaoLeiteira);
         }
     }
 }
