@@ -80,7 +80,7 @@
         {
             var animais = await AnimalService.ObterAnimaisDaPropriedadeAsync(propriedade.Id);
             totalAnimais = animais.Count;
-            animaisLactantes = animais.Count(a => a.EstadoFisiologico == "Lactante");
+            animaisLactantes = animais.Count(a => a.Lactante == true);
             totalBezerros = animais.Count(a => a.CategoriaAnimal == "Bezerro");
             totalFemeas = animais.Count(a => a.Sexo == "Feminino");
         }

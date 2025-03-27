@@ -50,11 +50,16 @@ public class DatabaseService
             // Criar tabelas
             await _database.CreateTableAsync<Propriedade>();
             await _database.CreateTableAsync<Animal>();
+            await _database.CreateTableAsync<Lactacao>();
+            await _database.CreateTableAsync<ProducaoLeiteira>();
 
             // Criar índices para simular foreign keys
             await _database.ExecuteAsync("CREATE INDEX IF NOT EXISTS IX_Animal_PropriedadeId ON Animal (PropriedadeId)");
             await _database.ExecuteAsync("CREATE INDEX IF NOT EXISTS IX_Animal_MaeId ON Animal (MaeId)");
             await _database.ExecuteAsync("CREATE INDEX IF NOT EXISTS IX_Animal_PaiId ON Animal (PaiId)");
+            await _database.ExecuteAsync("CREATE INDEX IF NOT EXISTS IX_Lactacao_AnimalId ON Lactacao (AnimalId)");
+            await _database.ExecuteAsync("CREATE INDEX IF NOT EXISTS IX_ProducaoLeiteira_AnimalId ON ProducaoLeiteira (AnimalId)");
+            await _database.ExecuteAsync("CREATE INDEX IF NOT EXISTS IX_ProducaoLeiteira_LactacaoId ON ProducaoLeiteira (LactacaoId)");
 
             Console.WriteLine($"Banco de dados criado em: {Constants.DatabasePath}");
         }

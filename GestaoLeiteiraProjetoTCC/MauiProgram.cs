@@ -21,10 +21,16 @@ public static class MauiProgram
 
         // Registrar serviços
         builder.Services.AddSingleton<DatabaseService>();
+
         builder.Services.AddSingleton<IPropriedadeRepository, PropriedadeRepository>();
-        builder.Services.AddSingleton<IPropriedadeService, PropriedadeService>();
         builder.Services.AddSingleton<IAnimalRepository, AnimalRepository>();
+        builder.Services.AddSingleton<ILactacaoRepository, LactacaoRepository>();
+        builder.Services.AddSingleton<IProducaoLeiteiraRepository, ProducaoLeiteiraRepository>();
+
+        builder.Services.AddSingleton<IPropriedadeService, PropriedadeService>();
         builder.Services.AddSingleton<IAnimalService, AnimalService>();
+        builder.Services.AddSingleton<ILactacaoService, LactacaoService>();
+        builder.Services.AddSingleton<IProducaoLeiteiraService, ProducaoLeiteiraService>();
 
 #if DEBUG
         builder.Services.AddBlazorWebViewDeveloperTools();
@@ -33,7 +39,6 @@ public static class MauiProgram
 
         var app = builder.Build();
 
-        // Inicialização segura do banco de dados
         InitializeDatabase(app.Services);
 
         return app;

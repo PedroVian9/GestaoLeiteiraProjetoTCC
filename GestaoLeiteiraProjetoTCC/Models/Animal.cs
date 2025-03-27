@@ -23,18 +23,17 @@ namespace GestaoLeiteiraProjetoTCC.Models
         public string Sexo { get; set; } // Masculino ou Feminino
 
         [Required(ErrorMessage = "A categoria do animal é obrigatória.")]
-        public string CategoriaAnimal { get; set; } // Bezerro, Novilha, Vaca (em lactação ou não), Touro
+        public string CategoriaAnimal { get; set; } // Bezerro, Novilha, Vaca, Touro
 
-        public string EstadoFisiologico { get; set; } // Lactante, Seca, Prenha (apenas se for fêmea)
+        public bool Lactante { get; set; } = false;
+        public bool Prenha { get; set; } = false;
 
         [Required(ErrorMessage = "O status do animal é obrigatório.")]
-        public string Status { get; set; } // Ativo, Inativo, Baixa
+        public string Status { get; set; } = "Ativo"; // Ativo, Inativo, Baixa
 
-        // Relacionamento com os pais (Auto-relacionamento)
         public int? MaeId { get; set; }
         public int? PaiId { get; set; }
 
-        // Relacionamento com a propriedade
         [Required(ErrorMessage = "O id da propriedade é obrigatório.")]
         public int PropriedadeId { get; set; }
     }
