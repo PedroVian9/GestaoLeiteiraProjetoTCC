@@ -1,7 +1,125 @@
 ﻿@page "/historico-producao"
+@using GestaoLeiteiraProjetoTCC.Models
+@using GestaoLeiteiraProjetoTCC.Services.Interfaces
+@inject ILactacaoService LactacaoService
+@inject IAnimalService AnimalService
+@inject IPropriedadeService PropriedadeService
+@inject IProducaoLeiteiraService ProducaoLeiteiraService
 
-<h3>HistoricoProducao</h3>
+<h3>Histórico de Produção</h3>
+
+@if (animais is null)
+{
+    <p>Carregando animais...</p>
+}
+else
+{
+    <div class="mb-3">
+        <label>Animal:</label>
+        <select @onchange="OnAnimalChange" class="form-select">
+            <option value="">Selecione um animal</option>
+            @foreach (var animal in animais)
+            {
+                <option value="@animal.Id">@animal.NomeAnimal (@animal.NumeroIdentificador)</option>
+            }
+        </select>
+    </div>
+
+    <div class="mb-3">
+        <label>Lactação:</label>
+        <select @onchange="OnLactacaoChange" class="form-select">
+            <option value="">Selecione uma lactação</option>
+            @if (lactacoes != null)
+            {
+                @foreach (var lactacao in lactacoes)
+                {
+                    <option value="@lactacao.Id">
+                        Período de lactação: - Início: @lactacao.DataInicio.ToString("dd/MM/yyyy")
+                        @(lactacao.DataFim.HasValue ? $" - Fim: {lactacao.DataFim.Value.ToString("dd/MM/yyyy")}" : "")
+                    </option>
+                }
+            }
+        </select>
+    </div>
+
+    <div class="mb-3">
+        <input type="date" @bind="dataInicio" class="form-control" />
+    </div>
+
+    <div class="mb-3">
+        <input type="date" @bind="dataFim" class="form-control" />
+    </div>
+
+    @if (lactacaoSelecionadaId.HasValue)
+    {
+        <button class="btn btn-primary" @onclick="BuscarProducoes">Buscar Produções</button>
+    }
+}
 
 @code {
+    private List<Animal> animais;
+    private List<Lactacao> lactacoes;
+    private int? animalSelecionadoId;
+    private int? lactacaoSelecionadaId;
+    private DateTime? dataInicio;
+    private DateTime? dataFim;
 
+    protected override async Task OnInitializedAsync()
+    {
+        var propriedade = PropriedadeService.ObterPropriedadeLogada();
+        if (propriedade != null)
+        {
+            animais = await AnimalService.ObterAnimaisDaPropriedadeAsync(propriedade.Id);
+            lactacoes = new List<Lactacao>(); // Inicializa vazio
+        }
+    }
+
+    private async Task OnAnimalChange(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var id))
+        {
+            animalSelecionadoId = id;
+            var listaLactacoes = await LactacaoService.ObterLactacoesPorAnimalAsync(id);
+            lactacoes = listaLactacoes
+                .OrderByDescending(l => l.DataInicio)
+                .ToList();
+        }
+        else
+        {
+            animalSelecionadoId = null;
+            lactacoes = new List<Lactacao>(); // Mantém vazio mas não nulo
+        }
+
+        lactacaoSelecionadaId = null;
+        StateHasChanged();
+    }
+
+    private void OnLactacaoChange(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var id))
+        {
+            lactacaoSelecionadaId = id;
+            var lactacao = lactacoes.FirstOrDefault(l => l.Id == id);
+            if (lactacao != null)
+            {
+                dataInicio = lactacao.DataInicio;
+                dataFim = lactacao.DataFim ?? DateTime.Today;
+            }
+        }
+    }
+
+
+
+    private async Task BuscarProducoes()
+    {
+        if (lactacaoSelecionadaId.HasValue)
+        {
+            // Implementar lógica para buscar produções
+            // Exemplo:
+            // var producoes = await ProducaoLeiteiraService.ObterProducoesPorLactacaoAsync(
+            //     lactacaoSelecionadaId.Value,
+            //     dataInicio,
+            //     dataFim);
+        }
+    }
 }
