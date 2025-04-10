@@ -10,7 +10,7 @@ namespace GestaoLeiteiraProjetoTCC.Services.Interfaces
     public interface IProducaoLeiteiraService
     {
         Task<int> CriarProducaoLeiteiraAsync(ProducaoLeiteira producaoLeiteira);
-
         Task AtualizarProducaoLeiteiraAsync(ProducaoLeiteira producaoLeiteira);
+        Task<List<ProducaoLeiteira>> ObterProducoesPorLactacaoAsync(int lactacaoId);
     }
 }

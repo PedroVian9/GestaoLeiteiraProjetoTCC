@@ -236,6 +236,17 @@ select.form-control {
     gap: 5px;
 }
 
+    .btn-action.ja-registrado {
+        background-color: #d6d6d6;
+        color: #777;
+        cursor: not-allowed;
+        border: none;
+        padding: 10px 15px;
+        border-radius: 5px;
+        font-size: 14px;
+        font-weight: bold;
+    }
+
     .btn-action.finalizar {
         background-color: #f8d7da;
         color: #721c24;

@@ -11,5 +11,6 @@ namespace GestaoLeiteiraProjetoTCC.Repositories.Interfaces
     {
         Task<int> CriarProducaoLeiteiraDb(ProducaoLeiteira producaoLeiteira);
         Task AtualizarProducaoLeiteiraDb(ProducaoLeiteira producaoLeiteira);
+        Task<List<ProducaoLeiteira>> ObterPorLactacaoAsync(int lactacaoId);
     }
 }

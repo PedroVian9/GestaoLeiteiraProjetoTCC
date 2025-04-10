@@ -4,6 +4,7 @@
 @inject ILactacaoService LactacaoService
 @inject IAnimalService AnimalService
 @inject IPropriedadeService PropriedadeService
+@inject IProducaoLeiteiraService ProducaoLeiteiraService
 
 <div class="page-container">
     <h3 class="page-title">Registro de Lactação</h3>
@@ -15,7 +16,14 @@
         </button>
     </div>
 
-    @if (Lactacoes == null)
+    @if (carregandoDados)
+    {
+        <div class="loading-overlay">
+            <div class="spinner"></div>
+            <p>Carregando dados...</p>
+        </div>
+    }
+    else if (Lactacoes == null)
     {
         <p class="loading-message">Carregando...</p>
     }
@@ -38,15 +46,35 @@
                             <span class="detail-label">Início:</span>
                             <span class="detail-value">@lactacao.DataInicio.ToString("dd/MM/yyyy")</span>
                         </div>
+                        @if (lactacao.DataFim.HasValue)
+                        {
+                            <div class="detail-item">
+                                <span class="detail-label">Término:</span>
+                                <span class="detail-value">@lactacao.DataFim.Value.ToString("dd/MM/yyyy")</span>
+                            </div>
+                        }
                     </div>
 
                     <div class="card-actions">
-                        <button class="btn-action finalizar" @onclick="() => AbrirModalConfirmacao(lactacao.Id)">
-                            <i class="fas fa-stop-circle"></i> Finalizar Lactação
-                        </button>
-                        <button class="btn-action registrar">
-                            <i class="fas fa-plus-circle"></i> Adicionar Produção Diária
-                        </button>
+                        @if (!lactacao.DataFim.HasValue)
+                        {
+                            <button class="btn-action finalizar" @onclick="() => AbrirModalConfirmacao(lactacao.Id)">
+                                <i class="fas fa-stop-circle"></i> Finalizar Lactação
+                            </button>
+
+                            @if (ProducaoRegistradaHojeMap.ContainsKey(lactacao.Id) && ProducaoRegistradaHojeMap[lactacao.Id])
+                            {
+                                <button class="btn-action ja-registrado" disabled>
+                                    <i class="fas fa-check-circle"></i> Produção já registrada
+                                </button>
+                            }
+                            else
+                            {
+                                <button class="btn-action registrar" @onclick="() => AbrirModalProducao(lactacao.Id, lactacao.AnimalId)">
+                                    <i class="fas fa-plus-circle"></i> Adicionar Produção Diária
+                                </button>
+                            }
+                        }
                     </div>
                 </div>
             }
@@ -115,6 +143,34 @@
             </div>
         </div>
     }
+
+    @if (MostrarModalProducao)
+    {
+        <div class="modal-overlay" @onclick="FecharModalProducao">
+            <div class="modal-content" @onclick:stopPropagation>
+                <h3>Registrar Produção Diária</h3>
+
+                <div class="form-group">
+                    <label>Data:</label>
+                    <input class="form-control" value="@DataProducao.ToString("dd/MM/yyyy")" disabled />
+                </div>
+
+                <div class="form-group">
+                    <label>Quantidade (litros):</label>
+                    <input type="number" step="0.01" class="form-control" @bind="QuantidadeLitros" />
+                    @if (MostrarErroQuantidade)
+                    {
+                        <span class="text-danger">Informe uma quantidade válida.</span>
+                    }
+                </div>
+
+                <div class="footer-actions">
+                    <button class="btn btn-secondary" @onclick="FecharModalProducao">Cancelar</button>
+                    <button class="btn btn-primary" @onclick="SalvarProducao">Salvar</button>
+                </div>
+            </div>
+        </div>
+    }
 </div>
 
 @code {
@@ -130,15 +186,43 @@
     private DateTime DataInicio = DateTime.Now;
     private Propriedade PropriedadeLogada;
     private int? LactacaoParaFinalizarId;
+    private bool MostrarModalProducao = false;
+    private DateTime DataProducao = DateTime.Now;
+    private double QuantidadeLitros;
+    private int LactacaoSelecionadaId;
+    private int AnimalSelecionadoParaProducaoId;
+    private bool MostrarErroQuantidade = false;
+    private bool carregandoDados = true;
+    private Dictionary<int, bool> ProducaoRegistradaHojeMap = new();
 
     protected override async Task OnInitializedAsync()
     {
-        PropriedadeLogada = PropriedadeService.ObterPropriedadeLogada();
-        if (PropriedadeLogada != null)
+        try
         {
-            Animais = await AnimalService.ObterAnimaisDaPropriedadeAsync(PropriedadeLogada.Id);
-            await CarregarLactacoes();
-            FiltrarAnimaisAptos();
+            carregandoDados = true;
+            StateHasChanged();
+
+            PropriedadeLogada = PropriedadeService.ObterPropriedadeLogada();
+            if (PropriedadeLogada != null)
+            {
+                Animais = await AnimalService.ObterAnimaisDaPropriedadeAsync(PropriedadeLogada.Id);
+                await CarregarLactacoes();
+                FiltrarAnimaisAptos();
+                await CarregarProducoesRegistradas();
+            }
+        }
+        finally
+        {
+            carregandoDados = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task CarregarProducoesRegistradas()
+    {
+        foreach (var lactacao in LactacoesAtivas)
+        {
+            ProducaoRegistradaHojeMap[lactacao.Id] = await ProducaoRegistradaHojeAsync(lactacao.Id);
         }
     }
 
@@ -157,7 +241,8 @@
 
         AnimaisAptos = Animais
             .Where(a => a.Sexo == "Feminino" &&
-                      a.CategoriaAnimal == "Vaca" && a.Status == "Ativo" &&
+                      a.CategoriaAnimal == "Vaca" &&
+                      a.Status == "Ativo" &&
                       !a.Lactante &&
                       !animaisEmLactacao.Contains(a.Id))
             .OrderBy(a => a.NomeAnimal)
@@ -223,6 +308,9 @@
 
         try
         {
+            carregandoDados = true;
+            StateHasChanged();
+
             var novaLactacao = new Lactacao
                 {
                     AnimalId = AnimalSelecionadoId.Value,
@@ -248,11 +336,24 @@
 
             await CarregarLactacoes();
             FiltrarAnimaisAptos();
+
+            // Carrega as produções para a nova lactação
+            var lactacaoCriada = Lactacoes.FirstOrDefault(l => l.AnimalId == AnimalSelecionadoId.Value && l.DataFim == null);
+            if (lactacaoCriada != null)
+            {
+                ProducaoRegistradaHojeMap[lactacaoCriada.Id] = await ProducaoRegistradaHojeAsync(lactacaoCriada.Id);
+            }
+
             FecharModal();
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Erro ao criar lactação: {ex.Message}");
+        }
+        finally
+        {
+            carregandoDados = false;
+            StateHasChanged();
         }
     }
 
@@ -262,6 +363,9 @@
         {
             try
             {
+                carregandoDados = true;
+                StateHasChanged();
+
                 await LactacaoService.FinalizarLactacaoAsync(LactacaoParaFinalizarId.Value);
 
                 var lactacao = Lactacoes.FirstOrDefault(l => l.Id == LactacaoParaFinalizarId.Value);
@@ -279,9 +383,11 @@
                         if (index >= 0) Animais[index] = animal;
                     }
 
+                    // Remove do mapa de produções
+                    ProducaoRegistradaHojeMap.Remove(LactacaoParaFinalizarId.Value);
+
                     await CarregarLactacoes();
                     FiltrarAnimaisAptos();
-                    StateHasChanged();
                 }
             }
             catch (Exception ex)
@@ -290,8 +396,80 @@
             }
             finally
             {
+                carregandoDados = false;
                 FecharModalConfirmacao();
+                StateHasChanged();
             }
+        }
+    }
+
+    private void AbrirModalProducao(int lactacaoId, int animalId)
+    {
+        LactacaoSelecionadaId = lactacaoId;
+        AnimalSelecionadoParaProducaoId = animalId;
+        QuantidadeLitros = 0;
+        MostrarErroQuantidade = false;
+        DataProducao = DateTime.Now;
+        MostrarModalProducao = true;
+    }
+
+    private void FecharModalProducao()
+    {
+        MostrarModalProducao = false;
+    }
+
+    private async Task SalvarProducao()
+    {
+        MostrarErroQuantidade = false;
+
+        if (QuantidadeLitros <= 0)
+        {
+            MostrarErroQuantidade = true;
+            return;
+        }
+
+        try
+        {
+            carregandoDados = true;
+            StateHasChanged();
+
+            var novaProducao = new GestaoLeiteiraProjetoTCC.Models.ProducaoLeiteira
+                {
+                    AnimalId = AnimalSelecionadoParaProducaoId,
+                    LactacaoId = LactacaoSelecionadaId,
+                    Data = DataProducao,
+                    Quantidade = QuantidadeLitros
+                };
+
+            await ProducaoLeiteiraService.CriarProducaoLeiteiraAsync(novaProducao);
+
+            // Atualiza o status após salvar
+            ProducaoRegistradaHojeMap[LactacaoSelecionadaId] = true;
+
+            FecharModalProducao();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Erro ao salvar produção: {ex.Message}");
+        }
+        finally
+        {
+            carregandoDados = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task<bool> ProducaoRegistradaHojeAsync(int lactacaoId)
+    {
+        try
+        {
+            var producoes = await ProducaoLeiteiraService.ObterProducoesPorLactacaoAsync(lactacaoId);
+            return producoes.Any(p => p.Data.Date == DateTime.Today);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Erro ao verificar produções: {ex.Message}");
+            return false;
         }
     }
 }

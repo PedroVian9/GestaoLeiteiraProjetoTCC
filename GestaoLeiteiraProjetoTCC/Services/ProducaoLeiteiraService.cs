@@ -22,5 +22,10 @@ namespace GestaoLeiteiraProjetoTCC.Services
         {
             await _producaoLeiteiraRepository.AtualizarProducaoLeiteiraDb(producaoLeiteira);
         }
+
+        public async Task<List<ProducaoLeiteira>> ObterProducoesPorLactacaoAsync(int lactacaoId)
+        {
+            return await _producaoLeiteiraRepository.ObterPorLactacaoAsync(lactacaoId);
+        }
     }
 }

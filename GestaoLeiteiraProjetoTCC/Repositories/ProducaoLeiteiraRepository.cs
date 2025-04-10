@@ -23,5 +23,13 @@ namespace GestaoLeiteiraProjetoTCC.Repositories
             var db = await _databaseService.GetConnectionAsync();
             await db.UpdateAsync(producaoLeiteira);
         }
+
+        public async Task<List<ProducaoLeiteira>> ObterPorLactacaoAsync(int lactacaoId)
+        {
+            var db = await _databaseService.GetConnectionAsync();
+            return await db.Table<ProducaoLeiteira>()
+                           .Where(p => p.LactacaoId == lactacaoId)
+                           .ToListAsync();
+        }
     }
 }
