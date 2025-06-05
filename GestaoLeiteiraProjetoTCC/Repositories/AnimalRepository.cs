@@ -18,6 +18,21 @@ namespace GestaoLeiteiraProjetoTCC.Repositories
             return await db.Table<Animal>().Where(a => a.PropriedadeId == propriedadeId).ToListAsync();
         }
 
+        public async Task<List<Animal>> ObterAnimaisValidosLactacaoDb(int propriedadeId)
+        {
+            var db = await _databaseService.GetConnectionAsync();
+
+            return await db.Table<Animal>()
+                .Where(a =>
+                    a.PropriedadeId == propriedadeId &&
+                    a.Sexo == "Feminino" &&
+                    a.CategoriaAnimal == "Vaca" &&
+                    a.Lactante == false &&
+                    a.Status == "Ativo")
+                .ToListAsync();
+        }
+
+
         public async Task<Animal> CadastrarAnimalDb(Animal animal)
         {
             var db = await _databaseService.GetConnectionAsync();

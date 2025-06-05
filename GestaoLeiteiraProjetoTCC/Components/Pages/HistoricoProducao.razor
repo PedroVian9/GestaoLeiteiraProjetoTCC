@@ -6,92 +6,356 @@
 @inject IPropriedadeService PropriedadeService
 @inject IProducaoLeiteiraService ProducaoLeiteiraService
 
-<h3>Histórico de Produção</h3>
+<div class="page-container">
+    <h3 class="page-title">Histórico de Produção</h3>
 
-@if (animais is null)
-{
-    <p>Carregando animais...</p>
-}
-else
-{
-    <div class="mb-3">
-        <label>Animal:</label>
-        <select @onchange="OnAnimalChange" class="form-select">
-            <option value="">Selecione um animal</option>
-            @foreach (var animal in animais)
-            {
-                <option value="@animal.Id">@animal.NomeAnimal (@animal.NumeroIdentificador)</option>
-            }
-        </select>
-    </div>
-
-    <div class="mb-3">
-        <label>Lactação:</label>
-        <select @onchange="OnLactacaoChange" class="form-select">
-            <option value="">Selecione uma lactação</option>
-            @if (lactacoes != null)
-            {
-                @foreach (var lactacao in lactacoes)
-                {
-                    <option value="@lactacao.Id">
-                        Período de lactação: - Início: @lactacao.DataInicio.ToString("dd/MM/yyyy")
-                        @(lactacao.DataFim.HasValue ? $" - Fim: {lactacao.DataFim.Value.ToString("dd/MM/yyyy")}" : "")
-                    </option>
-                }
-            }
-        </select>
-    </div>
-
-    <div class="mb-3">
-        <input type="date" @bind="dataInicio" class="form-control" />
-    </div>
-
-    <div class="mb-3">
-        <input type="date" @bind="dataFim" class="form-control" />
-    </div>
-
-    @if (lactacaoSelecionadaId.HasValue)
+    @if (carregandoDados)
     {
-        <button class="btn btn-primary" @onclick="BuscarProducoes">Buscar Produções</button>
+        <div class="loading-overlay">
+            <div class="spinner"></div>
+            <p>Carregando dados...</p>
+        </div>
     }
-}
+    else
+    {
+        <!-- Filtros -->
+        <div class="filters-container">
+            <div class="row">
+                <div class="col-md-3">
+                    <label>Animal:</label>
+                    <select @onchange="OnAnimalChange" class="form-select">
+                        <option value="">Selecione um animal</option>
+                        @if (animais != null)
+                        {
+                            @foreach (var animal in animais)
+                            {
+                                <option value="@animal.Id">@animal.NomeAnimal (@animal.NumeroIdentificador)</option>
+                            }
+                        }
+                    </select>
+                </div>
+
+                <div class="col-md-3">
+                    <label>Lactação:</label>
+                    <select @onchange="OnLactacaoChange" class="form-select" disabled="@(!animalSelecionadoId.HasValue)">
+                        <option value="">Todas</option>
+                        @if (lactacoes != null)
+                        {
+                            @foreach (var lactacao in lactacoes)
+                            {
+                                <option value="@lactacao.Id">
+                                    @lactacao.DataInicio.ToString("dd/MM/yyyy")
+                                    @(lactacao.DataFim.HasValue ? $" - {lactacao.DataFim.Value.ToString("dd/MM/yyyy")}" : " - Ativa")
+                                </option>
+                            }
+                        }
+                    </select>
+                </div>
+
+                <div class="col-md-2">
+                    <label>Data Início:</label>
+                    <input type="date" @bind="dataInicio" class="form-control" />
+                </div>
+
+                <div class="col-md-2">
+                    <label>Data Fim:</label>
+                    <input type="date" @bind="dataFim" class="form-control" />
+                </div>
+
+                <div class="col-md-2 d-flex align-items-end">
+                    <button class="btn btn-primary w-100" @onclick="BuscarProducoes" disabled="@(!animalSelecionadoId.HasValue)">
+                        <i class="fas fa-search"></i> Buscar
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabela de Resultados -->
+        @if (producoesLeiteira != null)
+        {
+            @if (!producoesLeiteira.Any())
+            {
+                <div class="empty-message">
+                    <i class="fas fa-info-circle"></i>
+                    <p>Nenhuma produção encontrada para os filtros selecionados.</p>
+                </div>
+            }
+            else
+            {
+                <!-- Resumo -->
+                <div class="summary-container">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="summary-card">
+                                <div class="summary-label">Total de Registros</div>
+                                <div class="summary-value">@producoesLeiteira.Count</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="summary-card">
+                                <div class="summary-label">Produção Total</div>
+                                <div class="summary-value">@producoesLeiteira.Sum(p => p.Quantidade).ToString("F2") L</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="summary-card">
+                                <div class="summary-label">Média Diária</div>
+                                <div class="summary-value">@(producoesLeiteira.Any() ? producoesLeiteira.Average(p => p.Quantidade).ToString("F2") : "0,00") L</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="summary-card">
+                                <div class="summary-label">Período</div>
+                                <div class="summary-value">
+                                    @if (producoesLeiteira.Any())
+                                    {
+                                        var inicio = producoesLeiteira.Min(p => p.Data);
+                                        var fim = producoesLeiteira.Max(p => p.Data);
+                                        @($"{inicio:dd/MM/yyyy} - {fim:dd/MM/yyyy}")
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tabela -->
+                <div class="table-container">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Animal</th>
+                                <th>Lactação</th>
+                                <th>Quantidade (L)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var producao in producoesLeiteira.OrderByDescending(p => p.Data))
+                            {
+                                <tr>
+                                    <td>@producao.Data.ToString("dd/MM/yyyy")</td>
+                                    <td>@ObterNomeAnimal(producao.AnimalId)</td>
+                                    <td>@ObterInfoLactacao(producao.LactacaoId)</td>
+                                    <td class="text-end">@producao.Quantidade.ToString("F2")</td>
+                                </tr>
+                            }
+                        </tbody>
+                        <tfoot>
+                            <tr class="table-info">
+                                <td colspan="3"><strong>Total:</strong></td>
+                                <td class="text-end"><strong>@producoesLeiteira.Sum(p => p.Quantidade).ToString("F2") L</strong></td>
+                                <td></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            }
+        }
+    }
+</div>
+
+<style>
+    .page-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .page-title {
+        color: #2c3e50;
+        margin-bottom: 30px;
+        font-weight: 600;
+    }
+
+    .filters-container {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        border: 1px solid #dee2e6;
+    }
+
+    .filters-container label {
+        font-weight: 600;
+        color: #495057;
+        margin-bottom: 5px;
+    }
+
+    .summary-container {
+        margin-bottom: 20px;
+    }
+
+    .summary-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 20px;
+        border-radius: 8px;
+        text-align: center;
+        height: 100%;
+    }
+
+    .summary-label {
+        font-size: 0.9rem;
+        opacity: 0.9;
+        margin-bottom: 8px;
+    }
+
+    .summary-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+    }
+
+    .table-container {
+        background: white;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .table {
+        margin-bottom: 0;
+    }
+
+    .table thead th {
+        background-color: #495057;
+        color: white;
+        border: none;
+        font-weight: 600;
+        padding: 15px;
+    }
+
+    .table tbody td {
+        padding: 12px 15px;
+        border-top: 1px solid #dee2e6;
+    }
+
+    .table-striped tbody tr:nth-of-type(odd) {
+        background-color: #f8f9fa;
+    }
+
+    .empty-message {
+        text-align: center;
+        padding: 40px;
+        color: #6c757d;
+    }
+
+    .empty-message i {
+        font-size: 3rem;
+        margin-bottom: 15px;
+        opacity: 0.5;
+    }
+
+    .loading-overlay {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 40px;
+        color: #6c757d;
+    }
+
+    .spinner {
+        border: 4px solid #f3f3f3;
+        border-top: 4px solid #007bff;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+        margin-bottom: 15px;
+    }
+
+    @@keyframes spin {
+        0% {
+            transform: rotate(0deg);
+        }
+
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+
+    .spinner {
+        border: 4px solid #f3f3f3;
+        border-top: 4px solid #007bff;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+        margin-bottom: 15px;
+
+    .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        font-weight: 600;
+    }
+
+    .btn-primary:hover {
+        background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+        transform: translateY(-1px);
+    }
+</style>
 
 @code {
     private List<Animal> animais;
-    private List<Lactacao> lactacoes;
+    private List<Lactacao> lactacoes = new();
+    private List<ProducaoLeiteira> producoesLeiteira;
     private int? animalSelecionadoId;
     private int? lactacaoSelecionadaId;
     private DateTime? dataInicio;
     private DateTime? dataFim;
+    private bool carregandoDados = true;
+    private Propriedade propriedadeLogada;
 
     protected override async Task OnInitializedAsync()
     {
-        var propriedade = PropriedadeService.ObterPropriedadeLogada();
-        if (propriedade != null)
+        try
         {
-            animais = await AnimalService.ObterAnimaisDaPropriedadeAsync(propriedade.Id);
-            lactacoes = new List<Lactacao>(); // Inicializa vazio
+            carregandoDados = true;
+            StateHasChanged();
+
+            propriedadeLogada = PropriedadeService.ObterPropriedadeLogada();
+            if (propriedadeLogada != null)
+            {
+                animais = await AnimalService.ObterAnimaisDaPropriedadeAsync(propriedadeLogada.Id);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Erro ao carregar dados iniciais: {ex.Message}");
+        }
+        finally
+        {
+            carregandoDados = false;
+            StateHasChanged();
         }
     }
 
     private async Task OnAnimalChange(ChangeEventArgs e)
     {
-        if (int.TryParse(e.Value?.ToString(), out var id))
+        try
         {
-            animalSelecionadoId = id;
-            var listaLactacoes = await LactacaoService.ObterLactacoesPorAnimalAsync(id);
-            lactacoes = listaLactacoes
-                .OrderByDescending(l => l.DataInicio)
-                .ToList();
-        }
-        else
-        {
-            animalSelecionadoId = null;
-            lactacoes = new List<Lactacao>(); // Mantém vazio mas não nulo
-        }
+            if (int.TryParse(e.Value?.ToString(), out var id))
+            {
+                animalSelecionadoId = id;
+                var listaLactacoes = await LactacaoService.ObterLactacoesPorAnimalAsync(id);
+                lactacoes = listaLactacoes.OrderByDescending(l => l.DataInicio).ToList();
+            }
+            else
+            {
+                animalSelecionadoId = null;
+                lactacoes = new List<Lactacao>();
+            }
 
-        lactacaoSelecionadaId = null;
-        StateHasChanged();
+            // Reset outros filtros
+            lactacaoSelecionadaId = null;
+            producoesLeiteira = null;
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Erro ao carregar lactações: {ex.Message}");
+        }
     }
 
     private void OnLactacaoChange(ChangeEventArgs e)
@@ -99,27 +363,83 @@ else
         if (int.TryParse(e.Value?.ToString(), out var id))
         {
             lactacaoSelecionadaId = id;
-            var lactacao = lactacoes.FirstOrDefault(l => l.Id == id);
-            if (lactacao != null)
-            {
-                dataInicio = lactacao.DataInicio;
-                dataFim = lactacao.DataFim ?? DateTime.Today;
-            }
         }
+        else
+        {
+            lactacaoSelecionadaId = null;
+        }
+
+        // Reset resultados
+        producoesLeiteira = null;
+        StateHasChanged();
     }
-
-
 
     private async Task BuscarProducoes()
     {
-        if (lactacaoSelecionadaId.HasValue)
+        if (!animalSelecionadoId.HasValue) return;
+
+        try
         {
-            // Implementar lógica para buscar produções
-            // Exemplo:
-            // var producoes = await ProducaoLeiteiraService.ObterProducoesPorLactacaoAsync(
-            //     lactacaoSelecionadaId.Value,
-            //     dataInicio,
-            //     dataFim);
+            carregandoDados = true;
+            StateHasChanged();
+
+            producoesLeiteira = new List<ProducaoLeiteira>();
+
+            if (lactacaoSelecionadaId.HasValue)
+            {
+                // Buscar por lactação específica
+                var producoesLactacao = await ProducaoLeiteiraService.ObterProducoesPorLactacaoAsync(lactacaoSelecionadaId.Value);
+                producoesLeiteira.AddRange(producoesLactacao);
+            }
+            else
+            {
+                // Buscar todas as lactações do animal
+                foreach (var lactacao in lactacoes)
+                {
+                    var producoesLactacao = await ProducaoLeiteiraService.ObterProducoesPorLactacaoAsync(lactacao.Id);
+                    producoesLeiteira.AddRange(producoesLactacao);
+                }
+            }
+
+            // Aplicar filtros de data
+            if (dataInicio.HasValue)
+            {
+                producoesLeiteira = producoesLeiteira.Where(p => p.Data >= dataInicio.Value).ToList();
+            }
+
+            if (dataFim.HasValue)
+            {
+                producoesLeiteira = producoesLeiteira.Where(p => p.Data <= dataFim.Value).ToList();
+            }
+
+            producoesLeiteira = producoesLeiteira.OrderByDescending(p => p.Data).ToList();
         }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Erro ao buscar produções: {ex.Message}");
+            producoesLeiteira = new List<ProducaoLeiteira>();
+        }
+        finally
+        {
+            carregandoDados = false;
+            StateHasChanged();
+        }
+    }
+
+    private string ObterNomeAnimal(int animalId)
+    {
+        var animal = animais?.FirstOrDefault(a => a.Id == animalId);
+        return animal != null ? $"{animal.NomeAnimal} ({animal.NumeroIdentificador})" : $"Animal ID: {animalId}";
+    }
+
+    private string ObterInfoLactacao(int lactacaoId)
+    {
+        var lactacao = lactacoes?.FirstOrDefault(l => l.Id == lactacaoId);
+        if (lactacao != null)
+        {
+            return $"{lactacao.DataInicio:dd/MM/yyyy}" +
+                   (lactacao.DataFim.HasValue ? $" - {lactacao.DataFim.Value:dd/MM/yyyy}" : " - Ativa");
+        }
+        return $"Lactação ID: {lactacaoId}";
     }
 }

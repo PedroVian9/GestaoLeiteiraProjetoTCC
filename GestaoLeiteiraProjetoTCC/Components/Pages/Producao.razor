@@ -207,7 +207,6 @@
             {
                 Animais = await AnimalService.ObterAnimaisDaPropriedadeAsync(PropriedadeLogada.Id);
                 await CarregarLactacoes();
-                FiltrarAnimaisAptos();
                 await CarregarProducoesRegistradas();
             }
         }
@@ -232,23 +231,6 @@
         return animal != null ? $"{animal.NomeAnimal} ({animal.NumeroIdentificador})" : $"Animal ID: {animalId}";
     }
 
-    private void FiltrarAnimaisAptos()
-    {
-        var animaisEmLactacao = Lactacoes
-            .Where(l => l.DataFim == null)
-            .Select(l => l.AnimalId)
-            .ToList();
-
-        AnimaisAptos = Animais
-            .Where(a => a.Sexo == "Feminino" &&
-                      a.CategoriaAnimal == "Vaca" &&
-                      a.Status == "Ativo" &&
-                      !a.Lactante &&
-                      !animaisEmLactacao.Contains(a.Id))
-            .OrderBy(a => a.NomeAnimal)
-            .ToList();
-    }
-
     private async Task CarregarLactacoes()
     {
         if (PropriedadeLogada != null)
@@ -263,13 +245,31 @@
         }
     }
 
-    private void AbrirModal()
+    private async Task AbrirModal()
     {
-        AnimalSelecionadoId = null;
-        DataInicio = DateTime.Now;
-        MostrarErroAnimal = false;
-        MostrarErroData = false;
-        MostrarModal = true;
+        try
+        {
+            AnimalSelecionadoId = null;
+            DataInicio = DateTime.Now;
+            MostrarErroAnimal = false;
+            MostrarErroData = false;
+
+            // Carrega os animais aptos especificamente para lactação
+            if (PropriedadeLogada != null)
+            {
+                AnimaisAptos = await AnimalService.ObterAnimaisValidosLactacao(PropriedadeLogada.Id);
+            }
+
+            MostrarModal = true;
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Erro ao carregar animais aptos: {ex.Message}");
+            AnimaisAptos = new List<Animal>();
+            MostrarModal = true;
+            StateHasChanged();
+        }
     }
 
     private void FecharModal()
@@ -319,23 +319,22 @@
 
             await LactacaoService.CriarLactacaoAsync(novaLactacao);
 
-            var animal = await AnimalService.ObterAnimaisDaPropriedadeAsync(PropriedadeLogada.Id)
-                .ContinueWith(t => t.Result.FirstOrDefault(a => a.Id == AnimalSelecionadoId.Value));
-
-            if (animal != null)
+            // Atualiza apenas o animal selecionado para lactante
+            var animalSelecionado = Animais.FirstOrDefault(a => a.Id == AnimalSelecionadoId.Value);
+            if (animalSelecionado != null)
             {
-                animal.Lactante = true;
-                await AnimalService.AtualizarAnimalAsync(animal);
+                animalSelecionado.Lactante = true;
+                await AnimalService.AtualizarAnimalAsync(animalSelecionado);
 
-                var index = Animais.FindIndex(a => a.Id == animal.Id);
+                // Atualiza na lista local
+                var index = Animais.FindIndex(a => a.Id == animalSelecionado.Id);
                 if (index >= 0)
                 {
-                    Animais[index] = animal;
+                    Animais[index] = animalSelecionado;
                 }
             }
 
             await CarregarLactacoes();
-            FiltrarAnimaisAptos();
 
             // Carrega as produções para a nova lactação
             var lactacaoCriada = Lactacoes.FirstOrDefault(l => l.AnimalId == AnimalSelecionadoId.Value && l.DataFim == null);
@@ -371,23 +370,23 @@
                 var lactacao = Lactacoes.FirstOrDefault(l => l.Id == LactacaoParaFinalizarId.Value);
                 if (lactacao != null)
                 {
-                    var animal = await AnimalService.ObterAnimaisDaPropriedadeAsync(PropriedadeLogada.Id)
-                        .ContinueWith(t => t.Result.FirstOrDefault(a => a.Id == lactacao.AnimalId));
-
+                    var animal = Animais.FirstOrDefault(a => a.Id == lactacao.AnimalId);
                     if (animal != null)
                     {
                         animal.Lactante = false;
                         await AnimalService.AtualizarAnimalAsync(animal);
 
                         var index = Animais.FindIndex(a => a.Id == animal.Id);
-                        if (index >= 0) Animais[index] = animal;
+                        if (index >= 0)
+                        {
+                            Animais[index] = animal;
+                        }
                     }
 
                     // Remove do mapa de produções
                     ProducaoRegistradaHojeMap.Remove(LactacaoParaFinalizarId.Value);
 
                     await CarregarLactacoes();
-                    FiltrarAnimaisAptos();
                 }
             }
             catch (Exception ex)
