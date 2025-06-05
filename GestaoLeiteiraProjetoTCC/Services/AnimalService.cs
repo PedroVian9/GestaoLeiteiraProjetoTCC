@@ -26,6 +26,11 @@ namespace GestaoLeiteiraProjetoTCC.Services
             return await _animalRepository.ObterAnimaisValidosLactacaoDb(propriedadeId);
         }
 
+        public async Task<List<Animal>> ObterAnimaisQueTiveramLactacao(int propriedadeId)
+        {
+            return await _animalRepository.ObterAnimaisQueTiveramLactacaoDb(propriedadeId);
+        }
+
         public async Task<Animal> CadastrarAnimalAsync(Animal animal)
         {
             var propriedadeLogada = _propriedadeService.ObterPropriedadeLogada();
