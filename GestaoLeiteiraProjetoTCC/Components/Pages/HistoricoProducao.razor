@@ -11,145 +11,145 @@
 
     @if (carregandoDados)
     {
-        <div class="loading-overlay">
-            <div class="spinner"></div>
-            <p>Carregando dados...</p>
-        </div>
+            <div class="loading-overlay">
+                <div class="spinner"></div>
+                <p>Carregando dados...</p>
+            </div>
     }
     else
     {
-        <!-- Filtros -->
-        <div class="filters-container">
-            <div class="row">
-                <div class="col-md-3">
-                    <label>Animal:</label>
-                    <select @onchange="OnAnimalChange" class="form-select">
-                        <option value="">Selecione um animal</option>
+            <!-- Filtros -->
+            <div class="filters-container">
+                <div class="row">
+                    <div class="col-md-3">
+                        <label>Animal:</label>
+                        <select @bind="animalSelecionadoString" @bind:after="OnAnimalChange" class="form-select">
+                            <option value="todos">Todos os animais</option>
                         @if (animais != null)
                         {
                             @foreach (var animal in animais)
                             {
-                                <option value="@animal.Id">@animal.NomeAnimal (@animal.NumeroIdentificador)</option>
+                                            <option value="@animal.Id">@animal.NomeAnimal (@animal.NumeroIdentificador)</option>
                             }
                         }
-                    </select>
-                </div>
+                        </select>
+                    </div>
 
-                <div class="col-md-3">
-                    <label>Lactação:</label>
-                    <select @onchange="OnLactacaoChange" class="form-select" disabled="@(!animalSelecionadoId.HasValue)">
-                        <option value="">Todas</option>
+                    <div class="col-md-3">
+                        <label>Lactação:</label>
+                        <select @bind="lactacaoSelecionadaString" @bind:after="OnLactacaoChange" class="form-select">
+                            <option value="todas">Todas</option>
                         @if (lactacoes != null)
                         {
                             @foreach (var lactacao in lactacoes)
                             {
-                                <option value="@lactacao.Id">
+                                            <option value="@lactacao.Id">
                                     @lactacao.DataInicio.ToString("dd/MM/yyyy")
                                     @(lactacao.DataFim.HasValue ? $" - {lactacao.DataFim.Value.ToString("dd/MM/yyyy")}" : " - Ativa")
-                                </option>
+                                            </option>
                             }
                         }
-                    </select>
-                </div>
+                        </select>
+                    </div>
 
-                <div class="col-md-2">
-                    <label>Data Início:</label>
-                    <input type="date" @bind="dataInicio" class="form-control" />
-                </div>
+                    <div class="col-md-2">
+                        <label>Data Início:</label>
+                        <input type="date" @bind="dataInicio" class="form-control" />
+                    </div>
 
-                <div class="col-md-2">
-                    <label>Data Fim:</label>
-                    <input type="date" @bind="dataFim" class="form-control" />
-                </div>
+                    <div class="col-md-2">
+                        <label>Data Fim:</label>
+                        <input type="date" @bind="dataFim" class="form-control" />
+                    </div>
 
-                <div class="col-md-2 d-flex align-items-end">
-                    <button class="btn btn-primary w-100" @onclick="BuscarProducoes" disabled="@(!animalSelecionadoId.HasValue)">
-                        <i class="fas fa-search"></i> Buscar
-                    </button>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button class="btn btn-primary w-100" @onclick="BuscarProducoes">
+                            <i class="fas fa-search"></i> Buscar
+                        </button>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Tabela de Resultados -->
+            <!-- Tabela de Resultados -->
         @if (producoesLeiteira != null)
         {
             @if (!producoesLeiteira.Any())
             {
-                <div class="empty-message">
-                    <i class="fas fa-info-circle"></i>
-                    <p>Nenhuma produção encontrada para os filtros selecionados.</p>
-                </div>
+                            <div class="empty-message">
+                                <i class="fas fa-info-circle"></i>
+                                <p>Nenhuma produção encontrada para os filtros selecionados.</p>
+                            </div>
             }
             else
             {
-                <!-- Resumo -->
-                <div class="summary-container">
-                    <div class="row">
-                        <div class="col-md-3">
-                            <div class="summary-card">
-                                <div class="summary-label">Total de Registros</div>
-                                <div class="summary-value">@producoesLeiteira.Count</div>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="summary-card">
-                                <div class="summary-label">Produção Total</div>
-                                <div class="summary-value">@producoesLeiteira.Sum(p => p.Quantidade).ToString("F2") L</div>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="summary-card">
-                                <div class="summary-label">Média Diária</div>
-                                <div class="summary-value">@(producoesLeiteira.Any() ? producoesLeiteira.Average(p => p.Quantidade).ToString("F2") : "0,00") L</div>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="summary-card">
-                                <div class="summary-label">Período</div>
-                                <div class="summary-value">
+                            <!-- Resumo -->
+                            <div class="summary-container">
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <div class="summary-card">
+                                            <div class="summary-label">Total de Registros</div>
+                                            <div class="summary-value">@producoesLeiteira.Count</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="summary-card">
+                                            <div class="summary-label">Produção Total</div>
+                                            <div class="summary-value">@producoesLeiteira.Sum(p => p.Quantidade).ToString("F2") L</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="summary-card">
+                                            <div class="summary-label">Média Diária</div>
+                                            <div class="summary-value">@(producoesLeiteira.Any() ? producoesLeiteira.Average(p => p.Quantidade).ToString("F2") : "0,00") L</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="summary-card">
+                                            <div class="summary-label">Período</div>
+                                            <div class="summary-value">
                                     @if (producoesLeiteira.Any())
                                     {
                                         var inicio = producoesLeiteira.Min(p => p.Data);
                                         var fim = producoesLeiteira.Max(p => p.Data);
                                         @($"{inicio:dd/MM/yyyy} - {fim:dd/MM/yyyy}")
                                     }
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    </div>
-                </div>
 
-                <!-- Tabela -->
-                <div class="table-container">
-                    <table class="table table-striped">
-                        <thead>
-                            <tr>
-                                <th>Data</th>
-                                <th>Animal</th>
-                                <th>Lactação</th>
-                                <th>Quantidade (L)</th>
-                            </tr>
-                        </thead>
-                        <tbody>
+                            <!-- Tabela -->
+                            <div class="table-container">
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Data</th>
+                                            <th>Animal</th>
+                                            <th>Lactação</th>
+                                            <th>Quantidade (L)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
                             @foreach (var producao in producoesLeiteira.OrderByDescending(p => p.Data))
                             {
-                                <tr>
-                                    <td>@producao.Data.ToString("dd/MM/yyyy")</td>
-                                    <td>@ObterNomeAnimal(producao.AnimalId)</td>
-                                    <td>@ObterInfoLactacao(producao.LactacaoId)</td>
-                                    <td class="text-end">@producao.Quantidade.ToString("F2")</td>
-                                </tr>
+                                                <tr>
+                                                    <td>@producao.Data.ToString("dd/MM/yyyy")</td>
+                                                    <td>@ObterNomeAnimal(producao.AnimalId)</td>
+                                                    <td>@ObterInfoLactacao(producao.LactacaoId)</td>
+                                                    <td class="text-end">@producao.Quantidade.ToString("F2")</td>
+                                                </tr>
                             }
-                        </tbody>
-                        <tfoot>
-                            <tr class="table-info">
-                                <td colspan="3"><strong>Total:</strong></td>
-                                <td class="text-end"><strong>@producoesLeiteira.Sum(p => p.Quantidade).ToString("F2") L</strong></td>
-                                <td></td>
-                            </tr>
-                        </tfoot>
-                    </table>
-                </div>
+                                    </tbody>
+                                    <tfoot>
+                                        <tr class="table-info">
+                                            <td colspan="3"><strong>Total:</strong></td>
+                                            <td class="text-end"><strong>@producoesLeiteira.Sum(p => p.Quantidade).ToString("F2") L</strong></td>
+                                            <td></td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
             }
         }
     }
@@ -159,8 +159,11 @@
     private List<Animal> animais;
     private List<Lactacao> lactacoes = new();
     private List<ProducaoLeiteira> producoesLeiteira;
-    private int? animalSelecionadoId;
-    private int? lactacaoSelecionadaId;
+
+    // Mudança: usar string para controlar "todos" vs IDs específicos
+    private string animalSelecionadoString = "todos";
+    private string lactacaoSelecionadaString = "todas";
+
     private DateTime? dataInicio;
     private DateTime? dataFim;
     private bool carregandoDados = true;
@@ -177,6 +180,9 @@
             if (propriedadeLogada != null)
             {
                 animais = await AnimalService.ObterAnimaisQueTiveramLactacao(propriedadeLogada.Id);
+
+                // Carregar todas as lactações de todos os animais
+                await CarregarTodasLactacoes();
             }
         }
         catch (Exception ex)
@@ -190,25 +196,51 @@
         }
     }
 
-    private async Task OnAnimalChange(ChangeEventArgs e)
+    private async Task CarregarTodasLactacoes()
     {
         try
         {
-            if (int.TryParse(e.Value?.ToString(), out var id))
+            var todasLactacoes = new List<Lactacao>();
+
+            if (animais != null)
             {
-                animalSelecionadoId = id;
+                foreach (var animal in animais)
+                {
+                    var lactacoesAnimal = await LactacaoService.ObterLactacoesPorAnimalAsync(animal.Id);
+                    todasLactacoes.AddRange(lactacoesAnimal);
+                }
+            }
+
+            lactacoes = todasLactacoes.OrderByDescending(l => l.DataInicio).ToList();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Erro ao carregar todas as lactações: {ex.Message}");
+        }
+    }
+
+    private async Task OnAnimalChange()
+    {
+        try
+        {
+            if (animalSelecionadoString == "todos")
+            {
+                // Carregar todas as lactações
+                await CarregarTodasLactacoes();
+            }
+            else if (int.TryParse(animalSelecionadoString, out var id))
+            {
+                // Carregar lactações do animal específico
                 var listaLactacoes = await LactacaoService.ObterLactacoesPorAnimalAsync(id);
                 lactacoes = listaLactacoes.OrderByDescending(l => l.DataInicio).ToList();
             }
             else
             {
-                animalSelecionadoId = null;
                 lactacoes = new List<Lactacao>();
             }
 
-            // Reset outros filtros
-            lactacaoSelecionadaId = null;
-            producoesLeiteira = null;
+            // Reset apenas a lactação selecionada, mas mantém a tabela
+            lactacaoSelecionadaString = "todas";
             StateHasChanged();
         }
         catch (Exception ex)
@@ -217,26 +249,14 @@
         }
     }
 
-    private void OnLactacaoChange(ChangeEventArgs e)
+    private void OnLactacaoChange()
     {
-        if (int.TryParse(e.Value?.ToString(), out var id))
-        {
-            lactacaoSelecionadaId = id;
-        }
-        else
-        {
-            lactacaoSelecionadaId = null;
-        }
-
-        // Reset resultados
-        producoesLeiteira = null;
+        // Não resetar os resultados aqui - apenas quando clicar em buscar
         StateHasChanged();
     }
 
     private async Task BuscarProducoes()
     {
-        if (!animalSelecionadoId.HasValue) return;
-
         try
         {
             carregandoDados = true;
@@ -244,18 +264,41 @@
 
             producoesLeiteira = new List<ProducaoLeiteira>();
 
-            if (lactacaoSelecionadaId.HasValue)
+            if (animalSelecionadoString == "todos")
             {
-                // Buscar por lactação específica
-                var producoesLactacao = await ProducaoLeiteiraService.ObterProducoesPorLactacaoAsync(lactacaoSelecionadaId.Value);
-                producoesLeiteira.AddRange(producoesLactacao);
-            }
-            else
-            {
-                // Buscar todas as lactações do animal
-                foreach (var lactacao in lactacoes)
+                // Buscar produções de todos os animais
+                if (lactacaoSelecionadaString == "todas")
                 {
-                    var producoesLactacao = await ProducaoLeiteiraService.ObterProducoesPorLactacaoAsync(lactacao.Id);
+                    // Todas as lactações de todos os animais
+                    foreach (var lactacao in lactacoes)
+                    {
+                        var producoesLactacao = await ProducaoLeiteiraService.ObterProducoesPorLactacaoAsync(lactacao.Id);
+                        producoesLeiteira.AddRange(producoesLactacao);
+                    }
+                }
+                else if (int.TryParse(lactacaoSelecionadaString, out var lactacaoId))
+                {
+                    // Lactação específica (pode ser de qualquer animal)
+                    var producoesLactacao = await ProducaoLeiteiraService.ObterProducoesPorLactacaoAsync(lactacaoId);
+                    producoesLeiteira.AddRange(producoesLactacao);
+                }
+            }
+            else if (int.TryParse(animalSelecionadoString, out var animalId))
+            {
+                // Animal específico
+                if (lactacaoSelecionadaString == "todas")
+                {
+                    // Todas as lactações do animal específico
+                    foreach (var lactacao in lactacoes)
+                    {
+                        var producoesLactacao = await ProducaoLeiteiraService.ObterProducoesPorLactacaoAsync(lactacao.Id);
+                        producoesLeiteira.AddRange(producoesLactacao);
+                    }
+                }
+                else if (int.TryParse(lactacaoSelecionadaString, out var lactacaoId))
+                {
+                    // Lactação específica do animal específico
+                    var producoesLactacao = await ProducaoLeiteiraService.ObterProducoesPorLactacaoAsync(lactacaoId);
                     producoesLeiteira.AddRange(producoesLactacao);
                 }
             }
