@@ -50,7 +50,11 @@
     background-image: url("/Icons/cow-face.png");
 }
 
-.bi-plus-square-milk{
+.bi-plus-square-lactacao {
+    background-image: url("/Icons/lactation.png");
+}
+
+.bi-plus-square-milk {
     background-image: url("/Icons/milk.png");
 }
 

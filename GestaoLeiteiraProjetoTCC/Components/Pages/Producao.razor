@@ -7,14 +7,8 @@
 @inject IProducaoLeiteiraService ProducaoLeiteiraService
 
 <div class="page-container">
-    <h3 class="page-title">Registro de Lactação</h3>
+    <h3 class="page-title">Registro de Produção Leiteira</h3>
     <div class="current-date">@DateTime.Now.ToString("dd/MM/yyyy")</div>
-
-    <div class="actions-container">
-        <button class="add-button" @onclick="AbrirModal">
-            <span class="plus-icon">+</span> Nova Lactação
-        </button>
-    </div>
 
     @if (carregandoDados)
     {
@@ -23,57 +17,55 @@
             <p>Carregando dados...</p>
         </div>
     }
-    else if (Lactacoes == null)
+    else if (VacasLactantes == null)
     {
         <p class="loading-message">Carregando...</p>
     }
-    else if (!LactacoesAtivas.Any())
+    else if (!VacasLactantes.Any())
     {
-        <p class="empty-message">Nenhuma lactação ativa no momento.</p>
+        <p class="empty-message">Nenhuma vaca em lactação no momento.</p>
     }
     else
     {
-        <div class="lactacoes-grid">
-            @foreach (var lactacao in LactacoesAtivas)
+        <div class="vacas-grid">
+            @foreach (var item in VacasLactantes)
             {
-                <div class="lactacao-card">
+                <div class="vaca-card">
                     <div class="card-header">
-                        <span class="animal-name">@ObterNomeAnimal(lactacao.AnimalId)</span>
+                        <span class="animal-name">@item.Animal.NomeAnimal (@item.Animal.NumeroIdentificador)</span>
+                        <span class="status-badge lactante">Em Lactação</span>
                     </div>
 
                     <div class="card-details">
                         <div class="detail-item">
-                            <span class="detail-label">Início:</span>
-                            <span class="detail-value">@lactacao.DataInicio.ToString("dd/MM/yyyy")</span>
+                            <span class="detail-label">Início da Lactação:</span>
+                            <span class="detail-value">@item.Lactacao.DataInicio.ToString("dd/MM/yyyy")</span>
                         </div>
-                        @if (lactacao.DataFim.HasValue)
+                        <div class="detail-item">
+                            <span class="detail-label">Dias de Lactação:</span>
+                            <span class="detail-value">@CalcularDiasCorridos(item.Lactacao.DataInicio) dias</span>
+                        </div>
+                        @if (item.UltimaProducao != null)
                         {
                             <div class="detail-item">
-                                <span class="detail-label">Término:</span>
-                                <span class="detail-value">@lactacao.DataFim.Value.ToString("dd/MM/yyyy")</span>
+                                <span class="detail-label">Última Produção:</span>
+                                <span class="detail-value">@item.UltimaProducao.Data.ToString("dd/MM/yyyy") - @item.UltimaProducao.Quantidade.ToString("F2")L</span>
                             </div>
                         }
                     </div>
 
                     <div class="card-actions">
-                        @if (!lactacao.DataFim.HasValue)
+                        @if (ProducaoRegistradaHojeMap.ContainsKey(item.Lactacao.Id) && ProducaoRegistradaHojeMap[item.Lactacao.Id])
                         {
-                            <button class="btn-action finalizar" @onclick="() => AbrirModalConfirmacao(lactacao.Id)">
-                                <i class="fas fa-stop-circle"></i> Finalizar Lactação
+                            <button class="btn-action ja-registrado" disabled>
+                                <i class="fas fa-check-circle"></i> Produção já registrada hoje
                             </button>
-
-                            @if (ProducaoRegistradaHojeMap.ContainsKey(lactacao.Id) && ProducaoRegistradaHojeMap[lactacao.Id])
-                            {
-                                <button class="btn-action ja-registrado" disabled>
-                                    <i class="fas fa-check-circle"></i> Produção já registrada
-                                </button>
-                            }
-                            else
-                            {
-                                <button class="btn-action registrar" @onclick="() => AbrirModalProducao(lactacao.Id, lactacao.AnimalId)">
-                                    <i class="fas fa-plus-circle"></i> Adicionar Produção Diária
-                                </button>
-                            }
+                        }
+                        else
+                        {
+                            <button class="btn-action registrar" @onclick="() => AbrirModalProducao(item.Lactacao.Id, item.Animal.Id, item.Animal.NomeAnimal)">
+                                <i class="fas fa-plus-circle"></i> Registrar Produção Hoje
+                            </button>
                         }
                     </div>
                 </div>
@@ -81,74 +73,13 @@
         </div>
     }
 
-    <!-- Modal de Nova Lactação -->
-    @if (MostrarModal)
-    {
-        <div class="modal-overlay" @onclick="FecharModal">
-            <div class="modal-content" @onclick:stopPropagation>
-                <h3>Nova Lactação</h3>
-                <p class="modal-info-text">Para cadastrar uma lactação, o animal deve ser Fêmea, ter como categoria "Vaca", não estar lactante e o status estar como "Ativo".</p>
-
-                <div class="form-group">
-                    <label>Animal:</label>
-                    <select @bind="AnimalSelecionadoId" class="form-control">
-                        <option value="">Selecione um animal</option>
-                        @if (AnimaisAptos != null && AnimaisAptos.Any())
-                        {
-                            @foreach (var animal in AnimaisAptos)
-                            {
-                                <option value="@animal.Id">@animal.NomeAnimal (@animal.NumeroIdentificador) - @animal.CategoriaAnimal</option>
-                            }
-                        }
-                        else
-                        {
-                            <option value="" disabled>Nenhuma vaca apta disponível</option>
-                        }
-                    </select>
-                    @if (MostrarErroAnimal)
-                    {
-                        <span class="text-danger">Selecione um animal</span>
-                    }
-                </div>
-
-                <div class="form-group">
-                    <label>Data de Início:</label>
-                    <input type="date" @bind="DataInicio" class="form-control" />
-                    @if (MostrarErroData)
-                    {
-                        <span class="text-danger">Data inválida</span>
-                    }
-                </div>
-
-                <div class="footer-actions">
-                    <button @onclick="FecharModal" class="btn btn-secondary">Cancelar</button>
-                    <button @onclick="CriarLactacao" class="btn btn-primary" disabled="@(AnimaisAptos == null || !AnimaisAptos.Any())">Salvar</button>
-                </div>
-            </div>
-        </div>
-    }
-
-    <!-- Modal de Confirmação para Finalizar Lactação -->
-    @if (MostrarModalConfirmacao)
-    {
-        <div class="modal-overlay" @onclick="FecharModalConfirmacao">
-            <div class="modal-content" @onclick:stopPropagation>
-                <h3>Confirmar Finalização</h3>
-                <p class="modal-info-text">Tem certeza que deseja finalizar esta lactação? A data de término será registrada como a data atual.</p>
-
-                <div class="footer-actions">
-                    <button @onclick="FecharModalConfirmacao" class="btn btn-secondary">Cancelar</button>
-                    <button @onclick="ConfirmarFinalizacao" class="btn btn-primary">Confirmar</button>
-                </div>
-            </div>
-        </div>
-    }
-
+    <!-- Modal de Registro de Produção -->
     @if (MostrarModalProducao)
     {
         <div class="modal-overlay" @onclick="FecharModalProducao">
             <div class="modal-content" @onclick:stopPropagation>
                 <h3>Registrar Produção Diária</h3>
+                <p class="modal-info-text">Vaca: <strong>@NomeAnimalSelecionado</strong></p>
 
                 <div class="form-group">
                     <label>Data:</label>
@@ -157,10 +88,10 @@
 
                 <div class="form-group">
                     <label>Quantidade (litros):</label>
-                    <input type="number" step="0.01" class="form-control" @bind="QuantidadeLitros" />
+                    <input type="number" step="0.01" class="form-control" @bind="QuantidadeLitros" placeholder="Ex: 25.50" />
                     @if (MostrarErroQuantidade)
                     {
-                        <span class="text-danger">Informe uma quantidade válida.</span>
+                        <span class="text-danger">Informe uma quantidade válida maior que zero.</span>
                     }
                 </div>
 
@@ -186,45 +117,26 @@
         margin: 20px 0 30px;
     }
 
-    .actions-container {
-        text-align: right;
-        margin-bottom: 25px;
-    }
-
-    .add-button {
-        background-color: #3a7ca5;
-        color: white;
-        border: none;
-        padding: 10px 20px;
-        border-radius: 5px;
-        cursor: pointer;
+    .current-date {
+        text-align: center;
+        color: #666;
+        margin-bottom: 30px;
         font-size: 16px;
-        display: inline-flex;
-        align-items: center;
+        font-weight: 500;
     }
 
-        .add-button:hover {
-            background-color: #2c6284;
-        }
-
-    .plus-icon {
-        margin-right: 8px;
-        font-weight: bold;
-        font-size: 18px;
-    }
-
-    .lactacoes-grid {
+    .vacas-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
         gap: 20px;
     }
 
-    .lactacao-card {
+    .vaca-card {
         background: white;
         border-radius: 10px;
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         padding: 20px;
-        border-left: 4px solid #3a7ca5;
+        border-left: 4px solid #28a745;
     }
 
     .card-header {
@@ -249,13 +161,8 @@
         font-weight: bold;
     }
 
-        .status-badge.active {
-            background-color: #4CAF50;
-            color: white;
-        }
-
-        .status-badge.inactive {
-            background-color: #6c757d;
+        .status-badge.lactante {
+            background-color: #28a745;
             color: white;
         }
 
@@ -267,22 +174,84 @@
         display: flex;
         justify-content: space-between;
         margin-bottom: 8px;
+        flex-wrap: wrap;
     }
 
     .detail-label {
         font-weight: 500;
         color: #555;
+        min-width: 120px;
     }
 
     .detail-value {
         color: #333;
+        text-align: right;
+        flex: 1;
     }
+
+    .card-actions {
+        display: flex;
+        justify-content: flex-end;
+        margin-top: 15px;
+    }
+
+    .btn-action {
+        padding: 10px 15px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 500;
+    }
+
+        .btn-action.ja-registrado {
+            background-color: #d6d6d6;
+            color: #777;
+            cursor: not-allowed;
+        }
+
+        .btn-action.registrar {
+            background-color: #17a2b8;
+            color: white;
+        }
+
+            .btn-action.registrar:hover {
+                background-color: #138496;
+            }
 
     .loading-message, .empty-message {
         text-align: center;
         color: #666;
         margin: 40px 0;
         font-size: 16px;
+    }
+
+    .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.5);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+        color: white;
+    }
+
+    .spinner {
+        border: 4px solid #f3f3f3;
+        border-top: 4px solid #3498db;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        animation: spin 2s linear infinite;
+        margin-bottom: 20px;
     }
 
     /* Modal styles */
@@ -344,9 +313,10 @@
         font-size: 16px;
     }
 
-    select.form-control {
-        height: 40px;
-    }
+        .form-control:disabled {
+            background-color: #f8f9fa;
+            color: #6c757d;
+        }
 
     .footer-actions {
         display: flex;
@@ -372,11 +342,6 @@
             background-color: #2c6284;
         }
 
-        .btn-primary:disabled {
-            background-color: #cccccc;
-            cursor: not-allowed;
-        }
-
     .btn-secondary {
         background-color: #6c757d;
         color: white;
@@ -394,93 +359,35 @@
         display: block;
     }
 
-    .card-actions {
-        display: flex;
-        gap: 10px;
-        margin-top: 15px;
-        justify-content: flex-end;
-    }
-
-    .btn-action {
-        padding: 8px 12px;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-        font-size: 14px;
-        display: flex;
-        align-items: center;
-        gap: 5px;
-    }
-
-        .btn-action.ja-registrado {
-            background-color: #d6d6d6;
-            color: #777;
-            cursor: not-allowed;
-            border: none;
-            padding: 10px 15px;
-            border-radius: 5px;
-            font-size: 14px;
-            font-weight: bold;
-        }
-
-        .btn-action.finalizar {
-            background-color: #f8d7da;
-            color: #721c24;
-        }
-
-            .btn-action.finalizar:hover {
-                background-color: #f5c6cb;
-            }
-
-        .btn-action.registrar {
-            background-color: #d1ecf1;
-            color: #0c5460;
-        }
-
-            .btn-action.registrar:hover {
-                background-color: #bee5eb;
-            }
-
-    /* Ícones Font Awesome */
     .fas {
         font-size: 14px;
     }
-
-    /* Estilos para o modal de confirmação */
-    .modal-confirmacao {
-        max-width: 400px;
-    }
-
-        .modal-confirmacao h3 {
-            color: #dc3545;
-        }
-
-        .modal-confirmacao .modal-info-text {
-            color: #6c757d;
-            margin-bottom: 25px;
-        }
 </style>
 
 @code {
+    public class VacaLactante
+    {
+        public Animal Animal { get; set; }
+        public Lactacao Lactacao { get; set; }
+        public GestaoLeiteiraProjetoTCC.Models.ProducaoLeiteira UltimaProducao { get; set; }
+    }
+
     private List<Animal> Animais = new();
-    private List<Animal> AnimaisAptos = new();
     private List<Lactacao> Lactacoes = new();
-    private List<Lactacao> LactacoesAtivas => Lactacoes.Where(l => l.DataFim == null).ToList();
-    private int? AnimalSelecionadoId;
-    private bool MostrarModal = false;
-    private bool MostrarModalConfirmacao = false;
-    private bool MostrarErroAnimal = false;
-    private bool MostrarErroData = false;
-    private DateTime DataInicio = DateTime.Now;
+    private List<VacaLactante> VacasLactantes = new();
     private Propriedade PropriedadeLogada;
-    private int? LactacaoParaFinalizarId;
+    private bool carregandoDados = true;
+
+    // Modal de produção
     private bool MostrarModalProducao = false;
     private DateTime DataProducao = DateTime.Now;
     private double QuantidadeLitros;
     private int LactacaoSelecionadaId;
     private int AnimalSelecionadoParaProducaoId;
+    private string NomeAnimalSelecionado = "";
     private bool MostrarErroQuantidade = false;
-    private bool carregandoDados = true;
+
+    // Controle de produções registradas
     private Dictionary<int, bool> ProducaoRegistradaHojeMap = new();
 
     protected override async Task OnInitializedAsync()
@@ -493,207 +400,101 @@
             PropriedadeLogada = PropriedadeService.ObterPropriedadeLogada();
             if (PropriedadeLogada != null)
             {
-                Animais = await AnimalService.ObterAnimaisDaPropriedadeAsync(PropriedadeLogada.Id);
-                await CarregarLactacoes();
-                await CarregarProducoesRegistradas();
+                await CarregarDados();
             }
         }
         finally
         {
             carregandoDados = false;
             StateHasChanged();
+        }
+    }
+
+    private async Task CarregarDados()
+    {
+        // Carrega animais da propriedade
+        Animais = await AnimalService.ObterAnimaisDaPropriedadeAsync(PropriedadeLogada.Id);
+
+        // Carrega lactações ativas
+        Lactacoes = new List<Lactacao>();
+        foreach (var animal in Animais.Where(a => a.Lactante))
+        {
+            var lactacoesAnimal = await LactacaoService.ObterLactacoesPorAnimalAsync(animal.Id);
+            var lactacaoAtiva = lactacoesAnimal.FirstOrDefault(l => l.DataFim == null);
+            if (lactacaoAtiva != null)
+            {
+                Lactacoes.Add(lactacaoAtiva);
+            }
+        }
+
+        // Monta a lista de vacas lactantes com suas informações
+        VacasLactantes = new List<VacaLactante>();
+        foreach (var lactacao in Lactacoes)
+        {
+            var animal = Animais.FirstOrDefault(a => a.Id == lactacao.AnimalId);
+            if (animal != null)
+            {
+                var ultimaProducao = await ObterUltimaProducao(lactacao.Id);
+
+                VacasLactantes.Add(new VacaLactante
+                    {
+                        Animal = animal,
+                        Lactacao = lactacao,
+                        UltimaProducao = ultimaProducao
+                    });
+            }
+        }
+
+        // Carrega status de produções registradas hoje
+        await CarregarProducoesRegistradas();
+    }
+
+    private async Task<GestaoLeiteiraProjetoTCC.Models.ProducaoLeiteira> ObterUltimaProducao(int lactacaoId)
+    {
+        try
+        {
+            var producoes = await ProducaoLeiteiraService.ObterProducoesPorLactacaoAsync(lactacaoId);
+            return producoes.OrderByDescending(p => p.Data).FirstOrDefault();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Erro ao obter última produção: {ex.Message}");
+            return null;
         }
     }
 
     private async Task CarregarProducoesRegistradas()
     {
-        foreach (var lactacao in LactacoesAtivas)
+        foreach (var lactacao in Lactacoes)
         {
             ProducaoRegistradaHojeMap[lactacao.Id] = await ProducaoRegistradaHojeAsync(lactacao.Id);
         }
     }
 
-    private string ObterNomeAnimal(int animalId)
-    {
-        var animal = Animais.FirstOrDefault(a => a.Id == animalId);
-        return animal != null ? $"{animal.NomeAnimal} ({animal.NumeroIdentificador})" : $"Animal ID: {animalId}";
-    }
-
-    private async Task CarregarLactacoes()
-    {
-        if (PropriedadeLogada != null)
-        {
-            Lactacoes = new List<Lactacao>();
-            foreach (var animal in Animais)
-            {
-                var lactacoesAnimal = await LactacaoService.ObterLactacoesPorAnimalAsync(animal.Id);
-                Lactacoes.AddRange(lactacoesAnimal);
-            }
-            Lactacoes = Lactacoes.OrderByDescending(l => l.DataInicio).ToList();
-        }
-    }
-
-    private async Task AbrirModal()
+    private async Task<bool> ProducaoRegistradaHojeAsync(int lactacaoId)
     {
         try
         {
-            AnimalSelecionadoId = null;
-            DataInicio = DateTime.Now;
-            MostrarErroAnimal = false;
-            MostrarErroData = false;
-
-            // Carrega os animais aptos especificamente para lactação
-            if (PropriedadeLogada != null)
-            {
-                AnimaisAptos = await AnimalService.ObterAnimaisValidosLactacao(PropriedadeLogada.Id);
-            }
-
-            MostrarModal = true;
-            StateHasChanged();
+            var producoes = await ProducaoLeiteiraService.ObterProducoesPorLactacaoAsync(lactacaoId);
+            return producoes.Any(p => p.Data.Date == DateTime.Today);
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Erro ao carregar animais aptos: {ex.Message}");
-            AnimaisAptos = new List<Animal>();
-            MostrarModal = true;
-            StateHasChanged();
+            Console.WriteLine($"Erro ao verificar produções: {ex.Message}");
+            return false;
         }
     }
 
-    private void FecharModal()
+    private int CalcularDiasCorridos(DateTime dataInicio)
     {
-        MostrarModal = false;
+        return (DateTime.Now.Date - dataInicio.Date).Days;
     }
 
-    private void AbrirModalConfirmacao(int lactacaoId)
-    {
-        LactacaoParaFinalizarId = lactacaoId;
-        MostrarModalConfirmacao = true;
-    }
-
-    private void FecharModalConfirmacao()
-    {
-        MostrarModalConfirmacao = false;
-        LactacaoParaFinalizarId = null;
-    }
-
-    private async Task CriarLactacao()
-    {
-        MostrarErroAnimal = false;
-        MostrarErroData = false;
-
-        if (!AnimalSelecionadoId.HasValue)
-        {
-            MostrarErroAnimal = true;
-            return;
-        }
-
-        if (DataInicio > DateTime.Now)
-        {
-            MostrarErroData = true;
-            return;
-        }
-
-        try
-        {
-            carregandoDados = true;
-            StateHasChanged();
-
-            var novaLactacao = new Lactacao
-                {
-                    AnimalId = AnimalSelecionadoId.Value,
-                    DataInicio = DataInicio
-                };
-
-            await LactacaoService.CriarLactacaoAsync(novaLactacao);
-
-            // Atualiza apenas o animal selecionado para lactante
-            var animalSelecionado = Animais.FirstOrDefault(a => a.Id == AnimalSelecionadoId.Value);
-            if (animalSelecionado != null)
-            {
-                animalSelecionado.Lactante = true;
-                await AnimalService.AtualizarAnimalAsync(animalSelecionado);
-
-                // Atualiza na lista local
-                var index = Animais.FindIndex(a => a.Id == animalSelecionado.Id);
-                if (index >= 0)
-                {
-                    Animais[index] = animalSelecionado;
-                }
-            }
-
-            await CarregarLactacoes();
-
-            // Carrega as produções para a nova lactação
-            var lactacaoCriada = Lactacoes.FirstOrDefault(l => l.AnimalId == AnimalSelecionadoId.Value && l.DataFim == null);
-            if (lactacaoCriada != null)
-            {
-                ProducaoRegistradaHojeMap[lactacaoCriada.Id] = await ProducaoRegistradaHojeAsync(lactacaoCriada.Id);
-            }
-
-            FecharModal();
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Erro ao criar lactação: {ex.Message}");
-        }
-        finally
-        {
-            carregandoDados = false;
-            StateHasChanged();
-        }
-    }
-
-    private async Task ConfirmarFinalizacao()
-    {
-        if (LactacaoParaFinalizarId.HasValue)
-        {
-            try
-            {
-                carregandoDados = true;
-                StateHasChanged();
-
-                await LactacaoService.FinalizarLactacaoAsync(LactacaoParaFinalizarId.Value);
-
-                var lactacao = Lactacoes.FirstOrDefault(l => l.Id == LactacaoParaFinalizarId.Value);
-                if (lactacao != null)
-                {
-                    var animal = Animais.FirstOrDefault(a => a.Id == lactacao.AnimalId);
-                    if (animal != null)
-                    {
-                        animal.Lactante = false;
-                        await AnimalService.AtualizarAnimalAsync(animal);
-
-                        var index = Animais.FindIndex(a => a.Id == animal.Id);
-                        if (index >= 0)
-                        {
-                            Animais[index] = animal;
-                        }
-                    }
-
-                    // Remove do mapa de produções
-                    ProducaoRegistradaHojeMap.Remove(LactacaoParaFinalizarId.Value);
-
-                    await CarregarLactacoes();
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Erro ao finalizar lactação: {ex.Message}");
-            }
-            finally
-            {
-                carregandoDados = false;
-                FecharModalConfirmacao();
-                StateHasChanged();
-            }
-        }
-    }
-
-    private void AbrirModalProducao(int lactacaoId, int animalId)
+    private void AbrirModalProducao(int lactacaoId, int animalId, string nomeAnimal)
     {
         LactacaoSelecionadaId = lactacaoId;
         AnimalSelecionadoParaProducaoId = animalId;
+        NomeAnimalSelecionado = nomeAnimal;
         QuantidadeLitros = 0;
         MostrarErroQuantidade = false;
         DataProducao = DateTime.Now;
@@ -733,6 +534,13 @@
             // Atualiza o status após salvar
             ProducaoRegistradaHojeMap[LactacaoSelecionadaId] = true;
 
+            // Atualiza a última produção na lista
+            var vacaLactante = VacasLactantes.FirstOrDefault(v => v.Lactacao.Id == LactacaoSelecionadaId);
+            if (vacaLactante != null)
+            {
+                vacaLactante.UltimaProducao = novaProducao;
+            }
+
             FecharModalProducao();
         }
         catch (Exception ex)
@@ -743,20 +551,6 @@
         {
             carregandoDados = false;
             StateHasChanged();
-        }
-    }
-
-    private async Task<bool> ProducaoRegistradaHojeAsync(int lactacaoId)
-    {
-        try
-        {
-            var producoes = await ProducaoLeiteiraService.ObterProducoesPorLactacaoAsync(lactacaoId);
-            return producoes.Any(p => p.Data.Date == DateTime.Today);
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Erro ao verificar produções: {ex.Message}");
-            return false;
         }
     }
 }
