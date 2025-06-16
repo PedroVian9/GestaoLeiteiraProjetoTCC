@@ -25,7 +25,7 @@ namespace GestaoLeiteiraProjetoTCC.Repositories
             return await db.Table<Animal>()
                 .Where(a =>
                     a.PropriedadeId == propriedadeId &&
-                    a.Sexo == "Feminino" &&
+                    a.Sexo == "Fêmea" &&
                     a.CategoriaAnimal == "Vaca" &&
                     a.Lactante == false &&
                     a.Status == "Ativo")

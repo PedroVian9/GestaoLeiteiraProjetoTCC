@@ -78,8 +78,8 @@ else
                     <label for="sexo">Sexo:</label>
                     <InputSelect id="sexo" @bind-Value="animal.Sexo" @onchange="(e) => OnSexoChanged(e.Value.ToString())" class="form-control">
                         <option value="">Selecione...</option>
-                        <option value="Masculino">Masculino</option>
-                        <option value="Feminino">Feminino</option>
+                        <option value="Macho">Macho</option>
+                        <option value="Fêmea">Fêmea</option>
                     </InputSelect>
                     <ValidationMessage For="@(() => animal.Sexo)" />
                 </div>
@@ -139,7 +139,7 @@ else
     private int propriedadeId;
 
     private bool MostrarOpcoesVaca =>
-        animal.Sexo == "Feminino" && animal.CategoriaAnimal == "Vaca";
+        animal.Sexo == "Fêmea" && animal.CategoriaAnimal == "Vaca";
 
     protected override async Task OnInitializedAsync()
     {

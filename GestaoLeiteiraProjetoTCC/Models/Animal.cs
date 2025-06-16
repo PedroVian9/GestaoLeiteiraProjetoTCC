@@ -20,7 +20,7 @@ namespace GestaoLeiteiraProjetoTCC.Models
 
         public DateTime? DataNascimento { get; set; }
 
-        public string Sexo { get; set; } // Masculino ou Feminino
+        public string Sexo { get; set; } // Macho ou Fêmea
 
         [Required(ErrorMessage = "A categoria do animal é obrigatória.")]
         public string CategoriaAnimal { get; set; } // Bezerro, Novilha, Vaca, Touro
