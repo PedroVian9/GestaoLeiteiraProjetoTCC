@@ -70,6 +70,10 @@
     background-image: url("/Icons/logout.png");
 }
 
+.bi-plus-square-racas {
+    background-image: url("/Icons/genetic.png");
+}
+
 .nav-item {
     font-size: 0.9rem;
     padding-bottom: 0.5rem;
