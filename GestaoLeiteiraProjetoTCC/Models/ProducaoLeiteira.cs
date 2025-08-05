@@ -23,5 +23,8 @@ namespace GestaoLeiteiraProjetoTCC.Models
 
         [Required(ErrorMessage = "A quantidade é obrigatória")]
         public double Quantidade { get; set; }
+
+        [Required(ErrorMessage = "O id da propriedade é obrigatório.")]
+        public int PropriedadeId { get; set; }
     }
 }

@@ -31,5 +31,14 @@ namespace GestaoLeiteiraProjetoTCC.Repositories
                            .Where(p => p.LactacaoId == lactacaoId)
                            .ToListAsync();
         }
+
+        public async Task<List<ProducaoLeiteira>> ObterPorPropriedadeAsync(int propriedadeId)
+        {
+            var db = await _databaseService.GetConnectionAsync();
+            return await db.Table<ProducaoLeiteira>()
+                           .Where(p => p.PropriedadeId == propriedadeId)
+                           .ToListAsync();
+        }
+
     }
 }

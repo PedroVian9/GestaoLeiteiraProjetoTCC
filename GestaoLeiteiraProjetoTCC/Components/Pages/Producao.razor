@@ -526,7 +526,8 @@
                     AnimalId = AnimalSelecionadoParaProducaoId,
                     LactacaoId = LactacaoSelecionadaId,
                     Data = DataProducao,
-                    Quantidade = QuantidadeLitros
+                    Quantidade = QuantidadeLitros,
+                    PropriedadeId = PropriedadeLogada.Id
                 };
 
             await ProducaoLeiteiraService.CriarProducaoLeiteiraAsync(novaProducao);
