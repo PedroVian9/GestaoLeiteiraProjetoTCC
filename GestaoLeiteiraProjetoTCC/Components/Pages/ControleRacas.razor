@@ -1,7 +1,594 @@
 ﻿@page "/controle-de-racas"
+@using GestaoLeiteiraProjetoTCC.Models
+@using GestaoLeiteiraProjetoTCC.Services.Interfaces
+@inject IRacaService RacaService
 
-<h3>Controle de Raças</h3>
+<div class="page-container">
+    <h3 class="page-title">Controle de Raças</h3>
+    <div class="current-date">@DateTime.Now.ToString("dd/MM/yyyy")</div>
+
+    <div class="raca-actions">
+        <button class="btn-action add" @onclick="AbrirModalNova">
+            <span class="plus-icon">+</span> Cadastrar nova raça
+        </button>
+    </div>
+
+    @if (carregandoDados)
+    {
+        <div class="loading-overlay">
+            <div class="spinner"></div>
+            <p>Carregando dados...</p>
+        </div>
+    }
+    else if (Racas == null)
+    {
+        <p class="loading-message">Carregando...</p>
+    }
+    else if (!Racas.Any())
+    {
+        <p class="empty-message">Nenhuma raça cadastrada.</p>
+    }
+    else
+    {
+        <div class="racas-grid">
+            @foreach (var raca in Racas)
+            {
+                <div class="raca-card">
+                    <div class="card-header">
+                        <span class="raca-name">@raca.NomeRaca</span>
+                        <span class="status-badge @raca.Status.ToLower()">
+                            @(raca.Status == "Sistema" ? "Criado pelo Sistema" : "Criado pelo Usuário")
+                        </span>
+                    </div>
+
+                    @if (PodeEditarOuExcluir(raca))
+                    {
+                        <div class="card-actions">
+                            <button class="btn-action editar" @onclick="() => AbrirModalEditar(raca)">
+                                <i class="fas fa-edit"></i> Editar
+                            </button>
+                            <button class="btn-action excluir" @onclick="() => ExcluirRaca(raca.Id)">
+                                <i class="fas fa-trash"></i> Excluir
+                            </button>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="card-actions">
+                            <span class="sistema-notice">Raça do sistema - não editável</span>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    }
+
+    <!-- Modal de Cadastro/Edição -->
+    @if (exibirModal)
+    {
+        <div class="modal-overlay" @onclick="FecharModal">
+            <div class="modal-content" @onclick:stopPropagation>
+                <h3>@(racaAtual.Id == 0 ? "Cadastrar Raça" : "Editar Raça")</h3>
+
+                <EditForm Model="racaAtual" OnValidSubmit="SalvarRaca">
+                    <DataAnnotationsValidator />
+
+                    <div class="form-group">
+                        <label for="nomeRaca">Nome da Raça:</label>
+                        <InputText id="nomeRaca" @bind-Value="racaAtual.NomeRaca" class="form-control" placeholder="Digite o nome da raça" />
+                        <ValidationMessage For="@(() => racaAtual.NomeRaca)" />
+                    </div>
+
+                    <div class="footer-actions">
+                        <button type="button" class="btn btn-secondary" @onclick="FecharModal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Salvar</button>
+                    </div>
+                </EditForm>
+
+                @if (mensagemSucesso != null)
+                {
+                    <div class="alert alert-success mt-3">@mensagemSucesso</div>
+                }
+
+                @if (!string.IsNullOrEmpty(MensagemErro))
+                {
+                    <div class="alert alert-danger mt-3">@MensagemErro</div>
+                }
+            </div>
+        </div>
+    }
+
+    <!-- Modal de Confirmação de Exclusão -->
+    @if (exibirModalExclusao)
+    {
+        <div class="modal-overlay" @onclick="FecharModalExclusao">
+            <div class="modal-content confirmation-modal" @onclick:stopPropagation>
+                <h3>Confirmar Exclusão</h3>
+                <p>Tem certeza de que deseja excluir a raça "<strong>@racaParaExcluir?.NomeRaca</strong>"?</p>
+                <p class="warning-text">Esta ação não pode ser desfeita.</p>
+
+                <div class="footer-actions">
+                    <button type="button" class="btn btn-secondary" @onclick="FecharModalExclusao">Cancelar</button>
+                    <button type="button" class="btn btn-danger" @onclick="ConfirmarExclusao">Excluir</button>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<style>
+    .page-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .page-title {
+        color: #023047;
+        text-align: center;
+        margin: 20px 0 30px;
+    }
+
+    .current-date {
+        text-align: center;
+        color: #666;
+        margin-bottom: 30px;
+        font-size: 16px;
+        font-weight: 500;
+    }
+
+    .raca-actions {
+        margin-bottom: 20px;
+        display: flex;
+        justify-content: flex-end;
+    }
+
+    .racas-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 15px;
+    }
+
+    .raca-card {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        padding: 15px;
+        border-left: 4px solid #8a5a44;
+    }
+
+    .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #eee;
+    }
+
+    .plus-icon {
+        margin-right: 8px;
+        font-weight: bold;
+        font-size: 18px;
+    }
+
+    .raca-name {
+        font-weight: bold;
+        font-size: 18px;
+        color: #023047;
+    }
+
+    .status-badge {
+        font-size: 10px;
+        padding: 3px 8px;
+        border-radius: 12px;
+        font-weight: bold;
+        text-transform: none;
+        white-space: nowrap;
+    }
+
+        .status-badge.sistema {
+            background-color: #6c757d;
+            color: white;
+        }
+
+        .status-badge.usuario {
+            background-color: #8a5a44;
+            color: white;
+        }
+
+        .status-badge.ativo {
+            background-color: #28a745;
+            color: white;
+        }
+
+    .card-details {
+        margin-bottom: 15px;
+    }
+
+    .detail-item {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 8px;
+        flex-wrap: wrap;
+    }
+
+    .detail-label {
+        font-weight: 500;
+        color: #555;
+        min-width: 120px;
+    }
+
+    .detail-value {
+        color: #333;
+        text-align: right;
+        flex: 1;
+    }
+
+    .card-actions {
+        display: flex;
+        justify-content: flex-end;
+        margin-top: 15px;
+        gap: 10px;
+    }
+
+    .sistema-notice {
+        font-size: 12px;
+        color: #6c757d;
+        font-style: italic;
+        padding: 8px 12px;
+        background-color: #f8f9fa;
+        border-radius: 4px;
+        border: 1px solid #e9ecef;
+    }
+
+    .btn-action {
+        padding: 8px 12px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-weight: 500;
+        text-decoration: none;
+    }
+
+        .btn-action.add {
+            background-color: #8a5a44;
+            color: white;
+            padding: 10px 15px;
+        }
+
+        .btn-action.editar {
+            background-color: #17a2b8;
+            color: white;
+        }
+
+        .btn-action.excluir {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .btn-action:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+    .loading-message, .empty-message {
+        text-align: center;
+        color: #666;
+        margin: 40px 0;
+        font-size: 16px;
+    }
+
+    .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.5);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+        color: white;
+    }
+
+    .spinner {
+        border: 4px solid #f3f3f3;
+        border-top: 4px solid #8a5a44;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        animation: spin 2s linear infinite;
+        margin-bottom: 20px;
+    }
+
+    /* Modal styles */
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+    }
+
+    .modal-content {
+        background-color: white;
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        width: 90%;
+        max-width: 500px;
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+
+    .confirmation-modal {
+        max-width: 400px;
+        text-align: center;
+    }
+
+    .modal-content h3 {
+        margin-top: 0;
+        color: #023047;
+        padding-bottom: 15px;
+        border-bottom: 1px solid #eee;
+        margin-bottom: 20px;
+    }
+
+    .warning-text {
+        color: #dc3545;
+        font-size: 14px;
+        margin-top: 10px;
+    }
+
+    /* Form styles */
+    .form-group {
+        margin-bottom: 20px;
+        text-align: left;
+    }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #333;
+        }
+
+    .form-control {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        font-size: 16px;
+        box-sizing: border-box;
+    }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #8a5a44;
+            box-shadow: 0 0 0 0.2rem rgba(138, 90, 68, 0.25);
+        }
+
+    .footer-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        margin-top: 25px;
+    }
+
+    .btn {
+        padding: 10px 20px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 16px;
+        border: none;
+        font-weight: 500;
+    }
+
+    .btn-primary {
+        background-color: #8a5a44;
+        color: white;
+    }
+
+        .btn-primary:hover {
+            background-color: #6d4435;
+        }
+
+    .btn-secondary {
+        background-color: #6c757d;
+        color: white;
+    }
+
+        .btn-secondary:hover {
+            background-color: #5a6268;
+        }
+
+    .btn-danger {
+        background-color: #dc3545;
+        color: white;
+    }
+
+        .btn-danger:hover {
+            background-color: #c82333;
+        }
+
+    .alert {
+        padding: 10px 15px;
+        border-radius: 4px;
+        margin-top: 15px;
+    }
+
+    .alert-success {
+        background-color: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+    }
+
+    .alert-danger {
+        background-color: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+    }
+
+    .text-danger {
+        color: #dc3545;
+        font-size: 14px;
+        margin-top: 5px;
+        display: block;
+    }
+
+    .fas {
+        font-size: 12px;
+    }
+
+    .mt-3 {
+        margin-top: 1rem;
+    }
+</style>
 
 @code {
+    private List<Raca> Racas = new();
+    private Raca racaAtual = new();
+    private Raca racaParaExcluir;
+    private string MensagemErro = string.Empty;
+    private string mensagemSucesso;
+    private bool exibirModal = false;
+    private bool exibirModalExclusao = false;
+    private bool carregandoDados = true;
 
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            carregandoDados = true;
+            StateHasChanged();
+            await CarregarRacas();
+        }
+        finally
+        {
+            carregandoDados = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task CarregarRacas()
+    {
+        Racas = await RacaService.ObterRacasOrdenadasPorNome();
+    }
+
+    private void AbrirModalNova()
+    {
+        racaAtual = new Raca();
+        MensagemErro = string.Empty;
+        mensagemSucesso = null;
+        exibirModal = true;
+    }
+
+    private void AbrirModalEditar(Raca raca)
+    {
+        racaAtual = new Raca
+            {
+                Id = raca.Id,
+                NomeRaca = raca.NomeRaca,
+                Status = raca.Status
+            };
+        MensagemErro = string.Empty;
+        mensagemSucesso = null;
+        exibirModal = true;
+    }
+
+    private void FecharModal()
+    {
+        exibirModal = false;
+        MensagemErro = string.Empty;
+        mensagemSucesso = null;
+    }
+
+    private async Task SalvarRaca()
+    {
+        try
+        {
+            carregandoDados = true;
+            StateHasChanged();
+
+            if (racaAtual.Id == 0)
+            {
+                await RacaService.Criar(racaAtual.NomeRaca);
+                mensagemSucesso = "Raça cadastrada com sucesso!";
+            }
+            else
+            {
+                await RacaService.AtualizarRacaPorId(racaAtual.Id, racaAtual.NomeRaca);
+                mensagemSucesso = "Raça atualizada com sucesso!";
+            }
+
+            await CarregarRacas();
+
+            // Exibe mensagem por 1.5 segundos e depois fecha o modal
+            StateHasChanged();
+            await Task.Delay(1500);
+            FecharModal();
+        }
+        catch (Exception ex)
+        {
+            MensagemErro = ex.Message;
+        }
+        finally
+        {
+            carregandoDados = false;
+            StateHasChanged();
+        }
+    }
+
+    private void ExcluirRaca(int id)
+    {
+        racaParaExcluir = Racas.FirstOrDefault(r => r.Id == id);
+        if (racaParaExcluir != null)
+        {
+            exibirModalExclusao = true;
+        }
+    }
+
+    private void FecharModalExclusao()
+    {
+        exibirModalExclusao = false;
+        racaParaExcluir = null;
+    }
+
+    private async Task ConfirmarExclusao()
+    {
+        try
+        {
+            carregandoDados = true;
+            StateHasChanged();
+
+            await RacaService.ExcluirRaca(racaParaExcluir.Id);
+            await CarregarRacas();
+
+            FecharModalExclusao();
+        }
+        catch (Exception ex)
+        {
+            MensagemErro = ex.Message;
+            FecharModalExclusao();
+        }
+        finally
+        {
+            carregandoDados = false;
+            StateHasChanged();
+        }
+    }
+
+    private bool PodeEditarOuExcluir(Raca raca) => raca.Status == "Usuario";
 }

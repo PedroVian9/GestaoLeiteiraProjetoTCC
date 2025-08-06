@@ -1,5 +1,4 @@
-﻿using CloudKit;
-using GestaoLeiteiraProjetoTCC.Models;
+﻿using GestaoLeiteiraProjetoTCC.Models;
 using GestaoLeiteiraProjetoTCC.Repositories.Interfaces;
 using SQLite;
 

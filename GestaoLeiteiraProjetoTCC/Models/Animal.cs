@@ -12,7 +12,7 @@ namespace GestaoLeiteiraProjetoTCC.Models
         [Required(ErrorMessage = "A raça do animal é obrigatória.")]
         public int RacaId { get; set; }
 
-        [Ignore]
+        [Ignore] //Não mapear a navegação automaticamente
         public Raca Raca { get; set; }
 
         [Required(ErrorMessage = "O nome do animal é obrigatório.")]

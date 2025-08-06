@@ -3,6 +3,7 @@
 @using GestaoLeiteiraProjetoTCC.Services.Interfaces
 @inject IAnimalService AnimalService
 @inject IPropriedadeService PropriedadeService
+@inject IRacaService RacaService
 
 <div class="page-container">
     <h3 class="page-title">Lista de Animais</h3>
@@ -85,7 +86,6 @@
 
                 <EditForm Model="animal" OnValidSubmit="SalvarAnimal">
                     <DataAnnotationsValidator />
-
                     <div class="form-group">
                         <label for="nomeAnimal">Nome do Animal:</label>
                         <InputText id="nomeAnimal" @bind-Value="animal.NomeAnimal" class="form-control" />
@@ -99,9 +99,15 @@
                     </div>
 
                     <div class="form-group">
-                        <label for="raca">Raça:</label>
-                        <InputText id="raca" @bind-Value="animal.Raca" class="form-control" />
-                        <ValidationMessage For="@(() => animal.Raca)" />
+                        <label for="racaId">Raça:</label>
+                        <InputSelect id="racaId" @bind-Value="animal.RacaId" class="form-control">
+                            <option value="">Selecione uma raça...</option>
+                            @foreach (var raca in racas)
+                            {
+                                <option value="@raca.Id">@raca.NomeRaca</option>
+                            }
+                        </InputSelect>
+                        <ValidationMessage For="@(() => animal.RacaId)" />
                     </div>
 
                     <div class="form-group">
@@ -479,6 +485,7 @@
     private string mensagemSucesso;
     private int propriedadeId;
     private bool carregandoDados = true;
+    private List<Raca> racas = new();
 
     private bool MostrarOpcoesVaca =>
         animal.Sexo == "Fêmea" && animal.CategoriaAnimal == "Vaca";
@@ -492,6 +499,13 @@
 
             var propriedade = PropriedadeService.ObterPropriedadeLogada();
             propriedadeId = propriedade.Id;
+
+            // Carrega TODAS as raças ativas (Sistema + Usuario)
+            racas = (await RacaService.ObterRacasOrdenadasPorNome())
+                .Where(r => r.Status == "Sistema" || r.Status == "Usuario")
+                .OrderBy(r => r.NomeRaca)
+                .ToList();
+
             await CarregarAnimais();
         }
         finally
@@ -526,7 +540,7 @@
                 Id = a.Id,
                 NomeAnimal = a.NomeAnimal,
                 NumeroIdentificador = a.NumeroIdentificador,
-                Raca = a.Raca,
+                RacaId = a.RacaId,
                 DataNascimento = a.DataNascimento,
                 Sexo = a.Sexo,
                 CategoriaAnimal = a.CategoriaAnimal,

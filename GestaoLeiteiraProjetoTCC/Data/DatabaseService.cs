@@ -52,6 +52,7 @@ public class DatabaseService
             await _database.CreateTableAsync<Animal>();
             await _database.CreateTableAsync<Lactacao>();
             await _database.CreateTableAsync<ProducaoLeiteira>();
+            await _database.CreateTableAsync<Raca>();
 
             // Criar índices para simular foreign keys
             await _database.ExecuteAsync("CREATE INDEX IF NOT EXISTS IX_Animal_PropriedadeId ON Animal (PropriedadeId)");
