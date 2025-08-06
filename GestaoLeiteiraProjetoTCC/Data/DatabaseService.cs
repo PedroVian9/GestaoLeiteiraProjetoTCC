@@ -60,8 +60,34 @@ public class DatabaseService
             await _database.ExecuteAsync("CREATE INDEX IF NOT EXISTS IX_Lactacao_AnimalId ON Lactacao (AnimalId)");
             await _database.ExecuteAsync("CREATE INDEX IF NOT EXISTS IX_ProducaoLeiteira_AnimalId ON ProducaoLeiteira (AnimalId)");
             await _database.ExecuteAsync("CREATE INDEX IF NOT EXISTS IX_ProducaoLeiteira_LactacaoId ON ProducaoLeiteira (LactacaoId)");
+            await _database.ExecuteAsync("CREATE INDEX IF NOT EXISTS IX_Animal_RacaId ON Animal (RacaId)");
 
             Console.WriteLine($"Banco de dados criado em: {Constants.DatabasePath}");
+
+            // Mock de raças pré-configuradas
+            var racasMock = new List<Raca>
+            {
+                new Raca { NomeRaca = "Angus", Status = "Sistema" },
+                new Raca { NomeRaca = "Brahman", Status = "Sistema" },
+                new Raca { NomeRaca = "Guzerá", Status = "Sistema" },
+                new Raca { NomeRaca = "Gir", Status = "Sistema" },
+                new Raca { NomeRaca = "Girolando", Status = "Sistema" },
+                new Raca { NomeRaca = "Holandesa", Status = "Sistema" },
+                new Raca { NomeRaca = "Jersey", Status = "Sistema" },
+                new Raca { NomeRaca = "Nelore", Status = "Sistema" },
+                new Raca { NomeRaca = "Sindi", Status = "Sistema" },
+            };
+
+            // Verificar se já existem raças
+            var racasExistentes = await _database.Table<Raca>().CountAsync();
+            if (racasExistentes == 0)
+            {
+                // Inserir raças mock
+                foreach (var raca in racasMock)
+                {
+                    await _database.InsertAsync(raca);
+                }
+            }
         }
         catch (Exception ex)
         {

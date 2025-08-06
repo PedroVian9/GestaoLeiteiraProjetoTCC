@@ -1,12 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using GestaoLeiteiraProjetoTCC.Models;
 
 namespace GestaoLeiteiraProjetoTCC.Services.Interfaces
 {
-    internal class IRacaService
+    public interface IRacaService
     {
+        Task Criar(string nomeRaca);
+        Task<bool> ValidarSeExisteRaca(string nomeRaca);
+        Task<List<Raca>> ObterRacasOrdenadasPorNome();
+        Task<Raca> ObterRacaPorId(int id);
     }
 }

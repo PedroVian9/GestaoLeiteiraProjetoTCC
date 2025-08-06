@@ -1,12 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using GestaoLeiteiraProjetoTCC.Models;
 
 namespace GestaoLeiteiraProjetoTCC.Repositories.Interfaces
 {
-    internal class IRacaRepository
+    public interface IRacaRepository
     {
+        Task<bool> ExisteRacaAsync(string nomeRaca);
+        Task CriarAsync(Raca raca);
+        Task<List<Raca>> ObterTodasOrdenadasPorNomeAsync();
+        Task<Raca> ObterPorIdAsync(int id);
+        Task AtualizarAsync(Raca raca);
+        Task ExcluirAsync(int id);
     }
 }

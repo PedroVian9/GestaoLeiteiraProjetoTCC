@@ -9,8 +9,11 @@ namespace GestaoLeiteiraProjetoTCC.Models
         [PrimaryKey, AutoIncrement]
         public int Id { get; set; }
 
-        [Required(ErrorMessage = "A raça é obrigatória.")]
-        public string Raca { get; set; }
+        [Required(ErrorMessage = "A raça do animal é obrigatória.")]
+        public int RacaId { get; set; }
+
+        [Ignore]
+        public Raca Raca { get; set; }
 
         [Required(ErrorMessage = "O nome do animal é obrigatório.")]
         public string NomeAnimal { get; set; }
