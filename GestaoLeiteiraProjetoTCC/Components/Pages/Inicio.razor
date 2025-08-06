@@ -22,7 +22,65 @@
                     </div>
                     <div class="info-item">
                         <i class="fas fa-ruler-combined"></i>
-                        <span>Área total: @propriedade.AreaTotal @((propriedade.TipoUnidade == 1) ? "hectares" : "alqueires")</span>
+                        <span>
+                            Área total: @propriedade.AreaTotal
+                            @if (propriedade.TipoUnidade == 1)
+                            {
+                                <text> alqueires mineiros</text>
+                            }
+                            else if (propriedade.TipoUnidade == 2)
+                            {
+                                <text> alqueires paulistas</text>
+                            }
+                            else if (propriedade.TipoUnidade == 3)
+                            {
+                                <text> hectares</text>
+                            }
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Resumo do rebanho -->
+        <div class="stats-section">
+            <h3 class="section-title">
+                <i class="fas fa-cow"></i>
+                Resumo do Rebanho
+            </h3>
+            <div class="stats-grid">
+                <div class="stat-card primary">
+                    <div class="stat-content">
+                        <div class="stat-number">@totalAnimais</div>
+                        <div class="stat-label">Total de Animais</div>
+                    </div>
+                </div>
+
+                <div class="stat-card females">
+                    <div class="stat-content">
+                        <div class="stat-number">@totalFemeas</div>
+                        <div class="stat-label">Fêmeas</div>
+                    </div>
+                </div>
+
+                <div class="stat-card lactation">
+                    <div class="stat-content">
+                        <div class="stat-number">@animaisLactantes</div>
+                        <div class="stat-label">Em Lactação</div>
+                    </div>
+                </div>
+
+                <div class="stat-card pregnant">
+                    <div class="stat-content">
+                        <div class="stat-number">@totalPrenhas</div>
+                        <div class="stat-label">Prenhas</div>
+                    </div>
+                </div>
+
+                <div class="stat-card calves">
+                    <div class="stat-content">
+                        <div class="stat-number">@totalBezerros</div>
+                        <div class="stat-label">Bezerros</div>
                     </div>
                 </div>
             </div>
@@ -86,50 +144,6 @@
                             <h4>Média diária no mês</h4>
                         </div>
                         <div class="production-value">@mediaProducaoDiaria<span class="unit">L</span></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Bottom Section - Animal Stats -->
-        <div class="stats-section">
-            <h3 class="section-title">
-                <i class="fas fa-cow"></i>
-                Resumo do Rebanho
-            </h3>
-            <div class="stats-grid">
-                <div class="stat-card primary">
-                    <div class="stat-content">
-                        <div class="stat-number">@totalAnimais</div>
-                        <div class="stat-label">Total de Animais</div>
-                    </div>
-                </div>
-
-                <div class="stat-card lactation">
-                    <div class="stat-content">
-                        <div class="stat-number">@animaisLactantes</div>
-                        <div class="stat-label">Em Lactação</div>
-                    </div>
-                </div>
-
-                <div class="stat-card calves">
-                    <div class="stat-content">
-                        <div class="stat-number">@totalBezerros</div>
-                        <div class="stat-label">Bezerros</div>
-                    </div>
-                </div>
-
-                <div class="stat-card females">
-                    <div class="stat-content">
-                        <div class="stat-number">@totalFemeas</div>
-                        <div class="stat-label">Fêmeas</div>
-                    </div>
-                </div>
-
-                <div class="stat-card pregnant">
-                    <div class="stat-content">
-                        <div class="stat-number">@totalPrenhas</div>
-                        <div class="stat-label">Prenhas</div>
                     </div>
                 </div>
             </div>
@@ -234,6 +248,7 @@
         border-radius: 8px;
         padding: 20px;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
     }
 
     .stats-grid {

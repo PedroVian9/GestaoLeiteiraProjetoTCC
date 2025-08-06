@@ -39,8 +39,9 @@
             <div class="form-group">
                 <label for="tipoUnidade">Tipo de Unidade:</label>
                 <InputSelect id="tipoUnidade" @bind-Value="propriedade.TipoUnidade" class="form-control">
-                    <option value="1">Hectares</option>
-                    <option value="2">Arrobas</option>
+                    <option value="1">Alqueires Mineiros</option>
+                    <option value="2">Alqueires Paulistas</option>
+                    <option value="3">Hectares</option>
                 </InputSelect>
                 <ValidationMessage For="@(() => propriedade.TipoUnidade)" />
             </div>
