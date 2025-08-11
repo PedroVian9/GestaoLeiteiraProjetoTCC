@@ -30,20 +30,21 @@
                 <ValidationMessage For="@(() => propriedade.Localizacao)" />
             </div>
 
-            <div class="form-group">
-                <label for="areaTotal">Área Total:</label>
-                <InputNumber id="areaTotal" @bind-Value="propriedade.AreaTotal" class="form-control" autocomplete="off"/>
-                <ValidationMessage For="@(() => propriedade.AreaTotal)" />
-            </div>
-
-            <div class="form-group">
-                <label for="tipoUnidade">Tipo de Unidade:</label>
-                <InputSelect id="tipoUnidade" @bind-Value="propriedade.TipoUnidade" class="form-control">
-                    <option value="1">Alqueires Mineiros</option>
-                    <option value="2">Alqueires Paulistas</option>
-                    <option value="3">Hectares</option>
-                </InputSelect>
-                <ValidationMessage For="@(() => propriedade.TipoUnidade)" />
+            <div class="form-group-inline">
+                <div class="form-group area-input">
+                    <label for="areaTotal">Área Total:</label>
+                    <InputNumber id="areaTotal" @bind-Value="propriedade.AreaTotal" class="form-control" autocomplete="off" />
+                    <ValidationMessage For="@(() => propriedade.AreaTotal)" />
+                </div>
+                <div class="form-group unidade-select">
+                    <label for="tipoUnidade">Tipo de Unidade:</label>
+                    <InputSelect id="tipoUnidade" @bind-Value="propriedade.TipoUnidade" class="form-control">
+                        <option value="1">Alqueires Mineiros</option>
+                        <option value="2">Alqueires Paulistas</option>
+                        <option value="3">Hectares</option>
+                    </InputSelect>
+                    <ValidationMessage For="@(() => propriedade.TipoUnidade)" />
+                </div>
             </div>
 
             <div class="form-group">
@@ -64,6 +65,145 @@
         }
     </div>
 </div>
+
+<style>
+    /* Estilos gerais */
+    body, html {
+        margin: 0;
+        padding: 0;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    /* Container principal */
+    .container-cadastro {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        padding: 20px;
+        background: #f8f9fa;
+    }
+
+    /* Caixa de conteúdo */
+    .content-box {
+        background-color: #023047;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        padding: 40px;
+        width: 100%;
+        max-width: 500px;
+        color: #333;
+        border: 1px solid #e5e7eb;
+    }
+
+    /* Título */
+    .title {
+        text-align: center;
+        color: white;
+        margin-bottom: 30px;
+        font-weight: 700;
+        font-size: 28px;
+    }
+
+    /* Grupo de formulário */
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 20px;
+    }
+
+    .form-group-inline {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 16px;
+        margin-bottom: 20px;
+    }
+
+        .form-group-inline .form-group {
+            margin-bottom: 0;
+        }
+
+    /* Rótulos */
+    .form-group label {
+        font-weight: 600;
+        color: white;
+        font-size: 14px;
+    }
+
+    /* Campos de entrada */
+    .form-control {
+        padding: 12px 16px;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        font-size: 16px;
+        width: 100%;
+        background-color: #fff;
+        transition: all 0.3s ease;
+    }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #3a7ca5;
+            box-shadow: 0 0 0 3px rgba(58, 124, 165, 0.2);
+        }
+
+    /* Mensagem de validação */
+    .validation-message {
+        color: #dc2626;
+        font-size: 12px;
+        margin-top: 4px;
+    }
+
+    /* Estilos para os botões */
+    .btn {
+        padding: 12px 25px;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border: none;
+        font-size: 16px;
+    }
+
+    .btn-primary {
+        background-color: #3a7ca5;
+        color: white;
+    }
+
+        .btn-primary:hover {
+            background-color: #2c6284;
+        }
+
+    .btn-secondary {
+        background-color: #6c757d;
+        color: white;
+    }
+
+        .btn-secondary:hover {
+            background-color: #5a6268;
+        }
+
+    /* Ações de rodapé */
+    .footer-actions {
+        display: flex;
+        justify-content: flex-end;
+        margin-top: 30px;
+        gap: 15px;
+    }
+
+    /* Mensagem de sucesso */
+    .message.success {
+        color: #10b981;
+        text-align: center;
+        margin-top: 25px;
+        font-weight: 600;
+        background-color: #ecfdf5;
+        padding: 15px;
+        border-radius: 8px;
+        border: 1px solid #6ee7b7;
+    }
+</style>
 
 @code {
     private Propriedade propriedade = new Propriedade();
