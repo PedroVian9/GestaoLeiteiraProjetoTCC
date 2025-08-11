@@ -12,5 +12,7 @@ namespace GestaoLeiteiraProjetoTCC.Services.Interfaces
         Task<Propriedade> LoginPropriedadeAsync(string nomeProprietario, string senha);
         Propriedade ObterPropriedadeLogada();
         Task<List<Animal>> ObterAnimaisDaPropriedadeLogadaAsync();
+        Task<bool> EditarPropriedadeAsync(Propriedade propriedade);
+        Task<bool> AlterarSenhaAsync(int id, string novaSenha);
     }
 }

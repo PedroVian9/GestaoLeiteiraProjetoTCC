@@ -11,5 +11,7 @@ namespace GestaoLeiteiraProjetoTCC.Repositories.Interfaces
         Task<Propriedade> ObterPropriedadePorIdDb(int id);
         Task<Propriedade> ValidarLoginDb(string nomeProprietario, string senha);
         Task<List<Animal>> ObterAnimaisPorPropriedadeIdDb(int propriedadeId);
+        Task<bool> EditarPropriedadeDb(Propriedade propriedade);
+        Task<bool> AlterarSenhaDb(int id, string novaSenha);
     }
 }

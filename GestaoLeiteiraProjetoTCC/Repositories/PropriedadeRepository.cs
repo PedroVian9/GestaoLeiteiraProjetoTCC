@@ -45,5 +45,28 @@ namespace GestaoLeiteiraProjetoTCC.Repositories
                 .Where(a => a.PropriedadeId == propriedadeId)
                 .ToListAsync();
         }
+
+        public async Task<bool> EditarPropriedadeDb(Propriedade propriedade)
+        {
+            var existente = await _database.FindAsync<Propriedade>(propriedade.Id);
+            if (existente == null) return false;
+
+            existente.NomeProprietario = propriedade.NomeProprietario;
+            existente.NomePropriedade = propriedade.NomePropriedade;
+            existente.Localizacao = propriedade.Localizacao;
+            existente.AreaTotal = propriedade.AreaTotal;
+            existente.TipoUnidade = propriedade.TipoUnidade;
+
+            return await _database.UpdateAsync(existente) > 0;
+        }
+
+        public async Task<bool> AlterarSenhaDb(int id, string novaSenha)
+        {
+            var existente = await _database.FindAsync<Propriedade>(id);
+            if (existente == null) return false;
+
+            existente.Senha = novaSenha;
+            return await _database.UpdateAsync(existente) > 0;
+        }
     }
 }

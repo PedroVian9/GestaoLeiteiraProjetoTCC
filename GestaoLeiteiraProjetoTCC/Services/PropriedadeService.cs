@@ -51,5 +51,15 @@ namespace GestaoLeiteiraProjetoTCC.Services
 
             return await _propriedadeRepository.ObterAnimaisPorPropriedadeIdDb(_propriedadeLogada.Id);
         }
+
+        public async Task<bool> EditarPropriedadeAsync(Propriedade propriedade)
+        {
+            return await _propriedadeRepository.EditarPropriedadeDb(propriedade);
+        }
+
+        public async Task<bool> AlterarSenhaAsync(int id, string novaSenha)
+        {
+            return await _propriedadeRepository.AlterarSenhaDb(id, novaSenha);
+        }
     }
 }
