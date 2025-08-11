@@ -6,8 +6,18 @@
 @inject IRacaService RacaService
 
 <div class="page-container">
-    <h3 class="page-title">Lista de Animais</h3>
-    <div class="current-date">@DateTime.Now.ToString("dd/MM/yyyy")</div>
+    <div class="dashboard-header">
+        <div class="header-content">
+            <div class="welcome-section">
+                <h1>Lista de Animais</h1>
+                <p class="property-owner">Gerencie e visualize todo o seu rebanho</p>
+            </div>
+            <div class="header-date-section">
+                <i class="fas fa-calendar-alt"></i>
+                <span>@DateTime.Now.ToString("dd/MM/yyyy")</span>
+            </div>
+        </div>
+    </div>
 
     <div class="animal-actions">
         <button class="btn-action add" @onclick="AbrirModalNovo">
@@ -192,19 +202,48 @@
         padding: 20px;
     }
 
-    .page-title {
-        color: #023047;
-        text-align: center;
-        margin: 20px 0 30px;
+    /* === ESTILOS DO NOVO CABEÇALHO === */
+    .dashboard-header {
+        background: white;
+        border-radius: 8px;
+        padding: 20px 25px;
+        margin-bottom: 30px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
     }
 
-    .current-date {
-        text-align: center;
-        color: #666;
-        margin-bottom: 30px;
-        font-size: 16px;
-        font-weight: 500;
+    .header-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 20px;
     }
+
+    .welcome-section h1 {
+        font-size: 2.2rem;
+        color: #023047;
+        margin: 0;
+        font-weight: 700;
+    }
+
+    .property-owner {
+        color: #666;
+        font-size: 1.1rem;
+        margin: 4px 0 0 0;
+        font-weight: 400;
+    }
+
+    .header-date-section {
+        font-size: 1rem;
+        font-weight: 500;
+        color: #4a5568;
+        background-color: #f8f9fa;
+        padding: 10px 16px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    /* === FIM DOS ESTILOS DO CABEÇALHO === */
 
     .animal-actions {
         margin-bottom: 20px;

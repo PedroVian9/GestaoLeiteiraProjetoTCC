@@ -6,123 +6,133 @@
 @inject IPropriedadeService PropriedadeService
 
 <div class="page-container">
-    <h3 class="page-title">Gerenciamento de Lactações</h3>
-    <div class="current-date">@DateTime.Now.ToString("dd/MM/yyyy")</div>
+    <div class="dashboard-header">
+        <div class="header-content">
+            <div class="welcome-section">
+                <h1>Gerenciamento de Lactações</h1>
+                <p class="property-owner">Controle o início e o fim das lactações do seu rebanho</p>
+            </div>
+            <div class="header-date-section">
+                <i class="fas fa-calendar-alt"></i>
+                <span>@DateTime.Now.ToString("dd/MM/yyyy")</span>
+            </div>
+        </div>
+    </div>
 
     <div class="actions-container">
-        <button class="add-button" @onclick="AbrirModal">
+        <button class="btn-action add" @onclick="AbrirModal">
             <span class="plus-icon">+</span> Nova Lactação
         </button>
     </div>
 
     @if (carregandoDados)
     {
-            <div class="loading-overlay">
-                <div class="spinner"></div>
-                <p>Carregando dados...</p>
-            </div>
+        <div class="loading-overlay">
+            <div class="spinner"></div>
+            <p>Carregando dados...</p>
+        </div>
     }
     else if (AnimaisLactacoes == null)
     {
-            <p class="loading-message">Carregando...</p>
+        <p class="loading-message">Carregando...</p>
     }
     else if (!LactacoesAtivas.Any())
     {
-            <p class="empty-message">Nenhuma lactação ativa no momento.</p>
+        <p class="empty-message">Nenhuma lactação ativa no momento.</p>
     }
     else
     {
-            <div class="lactacoes-grid">
+        <div class="lactacoes-grid">
             @foreach (var lactacao in LactacoesAtivas)
             {
-                        <div class="lactacao-card">
-                            <div class="card-header">
-                                <span class="animal-name">@ObterNomeAnimal(lactacao.AnimalId)</span>
-                                <span class="status-badge active">Ativa</span>
-                            </div>
+                <div class="lactacao-card">
+                    <div class="card-header">
+                        <span class="animal-name">@ObterNomeAnimal(lactacao.AnimalId)</span>
+                        <span class="status-badge active">Ativa</span>
+                    </div>
 
-                            <div class="card-details">
-                                <div class="detail-item">
-                                    <span class="detail-label">Início:</span>
-                                    <span class="detail-value">@lactacao.DataInicio.ToString("dd/MM/yyyy")</span>
-                                </div>
-                                <div class="detail-item">
-                                    <span class="detail-label">Dias corridos:</span>
-                                    <span class="detail-value">@CalcularDiasCorridos(lactacao.DataInicio) dias</span>
-                                </div>
-                            </div>
-
-                            <div class="card-actions">
-                                <button class="btn-action finalizar" @onclick="() => AbrirModalConfirmacao(lactacao.Id)">
-                                    <i class="fas fa-stop-circle"></i> Finalizar Lactação
-                                </button>
-                            </div>
+                    <div class="card-details">
+                        <div class="detail-item">
+                            <span class="detail-label">Início da Lactação:</span>
+                            <span class="detail-value">@lactacao.DataInicio.ToString("dd/MM/yyyy")</span>
                         </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Dias em Lactação:</span>
+                            <span class="detail-value">@CalcularDiasCorridos(lactacao.DataInicio) dias</span>
+                        </div>
+                    </div>
+
+                    <div class="card-actions">
+                        <button class="btn-action finalizar" @onclick="() => AbrirModalConfirmacao(lactacao.Id)">
+                            <i class="fas fa-stop-circle"></i> Finalizar
+                        </button>
+                    </div>
+                </div>
             }
-            </div>
+        </div>
     }
 
-    <!-- Modal de Nova Lactação -->
     @if (MostrarModal)
     {
-            <div class="modal-overlay" @onclick="FecharModal">
-                <div class="modal-content" @onclick:stopPropagation>
-                    <h3>Nova Lactação</h3>
-                <p class="modal-info-text">Todos os animais listados são Fêmeas da categoria Vaca, com status Ativo e que não estão em lactação..</p>
+        <div class="modal-overlay" @onclick="FecharModal">
+            <div class="modal-content" @onclick:stopPropagation>
+                <h3>Registrar Nova Lactação</h3>
+                <p class="modal-info-text">Selecione uma vaca com status "Ativo" que não esteja em lactação para iniciar um novo ciclo.</p>
 
-                    <div class="form-group">
-                        <label>Animal:</label>
-                        <select @bind="AnimalSelecionadoId" class="form-control">
-                            <option value="">Selecione um animal</option>
+                <div class="form-group">
+                    <label for="animal">Animal</label>
+                    <select id="animal" @bind="AnimalSelecionadoId" class="form-control">
+                        <option value="0" disabled selected>Clique para selecionar um animal</option>
                         @if (AnimaisAptos != null && AnimaisAptos.Any())
                         {
                             @foreach (var animal in AnimaisAptos)
                             {
-                                            <option value="@animal.Id">@animal.NomeAnimal (@animal.NumeroIdentificador) - @animal.CategoriaAnimal</option>
+                                <option value="@animal.Id">@animal.NomeAnimal (@animal.NumeroIdentificador)</option>
                             }
                         }
                         else
                         {
-                                    <option value="" disabled>Nenhuma vaca apta disponível</option>
+                            <option value="0" disabled>Nenhuma vaca apta disponível</option>
                         }
-                        </select>
+                    </select>
                     @if (MostrarErroAnimal)
                     {
-                                <span class="text-danger">Selecione um animal</span>
+                        <span class="validation-message">Por favor, selecione um animal.</span>
                     }
-                    </div>
+                </div>
 
-                    <div class="form-group">
-                        <label>Data de Início:</label>
-                        <input type="date" @bind="DataInicio" class="form-control" />
+                <div class="form-group">
+                    <label for="dataInicio">Data de Início</label>
+                    <input id="dataInicio" type="date" @bind="DataInicio" class="form-control" />
                     @if (MostrarErroData)
                     {
-                                <span class="text-danger">Data inválida</span>
+                        <span class="validation-message">A data de início não pode ser no futuro.</span>
                     }
-                    </div>
+                </div>
 
-                    <div class="footer-actions">
-                        <button @onclick="FecharModal" class="btn btn-secondary">Cancelar</button>
-                        <button @onclick="CriarLactacao" class="btn btn-primary" disabled="@(AnimaisAptos == null || !AnimaisAptos.Any())">Salvar</button>
-                    </div>
+                <div class="footer-actions">
+                    <button @onclick="FecharModal" class="btn btn-secondary">Cancelar</button>
+                    <button @onclick="CriarLactacao" class="btn btn-primary" disabled="@(AnimaisAptos == null || !AnimaisAptos.Any())">Salvar</button>
                 </div>
             </div>
+        </div>
     }
 
-    <!-- Modal de Confirmação para Finalizar Lactação -->
     @if (MostrarModalConfirmacao)
     {
-            <div class="modal-overlay" @onclick="FecharModalConfirmacao">
-                <div class="modal-content" @onclick:stopPropagation>
-                    <h3>Confirmar Finalização</h3>
-                    <p class="modal-info-text">Tem certeza que deseja finalizar esta lactação? A data de término será registrada como a data atual.</p>
+        <div class="modal-overlay" @onclick="FecharModalConfirmacao">
+            <div class="modal-content" @onclick:stopPropagation>
+                <h3>Confirmar Finalização</h3>
+                <p class="modal-info-text">
+                    Tem certeza que deseja finalizar esta lactação? A data de término será registrada como hoje. Esta ação não poderá ser desfeita.
+                </p>
 
-                    <div class="footer-actions">
-                        <button @onclick="FecharModalConfirmacao" class="btn btn-secondary">Cancelar</button>
-                        <button @onclick="ConfirmarFinalizacao" class="btn btn-primary">Confirmar</button>
-                    </div>
+                <div class="footer-actions">
+                    <button @onclick="FecharModalConfirmacao" class="btn btn-secondary">Cancelar</button>
+                    <button @onclick="ConfirmarFinalizacao" class="btn btn-danger">Confirmar Finalização</button>
                 </div>
             </div>
+        </div>
     }
 </div>
 
@@ -131,51 +141,60 @@
         max-width: 1200px;
         margin: 0 auto;
         padding: 20px;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
 
-    .page-title {
+    /* === ESTILOS DO CABEÇALHO === */
+    .dashboard-header {
+        background: white;
+        border-radius: 8px;
+        padding: 20px 25px;
+        margin-bottom: 30px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+
+    .header-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 20px;
+    }
+
+    .welcome-section h1 {
+        font-size: 2.2rem;
         color: #023047;
-        text-align: center;
-        margin: 20px 0 30px;
+        margin: 0;
+        font-weight: 700;
     }
 
-    .current-date {
-        text-align: center;
+    .property-owner {
         color: #666;
-        margin-bottom: 20px;
-        font-size: 14px;
+        font-size: 1.1rem;
+        margin: 4px 0 0 0;
+        font-weight: 400;
+    }
+
+    .header-date-section {
+        font-size: 1rem;
+        font-weight: 500;
+        color: #4a5568;
+        background-color: #f8f9fa;
+        padding: 10px 16px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
     }
 
     .actions-container {
-        text-align: right;
+        display: flex;
+        justify-content: flex-end;
         margin-bottom: 25px;
-    }
-
-    .add-button {
-        background-color: #3a7ca5;
-        color: white;
-        border: none;
-        padding: 10px 20px;
-        border-radius: 5px;
-        cursor: pointer;
-        font-size: 16px;
-        display: inline-flex;
-        align-items: center;
-    }
-
-        .add-button:hover {
-            background-color: #2c6284;
-        }
-
-    .plus-icon {
-        margin-right: 8px;
-        font-weight: bold;
-        font-size: 18px;
     }
 
     .lactacoes-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
         gap: 20px;
     }
 
@@ -222,6 +241,7 @@
         display: flex;
         justify-content: space-between;
         margin-bottom: 8px;
+        flex-wrap: wrap;
     }
 
     .detail-label {
@@ -231,33 +251,51 @@
 
     .detail-value {
         color: #333;
+        font-weight: 500;
     }
 
     .card-actions {
         display: flex;
         justify-content: flex-end;
-        margin-top: 15px;
+        margin-top: 20px;
     }
 
+    /* === ESTILOS DOS BOTÕES === */
     .btn-action {
-        padding: 8px 12px;
+        padding: 10px 15px;
         border: none;
-        border-radius: 4px;
+        border-radius: 5px;
         cursor: pointer;
         font-size: 14px;
         display: flex;
         align-items: center;
-        gap: 5px;
+        gap: 8px;
+        font-weight: 600;
+        transition: background-color 0.2s;
     }
 
+        .btn-action .plus-icon {
+            margin-right: 2px;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .btn-action.add {
+            background-color: #8a5a44;
+            color: white;
+        }
+
+            .btn-action.add:hover {
+                background-color: #714a38;
+            }
+
         .btn-action.finalizar {
-            background-color: #ab2836;
-            opacity: 80%;
+            background-color: #dc3545;
             color: white;
         }
 
             .btn-action.finalizar:hover {
-                background-color: #f5c6cb;
+                background-color: #c82333;
             }
 
     .loading-message, .empty-message {
@@ -292,14 +330,24 @@
         margin-bottom: 20px;
     }
 
-    /* Modal styles */
+    @@keyframes spin {
+        0% {
+            transform: rotate(0deg);
+        }
+
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+
+    /* === ESTILOS DOS MODAIS === */
     .modal-overlay {
         position: fixed;
         top: 0;
         left: 0;
         right: 0;
         bottom: 0;
-        background-color: rgba(0, 0, 0, 0.5);
+        background-color: rgba(0, 0, 0, 0.6);
         display: flex;
         justify-content: center;
         align-items: center;
@@ -307,10 +355,10 @@
     }
 
     .modal-content {
-        background-color: white;
-        padding: 30px;
-        border-radius: 10px;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        background-color: #ffffff;
+        padding: 25px 35px;
+        border-radius: 15px;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
         width: 90%;
         max-width: 500px;
         max-height: 90vh;
@@ -320,18 +368,22 @@
         .modal-content h3 {
             margin-top: 0;
             color: #023047;
-            padding-bottom: 15px;
-            border-bottom: 1px solid #eee;
+            font-size: 24px;
+            font-weight: 600;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #e0e7ee;
             margin-bottom: 20px;
+            text-align: center;
         }
 
     .modal-info-text {
-        color: #666;
-        margin-bottom: 20px;
-        font-size: 14px;
+        color: #6c757d;
+        margin-bottom: 25px;
+        font-size: 15px;
+        text-align: center;
+        line-height: 1.5;
     }
 
-    /* Form styles */
     .form-group {
         margin-bottom: 20px;
     }
@@ -340,39 +392,61 @@
             display: block;
             margin-bottom: 8px;
             font-weight: 500;
-            color: #333;
+            color: #4a5568;
+            font-size: 14px;
         }
 
     .form-control {
         width: 100%;
-        padding: 10px;
-        border: 1px solid #ced4da;
-        border-radius: 4px;
-        font-size: 16px;
+        padding: 12px 16px;
+        border: 1px solid #cbd5e0;
+        border-radius: 8px;
+        font-size: 15px;
+        background-color: #f8f9fa;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        box-sizing: border-box;
     }
 
+        .form-control:focus {
+            outline: none;
+            border-color: #3a7ca5;
+            background-color: #fff;
+            box-shadow: 0 0 0 3px rgba(58, 124, 165, 0.15);
+        }
+
     select.form-control {
-        height: 40px;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+        padding-right: 40px;
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
+        background-repeat: no-repeat;
+        background-position: right 1rem center;
+        background-size: 16px 12px;
     }
 
     .footer-actions {
         display: flex;
         justify-content: flex-end;
-        gap: 10px;
-        margin-top: 25px;
+        gap: 12px;
+        margin-top: 30px;
+        padding-top: 20px;
+        border-top: 1px solid #e0e7ee;
     }
 
     .btn {
-        padding: 10px 20px;
-        border-radius: 5px;
+        padding: 12px 24px;
+        border-radius: 8px;
         cursor: pointer;
         font-size: 16px;
+        font-weight: 600;
+        border: none;
+        transition: all 0.3s ease;
     }
 
     .btn-primary {
         background-color: #3a7ca5;
         color: white;
-        border: none;
     }
 
         .btn-primary:hover {
@@ -382,28 +456,35 @@
         .btn-primary:disabled {
             background-color: #cccccc;
             cursor: not-allowed;
+            opacity: 0.7;
         }
 
     .btn-secondary {
         background-color: #6c757d;
         color: white;
-        border: none;
     }
 
         .btn-secondary:hover {
             background-color: #5a6268;
         }
 
-    .text-danger {
-        color: #dc3545;
-        font-size: 14px;
+    .btn-danger {
+        background-color: #dc3545;
+        color: white;
+        border: none;
+    }
+
+        .btn-danger:hover {
+            background-color: #c82333;
+        }
+
+    .validation-message {
+        color: #e53e3e;
+        font-size: 12px;
         margin-top: 5px;
         display: block;
     }
 
-    .fas {
-        font-size: 14px;
-    }
 </style>
 
 @code {
@@ -471,7 +552,7 @@
     {
         try
         {
-            AnimalSelecionadoId = null;
+            AnimalSelecionadoId = 0;
             DataInicio = DateTime.Now;
             MostrarErroAnimal = false;
             MostrarErroData = false;
@@ -512,18 +593,11 @@
 
     private async Task CriarLactacao()
     {
-        MostrarErroAnimal = false;
-        MostrarErroData = false;
+        MostrarErroAnimal = AnimalSelecionadoId == null || AnimalSelecionadoId == 0;
+        MostrarErroData = DataInicio > DateTime.Now.Date.AddDays(1); // Permite a data de hoje
 
-        if (!AnimalSelecionadoId.HasValue)
+        if (MostrarErroAnimal || MostrarErroData)
         {
-            MostrarErroAnimal = true;
-            return;
-        }
-
-        if (DataInicio > DateTime.Now)
-        {
-            MostrarErroData = true;
             return;
         }
 
@@ -539,21 +613,7 @@
                 };
 
             await LactacaoService.CriarLactacaoAsync(novaLactacao);
-
-            var animalSelecionado = Animais.FirstOrDefault(a => a.Id == AnimalSelecionadoId.Value);
-            if (animalSelecionado != null)
-            {
-                animalSelecionado.Lactante = true;
-                await AnimalService.AtualizarAnimalAsync(animalSelecionado);
-
-                var index = Animais.FindIndex(a => a.Id == animalSelecionado.Id);
-                if (index >= 0)
-                {
-                    Animais[index] = animalSelecionado;
-                }
-            }
-
-            await CarregarLactacoes();
+            await CarregarLactacoes(); // Recarrega para obter a nova lactação e o status atualizado do animal
             FecharModal();
         }
         catch (Exception ex)
@@ -577,25 +637,7 @@
                 StateHasChanged();
 
                 await LactacaoService.FinalizarLactacaoAsync(LactacaoParaFinalizarId.Value);
-
-                var lactacao = AnimaisLactacoes.FirstOrDefault(l => l.Id == LactacaoParaFinalizarId.Value);
-                if (lactacao != null)
-                {
-                    var animal = Animais.FirstOrDefault(a => a.Id == lactacao.AnimalId);
-                    if (animal != null)
-                    {
-                        animal.Lactante = false;
-                        await AnimalService.AtualizarAnimalAsync(animal);
-
-                        var index = Animais.FindIndex(a => a.Id == animal.Id);
-                        if (index >= 0)
-                        {
-                            Animais[index] = animal;
-                        }
-                    }
-
-                    await CarregarLactacoes();
-                }
+                await CarregarLactacoes();
             }
             catch (Exception ex)
             {
