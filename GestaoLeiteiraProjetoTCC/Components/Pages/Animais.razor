@@ -52,7 +52,7 @@
                         </div>
                         <div class="detail-item">
                             <span class="detail-label">Nascimento:</span>
-                            <span class="detail-value">@animal.DataNascimento</span>
+                            <span class="detail-value">@animal.DataNascimento?.ToString("dd/MM/yyyy")</span>
                         </div>
                         <div class="detail-item">
                             <span class="detail-label">Sexo:</span>
@@ -77,84 +77,89 @@
         </div>
     }
 
-    <!-- Modal de Cadastro/Edição -->
     @if (exibirModal)
     {
         <div class="modal-overlay" @onclick="FecharModal">
             <div class="modal-content" @onclick:stopPropagation>
-                <h3>@(animal.Id == 0 ? "Cadastrar Animal" : "Editar Animal")</h3>
+                <h3>@(animal.Id == 0 ? "Cadastrar Novo Animal" : "Editar Animal")</h3>
 
                 <EditForm Model="animal" OnValidSubmit="SalvarAnimal">
                     <DataAnnotationsValidator />
-                    <div class="form-group">
-                        <label for="nomeAnimal">Nome do Animal:</label>
-                        <InputText id="nomeAnimal" @bind-Value="animal.NomeAnimal" class="form-control" placeholder="Digite o nome do animal..." />
-                        <ValidationMessage For="@(() => animal.NomeAnimal)" />
-                    </div>
-
-                    <div class="form-group">
-                        <label for="numeroIdentificador">Brinco ou RFID:</label>
-                        <InputText id="numeroIdentificador" @bind-Value="animal.NumeroIdentificador" class="form-control" placeholder="Digite o número do brinco ou RFID..." />
-                        <ValidationMessage For="@(() => animal.NumeroIdentificador)" />
-                    </div>
-
-                    <div class="form-group">
-                        <label for="racaId">Raça:</label>
-                        <InputSelect id="racaId" @bind-Value="animal.RacaId" class="form-control">
-                            <option value="0" disabled>Clique para selecionar uma raça...</option>
-                            @foreach (var raca in racas)
-                            {
-                                <option value="@raca.Id">@raca.NomeRaca</option>
-                            }
-                        </InputSelect>
-                        <ValidationMessage For="@(() => animal.RacaId)" />
-                    </div>
-
-                    <div class="form-group">
-                        <label for="dataNascimento">Data de Nascimento:</label>
-                        <InputDate id="dataNascimento" @bind-Value="animal.DataNascimento" class="form-control" />
-                    </div>
-
-                    <div class="form-group">
-                        <label for="sexo">Sexo:</label>
-                        <InputSelect id="sexo" @bind-Value="animal.Sexo" @onchange="(e) => OnSexoChanged(e.Value.ToString())" class="form-control">
-                            <option value="" disabled>Clique para selecionar o sexo...</option>
-                            <option value="Macho">Macho</option>
-                            <option value="Fêmea">Fêmea</option>
-                        </InputSelect>
-                        <ValidationMessage For="@(() => animal.Sexo)" />
-                    </div>
-
-                    <div class="form-group">
-                        <label for="categoriaAnimal">Categoria:</label>
-                        <InputSelect id="categoriaAnimal" @bind-Value="animal.CategoriaAnimal" @onchange="(e) => OnCategoriaChanged(e.Value.ToString())" class="form-control">
-                            <option value="" disabled>Clique para selecionar a categoria...</option>
-                            <option value="Bezerro">Bezerro</option>
-                            <option value="Novilha">Novilha</option>
-                            <option value="Vaca">Vaca</option>
-                            <option value="Touro">Touro</option>
-                        </InputSelect>
-                        <ValidationMessage For="@(() => animal.CategoriaAnimal)" />
-                    </div>
-
-                    @if (MostrarOpcoesVaca)
-                    {
+                    <div class="form-grid">
                         <div class="form-group">
-                            <div class="form-check">
-                                <InputCheckbox id="prenha" @bind-Value="animal.Prenha" class="form-check-input" />
-                                <label for="prenha" class="form-check-label">Prenha</label>
-                            </div>
+                            <label for="nomeAnimal">Nome do Animal</label>
+                            <InputText id="nomeAnimal" @bind-Value="animal.NomeAnimal" class="form-control" placeholder="Digite o nome do animal..." />
+                            <ValidationMessage For="@(() => animal.NomeAnimal)" />
                         </div>
-                    }
 
-                    <div class="form-group">
-                        <label for="status">Status:</label>
-                        <InputSelect id="status" @bind-Value="animal.Status" class="form-control">
-                            <option value="Ativo">Ativo</option>
-                            <option value="Inativo">Inativo</option>
-                            <option value="Baixa">Baixa</option>
-                        </InputSelect>
-                        <ValidationMessage For="@(() => animal.Status)" />
+                        <div class="form-group">
+                            <label for="numeroIdentificador">Brinco / RFID</label>
+                            <InputText id="numeroIdentificador" @bind-Value="animal.NumeroIdentificador" class="form-control" placeholder="Digite o número do brinco ou RFID..." />
+                            <ValidationMessage For="@(() => animal.NumeroIdentificador)" />
+                        </div>
+                    </div>
+
+                    <div class="form-grid-2-col">
+                        <div class="form-group">
+                            <label for="sexo">Sexo</label>
+                            <InputSelect id="sexo" @bind-Value="animal.Sexo" @onchange="(e) => OnSexoChanged(e.Value.ToString())" class="form-control">
+                                <option value="" disabled selected>Clique para selecionar o sexo...</option>
+                                <option value="Macho">Macho</option>
+                                <option value="Fêmea">Fêmea</option>
+                            </InputSelect>
+                            <ValidationMessage For="@(() => animal.Sexo)" />
+                        </div>
+
+                        <div class="form-group">
+                            <label for="categoriaAnimal">Categoria</label>
+                            <InputSelect id="categoriaAnimal" @bind-Value="animal.CategoriaAnimal" @onchange="(e) => OnCategoriaChanged(e.Value.ToString())" class="form-control">
+                                <option value="" disabled selected>Clique para selecionar a categoria...</option>
+                                <option value="Bezerro">Bezerro</option>
+                                <option value="Novilha">Novilha</option>
+                                <option value="Vaca">Vaca</option>
+                                <option value="Touro">Touro</option>
+                            </InputSelect>
+                            <ValidationMessage For="@(() => animal.CategoriaAnimal)" />
+                        </div>
+                    </div>
+
+                    <div class="form-grid-2-col">
+                        <div class="form-group">
+                            <label for="dataNascimento">Data de Nascimento</label>
+                            <InputDate id="dataNascimento" @bind-Value="animal.DataNascimento" class="form-control" />
+                            <ValidationMessage For="@(() => animal.DataNascimento)" />
+                        </div>
+
+                        <div class="form-group">
+                            <label for="racaId">Raça</label>
+                            <InputSelect id="racaId" @bind-Value="animal.RacaId" class="form-control">
+                                <option value="0" disabled selected>Clique para selecionar uma raça...</option>
+                                @foreach (var raca in racas)
+                                {
+                                    <option value="@raca.Id">@raca.NomeRaca</option>
+                                }
+                            </InputSelect>
+                            <ValidationMessage For="@(() => animal.RacaId)" />
+                        </div>
+                    </div>
+
+                    <div class="form-grid-2-col">
+                        <div class="form-group">
+                            <label for="status">Status</label>
+                            <InputSelect id="status" @bind-Value="animal.Status" class="form-control">
+                                <option value="Ativo">Ativo</option>
+                                <option value="Inativo">Inativo</option>
+                                <option value="Baixa">Baixa</option>
+                            </InputSelect>
+                            <ValidationMessage For="@(() => animal.Status)" />
+                        </div>
+                        @if (MostrarOpcoesVaca)
+                        {
+                            <div class="form-group checkbox-group">
+                                <label for="prenha" class="form-check-label">Prenha</label>
+                                <InputCheckbox id="prenha" @bind-Value="animal.Prenha" class="form-check-input" />
+                            </div>
+                        }
                     </div>
 
                     <div class="footer-actions">
@@ -173,6 +178,14 @@
 </div>
 
 <style>
+    /* Estilos gerais */
+    body, html {
+        margin: 0;
+        padding: 0;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: #f8f9fa;
+    }
+
     .page-container {
         max-width: 1200px;
         margin: 0 auto;
@@ -353,14 +366,14 @@
         }
     }
 
-    /* Modal styles */
+    /* === MODAL & FORM STYLES (NEW) === */
     .modal-overlay {
         position: fixed;
         top: 0;
         left: 0;
         right: 0;
         bottom: 0;
-        background-color: rgba(0, 0, 0, 0.5);
+        background-color: rgba(0, 0, 0, 0.6);
         display: flex;
         justify-content: center;
         align-items: center;
@@ -368,12 +381,12 @@
     }
 
     .modal-content {
-        background-color: white;
-        padding: 30px;
-        border-radius: 10px;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        background-color: #ffffff;
+        padding: 25px 35px;
+        border-radius: 15px;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
         width: 90%;
-        max-width: 500px;
+        max-width: 650px;
         max-height: 90vh;
         overflow-y: auto;
     }
@@ -381,77 +394,149 @@
         .modal-content h3 {
             margin-top: 0;
             color: #023047;
-            padding-bottom: 15px;
-            border-bottom: 1px solid #eee;
-            margin-bottom: 20px;
+            font-size: 24px;
+            font-weight: 600;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #e0e7ee;
+            margin-bottom: 25px;
+            text-align: center;
         }
 
-    /* Form styles */
+    .form-grid, .form-grid-2-col {
+        display: grid;
+        gap: 22px;
+        margin-bottom: 22px;
+    }
+
+    .form-grid-2-col {
+        grid-template-columns: 1fr 1fr;
+    }
+
     .form-group {
-        margin-bottom: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
     }
 
         .form-group label {
-            display: block;
-            margin-bottom: 8px;
             font-weight: 500;
-            color: #333;
+            color: #4a5568;
+            font-size: 14px;
         }
 
     .form-control {
         width: 100%;
-        padding: 10px;
-        border: 1px solid #ced4da;
-        border-radius: 4px;
-        font-size: 16px;
+        padding: 12px 16px;
+        border: 1px solid #cbd5e0;
+        border-radius: 8px;
+        font-size: 15px;
+        background-color: #f8f9fa;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        box-sizing: border-box;
     }
 
-        /* Estilo especial para options disabled - placeholders */
-        .form-control option[disabled] {
-            color: #6c757d !important;
-            font-style: italic;
-            background-color: #f8f9fa;
-            opacity: 0.8;
+        .form-control:focus {
+            outline: none;
+            border-color: #3a7ca5;
+            background-color: #fff;
+            box-shadow: 0 0 0 3px rgba(58, 124, 165, 0.15);
         }
 
-        /* Placeholder para inputs text */
         .form-control::placeholder {
-            color: #6c757d;
-            font-style: italic;
-            opacity: 0.8;
+            color: #a0aec0;
         }
 
-    .form-check {
-        display: flex;
-        align-items: center;
+    select.form-control {
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+        padding-right: 40px;
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
+        background-repeat: no-repeat;
+        background-position: right 1rem center;
+        background-size: 16px 12px;
     }
 
-    .form-check-input {
-        margin-right: 10px;
+    .checkbox-group {
+        display: flex;
+        flex-direction: row-reverse; /* Puts checkbox first */
+        justify-content: flex-end; /* Aligns to the right */
+        align-items: center;
+        gap: 12px;
+        padding-top: 30px; /* Aligns with other form fields */
     }
 
     .form-check-label {
-        margin-bottom: 0;
+        margin: 0;
+        font-weight: 500;
+        color: #4a5568;
+        font-size: 14px;
+        cursor: pointer;
     }
+
+    .form-check-input {
+        -webkit-appearance: none;
+        appearance: none;
+        background-color: #f8f9fa;
+        margin: 0;
+        font: inherit;
+        color: currentColor;
+        width: 1.25em;
+        height: 1.25em;
+        border: 1px solid #cbd5e0;
+        border-radius: 5px;
+        display: grid;
+        place-content: center;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+        .form-check-input::before {
+            content: "";
+            width: 0.65em;
+            height: 0.65em;
+            transform: scale(0);
+            transition: 120ms transform ease-in-out;
+            box-shadow: inset 1em 1em #3a7ca5;
+            transform-origin: bottom left;
+            clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+        }
+
+        .form-check-input:checked {
+            border-color: #3a7ca5;
+        }
+
+            .form-check-input:checked::before {
+                transform: scale(1);
+            }
+
+        .form-check-input:focus-visible {
+            outline: 2px solid #3a7ca5;
+            outline-offset: 2px;
+        }
 
     .footer-actions {
         display: flex;
         justify-content: flex-end;
-        gap: 10px;
-        margin-top: 25px;
+        gap: 12px;
+        margin-top: 30px;
+        padding-top: 20px;
+        border-top: 1px solid #e0e7ee;
     }
 
     .btn {
-        padding: 10px 20px;
-        border-radius: 5px;
+        padding: 12px 24px;
+        border-radius: 8px;
         cursor: pointer;
         font-size: 16px;
+        font-weight: 600;
+        border: none;
+        transition: all 0.3s ease;
     }
 
     .btn-primary {
         background-color: #3a7ca5;
         color: white;
-        border: none;
     }
 
         .btn-primary:hover {
@@ -461,7 +546,6 @@
     .btn-secondary {
         background-color: #6c757d;
         color: white;
-        border: none;
     }
 
         .btn-secondary:hover {
@@ -469,9 +553,9 @@
         }
 
     .alert {
-        padding: 10px 15px;
-        border-radius: 4px;
-        margin-top: 15px;
+        padding: 15px;
+        border-radius: 8px;
+        margin-top: 20px;
     }
 
     .alert-success {
@@ -480,15 +564,10 @@
         border: 1px solid #c3e6cb;
     }
 
-    .text-danger {
-        color: #dc3545;
-        font-size: 14px;
-        margin-top: 5px;
-        display: block;
-    }
-
-    .fas {
-        font-size: 14px;
+    .validation-message {
+        color: #e53e3e;
+        font-size: 12px;
+        margin-top: 4px;
     }
 </style>
 
