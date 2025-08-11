@@ -81,9 +81,9 @@
                     </div>
                 </div>
 
-                <div class="col-md-2 d-flex align-items-end">
-                    <div class="form-group w-100">
-                        <button class="btn btn-primary w-100" @onclick="BuscarProducoes">
+                <div class="col-md-2">
+                    <div class="form-group">
+                        <label>&nbsp;</label> <button class="btn btn-primary w-100" @onclick="BuscarProducoes">
                             <i class="fas fa-search"></i> Buscar
                         </button>
                     </div>
@@ -312,10 +312,6 @@
             background-color: #2c6284;
         }
 
-    .d-flex.align-items-end .form-group {
-        margin-bottom: 0;
-    }
-
     /* === ESTILOS DOS CARDS DE RESUMO === */
     .summary-container {
         margin-bottom: 30px;
@@ -466,7 +462,6 @@
     private List<Lactacao> lactacoes = new();
     private List<ProducaoLeiteira> producoesLeiteira;
 
-    // Mudança: usar string para controlar "todos" vs IDs específicos
     private string animalSelecionadoString = "todos";
     private string lactacaoSelecionadaString = "todas";
 
@@ -487,7 +482,6 @@
             {
                 animais = await AnimalService.ObterAnimaisQueTiveramLactacao(propriedadeLogada.Id);
 
-                // Carregar todas as lactações de todos os animais
                 await CarregarTodasLactacoes();
             }
         }
@@ -531,12 +525,10 @@
         {
             if (animalSelecionadoString == "todos")
             {
-                // Carregar todas as lactações
                 await CarregarTodasLactacoes();
             }
             else if (int.TryParse(animalSelecionadoString, out var id))
             {
-                // Carregar lactações do animal específico
                 var listaLactacoes = await LactacaoService.ObterLactacoesPorAnimalAsync(id);
                 lactacoes = listaLactacoes.OrderByDescending(l => l.DataInicio).ToList();
             }
@@ -545,7 +537,6 @@
                 lactacoes = new List<Lactacao>();
             }
 
-            // Reset apenas a lactação selecionada, mas mantém a tabela
             lactacaoSelecionadaString = "todas";
             StateHasChanged();
         }
@@ -557,7 +548,6 @@
 
     private void OnLactacaoChange()
     {
-        // Não resetar os resultados aqui - apenas quando clicar em buscar
         StateHasChanged();
     }
 
@@ -572,10 +562,8 @@
 
             if (animalSelecionadoString == "todos")
             {
-                // Buscar produções de todos os animais
                 if (lactacaoSelecionadaString == "todas")
                 {
-                    // Todas as lactações de todos os animais
                     foreach (var lactacao in lactacoes)
                     {
                         var producoesLactacao = await ProducaoLeiteiraService.ObterProducoesPorLactacaoAsync(lactacao.Id);
@@ -584,17 +572,14 @@
                 }
                 else if (int.TryParse(lactacaoSelecionadaString, out var lactacaoId))
                 {
-                    // Lactação específica (pode ser de qualquer animal)
                     var producoesLactacao = await ProducaoLeiteiraService.ObterProducoesPorLactacaoAsync(lactacaoId);
                     producoesLeiteira.AddRange(producoesLactacao);
                 }
             }
             else if (int.TryParse(animalSelecionadoString, out var animalId))
             {
-                // Animal específico
                 if (lactacaoSelecionadaString == "todas")
                 {
-                    // Todas as lactações do animal específico
                     foreach (var lactacao in lactacoes)
                     {
                         var producoesLactacao = await ProducaoLeiteiraService.ObterProducoesPorLactacaoAsync(lactacao.Id);
@@ -603,13 +588,11 @@
                 }
                 else if (int.TryParse(lactacaoSelecionadaString, out var lactacaoId))
                 {
-                    // Lactação específica do animal específico
                     var producoesLactacao = await ProducaoLeiteiraService.ObterProducoesPorLactacaoAsync(lactacaoId);
                     producoesLeiteira.AddRange(producoesLactacao);
                 }
             }
 
-            // Aplicar filtros de data
             if (dataInicio.HasValue)
             {
                 producoesLeiteira = producoesLeiteira.Where(p => p.Data.Date >= dataInicio.Value.Date).ToList();
