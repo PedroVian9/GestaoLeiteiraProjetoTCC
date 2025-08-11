@@ -88,20 +88,20 @@
                     <DataAnnotationsValidator />
                     <div class="form-group">
                         <label for="nomeAnimal">Nome do Animal:</label>
-                        <InputText id="nomeAnimal" @bind-Value="animal.NomeAnimal" class="form-control" />
+                        <InputText id="nomeAnimal" @bind-Value="animal.NomeAnimal" class="form-control" placeholder="Digite o nome do animal..." />
                         <ValidationMessage For="@(() => animal.NomeAnimal)" />
                     </div>
 
                     <div class="form-group">
                         <label for="numeroIdentificador">Brinco ou RFID:</label>
-                        <InputText id="numeroIdentificador" @bind-Value="animal.NumeroIdentificador" class="form-control" />
+                        <InputText id="numeroIdentificador" @bind-Value="animal.NumeroIdentificador" class="form-control" placeholder="Digite o número do brinco ou RFID..." />
                         <ValidationMessage For="@(() => animal.NumeroIdentificador)" />
                     </div>
 
                     <div class="form-group">
                         <label for="racaId">Raça:</label>
                         <InputSelect id="racaId" @bind-Value="animal.RacaId" class="form-control">
-                            <option value="">Selecione uma raça...</option>
+                            <option value="0" disabled>Clique para selecionar uma raça...</option>
                             @foreach (var raca in racas)
                             {
                                 <option value="@raca.Id">@raca.NomeRaca</option>
@@ -118,7 +118,7 @@
                     <div class="form-group">
                         <label for="sexo">Sexo:</label>
                         <InputSelect id="sexo" @bind-Value="animal.Sexo" @onchange="(e) => OnSexoChanged(e.Value.ToString())" class="form-control">
-                            <option value="">Selecione...</option>
+                            <option value="" disabled>Clique para selecionar o sexo...</option>
                             <option value="Macho">Macho</option>
                             <option value="Fêmea">Fêmea</option>
                         </InputSelect>
@@ -128,7 +128,7 @@
                     <div class="form-group">
                         <label for="categoriaAnimal">Categoria:</label>
                         <InputSelect id="categoriaAnimal" @bind-Value="animal.CategoriaAnimal" @onchange="(e) => OnCategoriaChanged(e.Value.ToString())" class="form-control">
-                            <option value="">Selecione...</option>
+                            <option value="" disabled>Clique para selecionar a categoria...</option>
                             <option value="Bezerro">Bezerro</option>
                             <option value="Novilha">Novilha</option>
                             <option value="Vaca">Vaca</option>
@@ -150,7 +150,6 @@
                     <div class="form-group">
                         <label for="status">Status:</label>
                         <InputSelect id="status" @bind-Value="animal.Status" class="form-control">
-                            <option value="">Selecione...</option>
                             <option value="Ativo">Ativo</option>
                             <option value="Inativo">Inativo</option>
                             <option value="Baixa">Baixa</option>
@@ -407,6 +406,21 @@
         font-size: 16px;
     }
 
+        /* Estilo especial para options disabled - placeholders */
+        .form-control option[disabled] {
+            color: #6c757d !important;
+            font-style: italic;
+            background-color: #f8f9fa;
+            opacity: 0.8;
+        }
+
+        /* Placeholder para inputs text */
+        .form-control::placeholder {
+            color: #6c757d;
+            font-style: italic;
+            opacity: 0.8;
+        }
+
     .form-check {
         display: flex;
         align-items: center;
@@ -526,8 +540,12 @@
             {
                 PropriedadeId = propriedadeId,
                 DataNascimento = DateTime.Today,
-                Status = "Ativo",
-                Prenha = false
+                Status = "Ativo", // Apenas o Status vem pré-definido
+                Prenha = false,
+            // Campos que devem vir vazios para o usuário selecionar
+                Sexo = "",
+                CategoriaAnimal = "",
+                RacaId = 0
             };
         exibirModal = true;
         mensagemSucesso = null;

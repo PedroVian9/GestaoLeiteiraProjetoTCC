@@ -86,9 +86,9 @@
             </div>
         </div>
 
-        <!-- Main Content Grid -->
+        <!-- Main Content Grid - Reorganized -->
         <div class="dashboard-grid">
-            <!-- Alerts Section - Moved to top priority -->
+            <!-- Alerts Section - Left Column -->
             <div class="alerts-section">
                 <h3 class="section-title">
                     <i class="fas fa-exclamation-triangle"></i>
@@ -115,7 +115,7 @@
                 </div>
             </div>
 
-            <!-- Right Column - Production Stats -->
+            <!-- Production Section - Right Column -->
             <div class="production-section">
                 <h3 class="section-title">
                     <i class="fas fa-chart-line"></i>
@@ -218,11 +218,12 @@
             width: 20px;
         }
 
-    /* Main Grid Layout */
+    /* Main Grid Layout - Reorganized to equal columns */
     .dashboard-grid {
         display: grid;
-        grid-template-columns: 2fr 1fr;
+        grid-template-columns: 1fr 1fr;
         gap: 20px;
+        align-items: start;
     }
 
     /* Section Titles */
@@ -306,18 +307,108 @@
         display: none;
     }
 
-    /* Production Section */
+    /* Alerts Section - Now with equal height and scroll */
+    .alerts-section {
+        background: white;
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        height: 400px;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .alerts-container {
+        flex: 1;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        padding-right: 8px;
+    }
+
+        /* Custom scrollbar for alerts */
+        .alerts-container::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .alerts-container::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 3px;
+        }
+
+        .alerts-container::-webkit-scrollbar-thumb {
+            background: #3a7ca5;
+            border-radius: 3px;
+        }
+
+            .alerts-container::-webkit-scrollbar-thumb:hover {
+                background: #2c5f7f;
+            }
+
+    .alert-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        background: #fff5f5;
+        padding: 12px 15px;
+        border-radius: 6px;
+        border-left: 4px solid #dc3545;
+        color: #721c24;
+        font-weight: 500;
+        font-size: 0.9rem;
+        flex-shrink: 0;
+    }
+
+        .alert-item i {
+            color: #dc3545;
+            font-size: 1rem;
+            margin-top: 2px;
+            flex-shrink: 0;
+        }
+
+        .alert-item span {
+            line-height: 1.4;
+        }
+
+    .no-alerts {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        background: #e0f2f1;
+        padding: 30px 15px;
+        border-radius: 6px;
+        border-left: 4px solid #3a7ca5;
+        color: #023047;
+        font-weight: 500;
+        font-size: 0.9rem;
+        text-align: center;
+        flex: 1;
+    }
+
+        .no-alerts i {
+            color: #3a7ca5;
+            font-size: 1.2rem;
+        }
+
+    /* Production Section - Now with equal height */
     .production-section {
         background: white;
         border-radius: 8px;
         padding: 20px;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        height: 400px;
+        display: flex;
+        flex-direction: column;
     }
 
     .production-grid {
+        flex: 1;
         display: flex;
         flex-direction: column;
         gap: 12px;
+        overflow: hidden;
     }
 
     .production-card {
@@ -326,10 +417,16 @@
         padding: 15px;
         transition: all 0.2s ease;
         border-left: 4px solid #3a7ca5;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        min-height: 0;
     }
 
         .production-card:hover {
             background: #e8f4f8;
+            transform: translateY(-2px);
         }
 
         .production-card.today {
@@ -351,7 +448,7 @@
         display: flex;
         align-items: center;
         gap: 10px;
-        margin-bottom: 15px;
+        margin-bottom: 8px;
     }
 
         .production-header i {
@@ -361,73 +458,23 @@
         .production-header h4 {
             color: #023047;
             margin: 0;
-            font-size: 1.1rem;
+            font-size: 1rem;
             font-weight: 600;
         }
 
     .production-value {
-        font-size: 2.2rem;
+        font-size: 1.8rem;
         font-weight: 700;
         color: #023047;
         display: flex;
         align-items: baseline;
-        gap: 8px;
+        gap: 6px;
     }
 
         .production-value .unit {
-            font-size: 1.2rem;
+            font-size: 1rem;
             color: #666;
             font-weight: 500;
-        }
-
-    /* Alerts Section */
-    .alerts-section {
-        background: white;
-        border-radius: 8px;
-        padding: 20px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    }
-
-    .alerts-container {
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-    }
-
-    .alert-item {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        background: #fff5f5;
-        padding: 12px 15px;
-        border-radius: 6px;
-        border-left: 4px solid #dc3545;
-        color: #721c24;
-        font-weight: 500;
-        font-size: 0.9rem;
-    }
-
-        .alert-item i {
-            color: #dc3545;
-            font-size: 1rem;
-        }
-
-    .no-alerts {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        background: #e0f2f1;
-        padding: 15px;
-        border-radius: 6px;
-        border-left: 4px solid #3a7ca5;
-        color: #023047;
-        font-weight: 500;
-        font-size: 0.9rem;
-    }
-
-        .no-alerts i {
-            color: #3a7ca5;
-            font-size: 1.2rem;
         }
 
     /* Loading State */
