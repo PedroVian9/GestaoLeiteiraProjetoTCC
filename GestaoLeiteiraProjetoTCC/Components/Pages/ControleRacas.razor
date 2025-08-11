@@ -4,8 +4,18 @@
 @inject IRacaService RacaService
 
 <div class="page-container">
-    <h3 class="page-title">Controle de Raças</h3>
-    <div class="current-date">@DateTime.Now.ToString("dd/MM/yyyy")</div>
+    <div class="dashboard-header">
+        <div class="header-content">
+            <div class="welcome-section">
+                <h1>Controle de Raças</h1>
+                <p class="property-owner">Adicione, edite e remova as raças do seu rebanho</p>
+            </div>
+            <div class="header-date-section">
+                <i class="fas fa-calendar-alt"></i>
+                <span>@DateTime.Now.ToString("dd/MM/yyyy")</span>
+            </div>
+        </div>
+    </div>
 
     <div class="raca-actions">
         <button class="btn-action add" @onclick="AbrirModalNova">
@@ -37,45 +47,47 @@
                     <div class="card-header">
                         <span class="raca-name">@raca.NomeRaca</span>
                         <span class="status-badge @raca.Status.ToLower()">
-                            @(raca.Status == "Sistema" ? "Criado pelo Sistema" : "Criado pelo Usuário")
+                            @(raca.Status == "Sistema" ? "Padrão do Sistema" : "Criado pelo Usuário")
                         </span>
                     </div>
 
-                    @if (PodeEditarOuExcluir(raca))
-                    {
-                        <div class="card-actions">
-                            <button class="btn-action editar" @onclick="() => AbrirModalEditar(raca)">
-                                <i class="fas fa-edit"></i> Editar
-                            </button>
-                            <button class="btn-action excluir" @onclick="() => ExcluirRaca(raca.Id)">
-                                <i class="fas fa-trash"></i> Excluir
-                            </button>
-                        </div>
-                    }
-                    else
-                    {
-                        <div class="card-actions">
-                            <span class="sistema-notice">Raça do sistema - não editável</span>
-                        </div>
-                    }
+                    <div class="card-body">
+                        @if (PodeEditarOuExcluir(raca))
+                        {
+                            <div class="card-actions">
+                                <button class="btn-action editar" @onclick="() => AbrirModalEditar(raca)">
+                                    <i class="fas fa-edit"></i> Editar
+                                </button>
+                                <button class="btn-action excluir" @onclick="() => ExcluirRaca(raca.Id)">
+                                    <i class="fas fa-trash"></i> Excluir
+                                </button>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="sistema-notice">
+                                <i class="fas fa-info-circle"></i>
+                                <span>Raça padrão não pode ser modificada.</span>
+                            </div>
+                        }
+                    </div>
                 </div>
             }
         </div>
     }
 
-    <!-- Modal de Cadastro/Edição -->
     @if (exibirModal)
     {
         <div class="modal-overlay" @onclick="FecharModal">
             <div class="modal-content" @onclick:stopPropagation>
-                <h3>@(racaAtual.Id == 0 ? "Cadastrar Raça" : "Editar Raça")</h3>
+                <h3>@(racaAtual.Id == 0 ? "Cadastrar Nova Raça" : "Editar Raça")</h3>
 
                 <EditForm Model="racaAtual" OnValidSubmit="SalvarRaca">
                     <DataAnnotationsValidator />
 
                     <div class="form-group">
-                        <label for="nomeRaca">Nome da Raça:</label>
-                        <InputText id="nomeRaca" @bind-Value="racaAtual.NomeRaca" class="form-control" placeholder="Digite o nome da raça" />
+                        <label for="nomeRaca">Nome da Raça</label>
+                        <InputText id="nomeRaca" @bind-Value="racaAtual.NomeRaca" class="form-control" placeholder="Ex: Holandesa, Gir Leiteiro..." />
                         <ValidationMessage For="@(() => racaAtual.NomeRaca)" />
                     </div>
 
@@ -87,29 +99,27 @@
 
                 @if (mensagemSucesso != null)
                 {
-                    <div class="alert alert-success mt-3">@mensagemSucesso</div>
+                    <div class="alert alert-success">@mensagemSucesso</div>
                 }
 
                 @if (!string.IsNullOrEmpty(MensagemErro))
                 {
-                    <div class="alert alert-danger mt-3">@MensagemErro</div>
+                    <div class="alert alert-danger">@MensagemErro</div>
                 }
             </div>
         </div>
     }
 
-    <!-- Modal de Confirmação de Exclusão -->
     @if (exibirModalExclusao)
     {
         <div class="modal-overlay" @onclick="FecharModalExclusao">
-            <div class="modal-content confirmation-modal" @onclick:stopPropagation>
+            <div class="modal-content" @onclick:stopPropagation>
                 <h3>Confirmar Exclusão</h3>
-                <p>Tem certeza de que deseja excluir a raça "<strong>@racaParaExcluir?.NomeRaca</strong>"?</p>
-                <p class="warning-text">Esta ação não pode ser desfeita.</p>
+                <p class="modal-info-text">Tem certeza de que deseja excluir a raça "<strong>@racaParaExcluir?.NomeRaca</strong>"? Esta ação não pode ser desfeita.</p>
 
                 <div class="footer-actions">
                     <button type="button" class="btn btn-secondary" @onclick="FecharModalExclusao">Cancelar</button>
-                    <button type="button" class="btn btn-danger" @onclick="ConfirmarExclusao">Excluir</button>
+                    <button type="button" class="btn btn-danger" @onclick="ConfirmarExclusao">Excluir Raça</button>
                 </div>
             </div>
         </div>
@@ -121,20 +131,49 @@
         max-width: 1200px;
         margin: 0 auto;
         padding: 20px;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
 
-    .page-title {
-        color: #023047;
-        text-align: center;
-        margin: 20px 0 30px;
-    }
-
-    .current-date {
-        text-align: center;
-        color: #666;
+    /* === ESTILOS DO CABEÇALHO === */
+    .dashboard-header {
+        background: white;
+        border-radius: 8px;
+        padding: 20px 25px;
         margin-bottom: 30px;
-        font-size: 16px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+
+    .header-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 20px;
+    }
+
+    .welcome-section h1 {
+        font-size: 2.2rem;
+        color: #023047;
+        margin: 0;
+        font-weight: 700;
+    }
+
+    .property-owner {
+        color: #666;
+        font-size: 1.1rem;
+        margin: 4px 0 0 0;
+        font-weight: 400;
+    }
+
+    .header-date-section {
+        font-size: 1rem;
         font-weight: 500;
+        color: #4a5568;
+        background-color: #f8f9fa;
+        padding: 10px 16px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
     }
 
     .raca-actions {
@@ -145,31 +184,25 @@
 
     .racas-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-        gap: 15px;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 20px;
     }
 
     .raca-card {
         background: white;
-        border-radius: 8px;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-        padding: 15px;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         border-left: 4px solid #8a5a44;
+        display: flex;
+        flex-direction: column;
     }
 
     .card-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 15px;
-        padding-bottom: 10px;
+        padding: 15px 20px;
         border-bottom: 1px solid #eee;
-    }
-
-    .plus-icon {
-        margin-right: 8px;
-        font-weight: bold;
-        font-size: 18px;
     }
 
     .raca-name {
@@ -179,10 +212,10 @@
     }
 
     .status-badge {
-        font-size: 10px;
-        padding: 3px 8px;
-        border-radius: 12px;
-        font-weight: bold;
+        font-size: 11px;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-weight: 600;
         text-transform: none;
         white-space: nowrap;
     }
@@ -197,84 +230,78 @@
             color: white;
         }
 
-        .status-badge.ativo {
-            background-color: #28a745;
-            color: white;
-        }
-
-    .card-details {
-        margin-bottom: 15px;
-    }
-
-    .detail-item {
+    .card-body {
+        padding: 20px;
+        flex-grow: 1;
         display: flex;
-        justify-content: space-between;
-        margin-bottom: 8px;
-        flex-wrap: wrap;
-    }
-
-    .detail-label {
-        font-weight: 500;
-        color: #555;
-        min-width: 120px;
-    }
-
-    .detail-value {
-        color: #333;
-        text-align: right;
-        flex: 1;
+        align-items: flex-end;
+        justify-content: flex-end;
     }
 
     .card-actions {
         display: flex;
         justify-content: flex-end;
-        margin-top: 15px;
         gap: 10px;
+        width: 100%;
     }
 
     .sistema-notice {
-        font-size: 12px;
+        font-size: 13px;
         color: #6c757d;
         font-style: italic;
-        padding: 8px 12px;
-        background-color: #f8f9fa;
-        border-radius: 4px;
-        border: 1px solid #e9ecef;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        width: 100%;
+        justify-content: flex-end;
     }
 
+    /* === ESTILOS DOS BOTÕES === */
     .btn-action {
-        padding: 8px 12px;
+        padding: 10px 15px;
         border: none;
         border-radius: 5px;
         cursor: pointer;
         font-size: 14px;
         display: flex;
         align-items: center;
-        gap: 6px;
-        font-weight: 500;
-        text-decoration: none;
+        gap: 8px;
+        font-weight: 600;
+        transition: background-color 0.2s;
     }
+
+        .btn-action .plus-icon {
+            margin-right: 2px;
+            font-weight: bold;
+            font-size: 18px;
+        }
 
         .btn-action.add {
             background-color: #8a5a44;
             color: white;
-            padding: 10px 15px;
         }
+
+            .btn-action.add:hover {
+                background-color: #714a38;
+            }
 
         .btn-action.editar {
             background-color: #17a2b8;
             color: white;
         }
 
+            .btn-action.editar:hover {
+                background-color: #138496;
+            }
+
         .btn-action.excluir {
             background-color: #dc3545;
             color: white;
         }
 
-        .btn-action:hover {
-            opacity: 0.9;
-            transform: translateY(-1px);
-        }
+            .btn-action.excluir:hover {
+                background-color: #c82333;
+            }
 
     .loading-message, .empty-message {
         text-align: center;
@@ -308,14 +335,24 @@
         margin-bottom: 20px;
     }
 
-    /* Modal styles */
+    @@keyframes spin {
+        0% {
+            transform: rotate(0deg);
+        }
+
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+
+    /* === ESTILOS DOS MODAIS === */
     .modal-overlay {
         position: fixed;
         top: 0;
         left: 0;
         right: 0;
         bottom: 0;
-        background-color: rgba(0, 0, 0, 0.5);
+        background-color: rgba(0, 0, 0, 0.6);
         display: flex;
         justify-content: center;
         align-items: center;
@@ -323,77 +360,82 @@
     }
 
     .modal-content {
-        background-color: white;
-        padding: 30px;
-        border-radius: 10px;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        background-color: #ffffff;
+        padding: 25px 35px;
+        border-radius: 15px;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
         width: 90%;
         max-width: 500px;
         max-height: 90vh;
         overflow-y: auto;
     }
 
-    .confirmation-modal {
-        max-width: 400px;
+        .modal-content h3 {
+            margin-top: 0;
+            color: #023047;
+            font-size: 24px;
+            font-weight: 600;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #e0e7ee;
+            margin-bottom: 25px;
+            text-align: center;
+        }
+
+    .modal-info-text {
+        color: #6c757d;
+        margin-bottom: 25px;
+        font-size: 15px;
         text-align: center;
+        line-height: 1.5;
     }
 
-    .modal-content h3 {
-        margin-top: 0;
-        color: #023047;
-        padding-bottom: 15px;
-        border-bottom: 1px solid #eee;
-        margin-bottom: 20px;
-    }
-
-    .warning-text {
-        color: #dc3545;
-        font-size: 14px;
-        margin-top: 10px;
-    }
-
-    /* Form styles */
     .form-group {
         margin-bottom: 20px;
-        text-align: left;
     }
 
         .form-group label {
             display: block;
             margin-bottom: 8px;
             font-weight: 500;
-            color: #333;
+            color: #4a5568;
+            font-size: 14px;
         }
 
     .form-control {
         width: 100%;
-        padding: 10px;
-        border: 1px solid #ced4da;
-        border-radius: 4px;
-        font-size: 16px;
+        padding: 12px 16px;
+        border: 1px solid #cbd5e0;
+        border-radius: 8px;
+        font-size: 15px;
+        background-color: #f8f9fa;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
         box-sizing: border-box;
     }
 
         .form-control:focus {
             outline: none;
             border-color: #8a5a44;
-            box-shadow: 0 0 0 0.2rem rgba(138, 90, 68, 0.25);
+            background-color: #fff;
+            box-shadow: 0 0 0 3px rgba(138, 90, 68, 0.15);
         }
 
     .footer-actions {
         display: flex;
         justify-content: flex-end;
-        gap: 10px;
-        margin-top: 25px;
+        gap: 12px;
+        margin-top: 30px;
+        padding-top: 20px;
+        border-top: 1px solid #e0e7ee;
     }
 
     .btn {
-        padding: 10px 20px;
-        border-radius: 5px;
+        padding: 12px 24px;
+        border-radius: 8px;
         cursor: pointer;
         font-size: 16px;
+        font-weight: 600;
         border: none;
-        font-weight: 500;
+        transition: all 0.3s ease;
     }
 
     .btn-primary {
@@ -402,7 +444,7 @@
     }
 
         .btn-primary:hover {
-            background-color: #6d4435;
+            background-color: #714a38;
         }
 
     .btn-secondary {
@@ -424,9 +466,9 @@
         }
 
     .alert {
-        padding: 10px 15px;
-        border-radius: 4px;
-        margin-top: 15px;
+        padding: 15px;
+        border-radius: 8px;
+        margin-top: 20px;
     }
 
     .alert-success {
@@ -441,19 +483,10 @@
         border: 1px solid #f5c6cb;
     }
 
-    .text-danger {
-        color: #dc3545;
-        font-size: 14px;
-        margin-top: 5px;
-        display: block;
-    }
-
-    .fas {
+    .validation-message {
+        color: #e53e3e;
         font-size: 12px;
-    }
-
-    .mt-3 {
-        margin-top: 1rem;
+        margin-top: 4px;
     }
 </style>
 
@@ -535,7 +568,6 @@
 
             await CarregarRacas();
 
-            // Exibe mensagem por 1.5 segundos e depois fecha o modal
             StateHasChanged();
             await Task.Delay(1500);
             FecharModal();
