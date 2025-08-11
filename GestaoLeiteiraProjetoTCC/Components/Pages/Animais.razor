@@ -54,7 +54,7 @@
                     <div class="card-details">
                         <div class="detail-item">
                             <span class="detail-label">Raça:</span>
-                            <span class="detail-value">@animal.Raca</span>
+                            <span class="detail-value">@(animal.Raca?.NomeRaca ?? "Não informada")</span>
                         </div>
                         <div class="detail-item">
                             <span class="detail-label">Categoria:</span>
@@ -293,20 +293,20 @@
         font-weight: bold;
     }
 
-        .status-badge.ativo {
-            background-color: #8a5a44;
-            color: white;
-        }
+    .status-badge.ativo {
+        background-color: #8a5a44;
+        color: white;
+    }
 
-        .status-badge.inativo {
-            background-color: #ffc107;
-            color: #212529;
-        }
+    .status-badge.inativo {
+        background-color: #ffc107;
+        color: #212529;
+    }
 
-        .status-badge.baixa {
-            background-color: #dc3545;
-            color: white;
-        }
+    .status-badge.baixa {
+        background-color: #dc3545;
+        color: white;
+    }
 
     .card-details {
         margin-bottom: 15px;
@@ -349,19 +349,19 @@
         font-weight: 500;
     }
 
-        .btn-action.add {
-            background-color: #8a5a44;
-            color: white;
-        }
+    .btn-action.add {
+        background-color: #8a5a44;
+        color: white;
+    }
 
-        .btn-action.editar {
-            background-color: #17a2b8;
-            color: white;
-        }
+    .btn-action.editar {
+        background-color: #17a2b8;
+        color: white;
+    }
 
-        .btn-action:hover {
-            opacity: 0.9;
-        }
+    .btn-action:hover {
+        opacity: 0.9;
+    }
 
     .loading-message, .empty-message {
         text-align: center;
@@ -396,13 +396,8 @@
     }
 
     @@keyframes spin {
-        0% {
-            transform: rotate(0deg);
-        }
-
-        100% {
-            transform: rotate(360deg);
-        }
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
     }
 
     /* === MODAL & FORM STYLES (NEW) === */
@@ -430,23 +425,23 @@
         overflow-y: auto;
     }
 
-        .modal-content h3 {
-            margin-top: 0;
-            color: #023047;
-            font-size: 24px;
-            font-weight: 600;
-            padding-bottom: 20px;
-            border-bottom: 1px solid #e0e7ee;
-            margin-bottom: 25px;
-            text-align: center;
-        }
+    .modal-content h3 {
+        margin-top: 0;
+        color: #023047;
+        font-size: 24px;
+        font-weight: 600;
+        padding-bottom: 20px;
+        border-bottom: 1px solid #e0e7ee;
+        margin-bottom: 25px;
+        text-align: center;
+    }
 
     .form-grid, .form-grid-2-col {
         display: grid;
         gap: 22px;
         margin-bottom: 22px;
     }
-
+    
     .form-grid-2-col {
         grid-template-columns: 1fr 1fr;
     }
@@ -457,11 +452,11 @@
         gap: 8px;
     }
 
-        .form-group label {
-            font-weight: 500;
-            color: #4a5568;
-            font-size: 14px;
-        }
+    .form-group label {
+        font-weight: 500;
+        color: #4a5568;
+        font-size: 14px;
+    }
 
     .form-control {
         width: 100%;
@@ -473,17 +468,17 @@
         transition: border-color 0.2s ease, box-shadow 0.2s ease;
         box-sizing: border-box;
     }
+    
+    .form-control:focus {
+        outline: none;
+        border-color: #3a7ca5;
+        background-color: #fff;
+        box-shadow: 0 0 0 3px rgba(58, 124, 165, 0.15);
+    }
 
-        .form-control:focus {
-            outline: none;
-            border-color: #3a7ca5;
-            background-color: #fff;
-            box-shadow: 0 0 0 3px rgba(58, 124, 165, 0.15);
-        }
-
-        .form-control::placeholder {
-            color: #a0aec0;
-        }
+    .form-control::placeholder {
+        color: #a0aec0;
+    }
 
     select.form-control {
         -webkit-appearance: none;
@@ -512,7 +507,7 @@
         font-size: 14px;
         cursor: pointer;
     }
-
+    
     .form-check-input {
         -webkit-appearance: none;
         appearance: none;
@@ -530,29 +525,29 @@
         transition: all 0.2s ease;
     }
 
-        .form-check-input::before {
-            content: "";
-            width: 0.65em;
-            height: 0.65em;
-            transform: scale(0);
-            transition: 120ms transform ease-in-out;
-            box-shadow: inset 1em 1em #3a7ca5;
-            transform-origin: bottom left;
-            clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
-        }
+    .form-check-input::before {
+        content: "";
+        width: 0.65em;
+        height: 0.65em;
+        transform: scale(0);
+        transition: 120ms transform ease-in-out;
+        box-shadow: inset 1em 1em #3a7ca5;
+        transform-origin: bottom left;
+        clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+    }
 
-        .form-check-input:checked {
-            border-color: #3a7ca5;
-        }
+    .form-check-input:checked {
+        border-color: #3a7ca5;
+    }
 
-            .form-check-input:checked::before {
-                transform: scale(1);
-            }
-
-        .form-check-input:focus-visible {
-            outline: 2px solid #3a7ca5;
-            outline-offset: 2px;
-        }
+    .form-check-input:checked::before {
+        transform: scale(1);
+    }
+    
+    .form-check-input:focus-visible {
+         outline: 2px solid #3a7ca5;
+         outline-offset: 2px;
+    }
 
     .footer-actions {
         display: flex;
@@ -578,18 +573,18 @@
         color: white;
     }
 
-        .btn-primary:hover {
-            background-color: #2c6284;
-        }
+    .btn-primary:hover {
+        background-color: #2c6284;
+    }
 
     .btn-secondary {
         background-color: #6c757d;
         color: white;
     }
 
-        .btn-secondary:hover {
-            background-color: #5a6268;
-        }
+    .btn-secondary:hover {
+        background-color: #5a6268;
+    }
 
     .alert {
         padding: 15px;
@@ -602,7 +597,7 @@
         color: #155724;
         border: 1px solid #c3e6cb;
     }
-
+    
     .validation-message {
         color: #e53e3e;
         font-size: 12px;
@@ -650,6 +645,15 @@
     private async Task CarregarAnimais()
     {
         animais = await AnimalService.ObterAnimaisDaPropriedadeAsync(propriedadeId);
+
+        if (animais != null && racas != null)
+        {
+            foreach (var animal in animais)
+            {
+                var racaEncontrada = racas.FirstOrDefault(r => r.Id == animal.RacaId);
+                animal.Raca = racaEncontrada;
+            }
+        }
     }
 
     private void AbrirModalNovo()
@@ -660,7 +664,7 @@
                 DataNascimento = DateTime.Today,
                 Status = "Ativo", // Apenas o Status vem pré-definido
                 Prenha = false,
-            // Campos que devem vir vazios para o usuário selecionar
+                // Campos que devem vir vazios para o usuário selecionar
                 Sexo = "",
                 CategoriaAnimal = "",
                 RacaId = 0

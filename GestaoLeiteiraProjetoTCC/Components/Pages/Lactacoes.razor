@@ -613,6 +613,29 @@
                 };
 
             await LactacaoService.CriarLactacaoAsync(novaLactacao);
+             var animalSelecionado = Animais.FirstOrDefault(a => a.Id == AnimalSelecionadoId.Value);
+
+            if (animalSelecionado != null)
+
+            {
+
+                animalSelecionado.Lactante = true;
+
+                await AnimalService.AtualizarAnimalAsync(animalSelecionado);
+
+
+
+                var index = Animais.FindIndex(a => a.Id == animalSelecionado.Id);
+
+                if (index >= 0)
+
+                {
+
+                    Animais[index] = animalSelecionado;
+
+                }
+
+            }
             await CarregarLactacoes(); // Recarrega para obter a nova lactação e o status atualizado do animal
             FecharModal();
         }
