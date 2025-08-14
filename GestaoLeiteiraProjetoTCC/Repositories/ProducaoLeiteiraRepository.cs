@@ -32,12 +32,23 @@ namespace GestaoLeiteiraProjetoTCC.Repositories
                            .ToListAsync();
         }
 
-        public async Task<List<ProducaoLeiteira>> ObterPorPropriedadeAsync(int propriedadeId)
+        // Assumindo que o nome do método no repositório é ObterPorPropriedadeDb
+        public async Task<List<ProducaoLeiteira>> ObterPorPropriedadeDb(int propriedadeId, DateTime? dataInicio = null, DateTime? dataFim = null)
         {
             var db = await _databaseService.GetConnectionAsync();
-            return await db.Table<ProducaoLeiteira>()
-                           .Where(p => p.PropriedadeId == propriedadeId)
-                           .ToListAsync();
+            var query = db.Table<ProducaoLeiteira>().Where(p => p.PropriedadeId == propriedadeId);
+
+            if (dataInicio.HasValue)
+            {
+                query = query.Where(p => p.Data.Date >= dataInicio.Value.Date);
+            }
+
+            if (dataFim.HasValue)
+            {
+                query = query.Where(p => p.Data.Date <= dataFim.Value.Date);
+            }
+
+            return await query.OrderByDescending(p => p.Data).ToListAsync();
         }
 
         public async Task<List<ProducaoLeiteira>> ObterProducoesPorLactacaoNoDiaAsync(int lactacaoId, DateTime dia)

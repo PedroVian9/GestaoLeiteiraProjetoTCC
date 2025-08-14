@@ -28,9 +28,9 @@ namespace GestaoLeiteiraProjetoTCC.Services
             return await _producaoLeiteiraRepository.ObterPorLactacaoAsync(lactacaoId);
         }
 
-        public async Task<List<ProducaoLeiteira>> ObterPorPropriedadeAsync(int propriedadeId)
+        public async Task<List<ProducaoLeiteira>> ObterPorPropriedadeAsync(int propriedadeId, DateTime? dataInicio = null, DateTime? dataFim = null)
         {
-            return await _producaoLeiteiraRepository.ObterPorPropriedadeAsync(propriedadeId);
+            return await _producaoLeiteiraRepository.ObterPorPropriedadeDb(propriedadeId, dataInicio, dataFim);
         }
 
         public async Task<List<ProducaoLeiteira>> ObterProducoesPorLactacaoNoDiaAsync(int lactacaoId, DateTime dia)

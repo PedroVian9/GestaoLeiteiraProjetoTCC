@@ -77,5 +77,13 @@ namespace GestaoLeiteiraProjetoTCC.Repositories
             var resultado = await db.DeleteAsync<Animal>(id);
             return resultado > 0;
         }
+
+        public async Task<Animal> ObterAnimalPorIdDb(int id)
+        {
+            var db = await _databaseService.GetConnectionAsync();
+            return await db.Table<Animal>()
+                           .Where(a => a.Id == id)
+                           .FirstOrDefaultAsync();
+        }
     }
 }

@@ -10,5 +10,6 @@
         Task<List<Lactacao>> ObterTodasLactacoesAtivasAsync(int propriedadeId);
 
         bool PodeEditarLactacao(int id);
+        Task<List<Lactacao>> ObterLactacoesDaPropriedadeAsync(int propriedadeId);
     }
 }

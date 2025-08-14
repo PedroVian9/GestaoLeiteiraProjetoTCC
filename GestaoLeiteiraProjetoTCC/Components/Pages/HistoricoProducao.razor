@@ -558,52 +558,22 @@
             carregandoDados = true;
             StateHasChanged();
 
-            producoesLeiteira = new List<ProducaoLeiteira>();
+            // 1. CHAMA SEU MÉTODO EXISTENTE, AGORA COM OS FILTROS DE DATA
+            var producoesFiltradas = await ProducaoLeiteiraService.ObterPorPropriedadeAsync(propriedadeLogada.Id, dataInicio, dataFim);
 
-            if (animalSelecionadoString == "todos")
+            // 2. APLICA OS FILTROS LOCAIS (que não vão ao banco)
+            if (int.TryParse(animalSelecionadoString, out var animalId))
             {
-                if (lactacaoSelecionadaString == "todas")
-                {
-                    foreach (var lactacao in lactacoes)
-                    {
-                        var producoesLactacao = await ProducaoLeiteiraService.ObterProducoesPorLactacaoAsync(lactacao.Id);
-                        producoesLeiteira.AddRange(producoesLactacao);
-                    }
-                }
-                else if (int.TryParse(lactacaoSelecionadaString, out var lactacaoId))
-                {
-                    var producoesLactacao = await ProducaoLeiteiraService.ObterProducoesPorLactacaoAsync(lactacaoId);
-                    producoesLeiteira.AddRange(producoesLactacao);
-                }
-            }
-            else if (int.TryParse(animalSelecionadoString, out var animalId))
-            {
-                if (lactacaoSelecionadaString == "todas")
-                {
-                    foreach (var lactacao in lactacoes)
-                    {
-                        var producoesLactacao = await ProducaoLeiteiraService.ObterProducoesPorLactacaoAsync(lactacao.Id);
-                        producoesLeiteira.AddRange(producoesLactacao);
-                    }
-                }
-                else if (int.TryParse(lactacaoSelecionadaString, out var lactacaoId))
-                {
-                    var producoesLactacao = await ProducaoLeiteiraService.ObterProducoesPorLactacaoAsync(lactacaoId);
-                    producoesLeiteira.AddRange(producoesLactacao);
-                }
+                producoesFiltradas = producoesFiltradas.Where(p => p.AnimalId == animalId).ToList();
             }
 
-            if (dataInicio.HasValue)
+            if (int.TryParse(lactacaoSelecionadaString, out var lactacaoId))
             {
-                producoesLeiteira = producoesLeiteira.Where(p => p.Data.Date >= dataInicio.Value.Date).ToList();
+                producoesFiltradas = producoesFiltradas.Where(p => p.LactacaoId == lactacaoId).ToList();
             }
 
-            if (dataFim.HasValue)
-            {
-                producoesLeiteira = producoesLeiteira.Where(p => p.Data.Date <= dataFim.Value.Date).ToList();
-            }
-
-            producoesLeiteira = producoesLeiteira.OrderByDescending(p => p.Data).ToList();
+            // 3. ATRIBUI O RESULTADO FINAL
+            producoesLeiteira = producoesFiltradas; // A ordenação já foi feita no repositório
         }
         catch (Exception ex)
         {

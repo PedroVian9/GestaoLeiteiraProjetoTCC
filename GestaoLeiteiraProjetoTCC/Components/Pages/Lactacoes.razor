@@ -538,12 +538,8 @@
     {
         if (PropriedadeLogada != null)
         {
-            AnimaisLactacoes = new List<Lactacao>();
-            foreach (var animal in Animais)
-            {
-                var lactacoesAnimal = await LactacaoService.ObterLactacoesPorAnimalAsync(animal.Id);
-                AnimaisLactacoes.AddRange(lactacoesAnimal);
-            }
+            // Usando o método otimizado que já criamos
+            AnimaisLactacoes = await LactacaoService.ObterLactacoesDaPropriedadeAsync(PropriedadeLogada.Id);
             AnimaisLactacoes = AnimaisLactacoes.OrderByDescending(l => l.DataInicio).ToList();
         }
     }
@@ -552,7 +548,7 @@
     {
         try
         {
-            AnimalSelecionadoId = 0;
+            AnimalSelecionadoId = null; // Iniciar como nulo para o placeholder funcionar
             DataInicio = DateTime.Now;
             MostrarErroAnimal = false;
             MostrarErroData = false;
@@ -563,13 +559,15 @@
             }
 
             MostrarModal = true;
-            StateHasChanged();
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Erro ao carregar animais aptos: {ex.Message}");
             AnimaisAptos = new List<Animal>();
             MostrarModal = true;
+        }
+        finally
+        {
             StateHasChanged();
         }
     }
@@ -594,7 +592,7 @@
     private async Task CriarLactacao()
     {
         MostrarErroAnimal = AnimalSelecionadoId == null || AnimalSelecionadoId == 0;
-        MostrarErroData = DataInicio > DateTime.Now.Date.AddDays(1); // Permite a data de hoje
+        MostrarErroData = DataInicio.Date > DateTime.Now.Date;
 
         if (MostrarErroAnimal || MostrarErroData)
         {
@@ -614,30 +612,14 @@
                 };
 
             await LactacaoService.CriarLactacaoAsync(novaLactacao);
-             var animalSelecionado = Animais.FirstOrDefault(a => a.Id == AnimalSelecionadoId.Value);
+            var animalSelecionado = Animais.FirstOrDefault(a => a.Id == AnimalSelecionadoId.Value);
 
-            if (animalSelecionado != null)
-
-            {
-
-                animalSelecionado.Lactante = true;
-
-                await AnimalService.AtualizarAnimalAsync(animalSelecionado);
-
-
-
-                var index = Animais.FindIndex(a => a.Id == animalSelecionado.Id);
-
-                if (index >= 0)
-
-                {
-
-                    Animais[index] = animalSelecionado;
-
-                }
-
-            }
-            await CarregarLactacoes(); // Recarrega para obter a nova lactação e o status atualizado do animal
+            if (animalSelecionado != null)
+            {
+                animalSelecionado.Lactante = true;
+                await AnimalService.AtualizarAnimalAsync(animalSelecionado);
+            }
+            await CarregarLactacoes();
             FecharModal();
         }
         catch (Exception ex)
@@ -651,28 +633,44 @@
         }
     }
 
+    // MÉTODO AJUSTADO
     private async Task ConfirmarFinalizacao()
     {
-        if (LactacaoParaFinalizarId.HasValue)
-        {
-            try
-            {
-                carregandoDados = true;
-                StateHasChanged();
+        if (!LactacaoParaFinalizarId.HasValue) return;
 
-                await LactacaoService.FinalizarLactacaoAsync(LactacaoParaFinalizarId.Value);
-                await CarregarLactacoes();
-            }
-            catch (Exception ex)
+        try
+        {
+            carregandoDados = true;
+            StateHasChanged();
+
+            // Encontra a lactação antes de finalizar para saber qual animal atualizar
+            var lactacaoFinalizada = AnimaisLactacoes.FirstOrDefault(l => l.Id == LactacaoParaFinalizarId.Value);
+
+            // Chama o serviço que agora atualiza a lactação E o animal
+            await LactacaoService.FinalizarLactacaoAsync(LactacaoParaFinalizarId.Value);
+
+            if (lactacaoFinalizada != null)
             {
-                Console.WriteLine($"Erro ao finalizar lactação: {ex.Message}");
+                // Atualiza o estado do animal na lista local para a UI refletir a mudança
+                var animal = Animais.FirstOrDefault(a => a.Id == lactacaoFinalizada.AnimalId);
+                if (animal != null)
+                {
+                    animal.Lactante = false;
+                }
             }
-            finally
-            {
-                carregandoDados = false;
-                FecharModalConfirmacao();
-                StateHasChanged();
-            }
+
+            // Recarrega a lista de lactações para atualizar a tabela
+            await CarregarLactacoes();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Erro ao finalizar lactação: {ex.Message}");
+        }
+        finally
+        {
+            carregandoDados = false;
+            FecharModalConfirmacao();
+            StateHasChanged();
         }
     }
 }
