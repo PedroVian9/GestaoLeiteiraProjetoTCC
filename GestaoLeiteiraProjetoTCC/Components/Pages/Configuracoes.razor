@@ -2,6 +2,7 @@
 @using GestaoLeiteiraProjetoTCC.Models
 @using GestaoLeiteiraProjetoTCC.Services.Interfaces
 @inject IPropriedadeService PropriedadeService
+@inject IQuantidadeOrdenhaService QuantidadeOrdenhaService  // <<-- 1. SERVIÇO INJETADO
 
 <div class="page-container">
     <div class="dashboard-header">
@@ -17,150 +18,151 @@
         </div>
     </div>
 
-    @if (propriedade == null)
+    @if (propriedade == null || loading) // Adicionado 'loading' para melhor feedback
     {
-        <div class="loading-overlay">
-            <div class="spinner"></div>
-            <p>Carregando dados...</p>
-        </div>
+            <div class="loading-overlay">
+                <div class="spinner"></div>
+                <p>Carregando dados...</p>
+            </div>
     }
     else
     {
-        <div class="cards-container">
-            <div class="config-card">
-                <div class="card-header">
-                    <i class="fas fa-home"></i>
-                    <h4>Informações da Propriedade</h4>
+            <div class="cards-container">
+                <div class="config-card">
+                     <div class="card-header">
+                         <i class="fas fa-home"></i>
+                         <h4>Informações da Propriedade</h4>
+                     </div>
+                     <div class="card-body">
+                         <div class="form-grid">
+                             <div class="form-group">
+                                 <label for="nomeProprietario">Nome do Proprietário</label>
+                                 <input id="nomeProprietario" type="text" @bind="propriedade.NomeProprietario"
+                                        placeholder="Digite o nome do proprietário" class="form-control" />
+                             </div>
+                             <div class="form-group">
+                                 <label for="nomePropriedade">Nome da Propriedade</label>
+                                 <input id="nomePropriedade" type="text" @bind="propriedade.NomePropriedade"
+                                        placeholder="Digite o nome da propriedade" class="form-control" />
+                             </div>
+                             <div class="form-group">
+                                 <label for="localizacao">Localização</label>
+                                 <input id="localizacao" type="text" @bind="propriedade.Localizacao"
+                                        placeholder="Digite a localização" class="form-control" />
+                             </div>
+                             <div class="form-grid-2-col">
+                                 <div class="form-group">
+                                     <label for="areaTotal">Área Total</label>
+                                     <input id="areaTotal" type="number" step="0.01" @bind="propriedade.AreaTotal"
+                                            placeholder="0,00" class="form-control" />
+                                 </div>
+                                 <div class="form-group">
+                                     <label for="tipoUnidade">Unidade</label>
+                                     <select id="tipoUnidade" @bind="propriedade.TipoUnidade" class="form-control">
+                                         <option value="0" disabled>Selecione...</option>
+                                         <option value="1">Alqueires Mineiros</option>
+                                         <option value="2">Alqueires Paulistas</option>
+                                         <option value="3">Hectares</option>
+                                     </select>
+                                 </div>
+                             </div>
+                         </div>
+                     </div>
+                     <div class="card-footer">
+                         <button class="btn btn-primary" @onclick="SalvarPropriedade">
+                             <i class="fas fa-save"></i>
+                             Salvar Alterações
+                         </button>
+                    @if (!string.IsNullOrEmpty(mensagemErroPropriedade))
+                    {
+                                 <div class="alert alert-danger">
+                            @mensagemErroPropriedade
+                                 </div>
+                    }
+                     </div>
                 </div>
 
-                <div class="card-body">
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label for="nomeProprietario">Nome do Proprietário</label>
-                            <input id="nomeProprietario" type="text" @bind="propriedade.NomeProprietario"
-                                   placeholder="Digite o nome do proprietário" class="form-control" />
+                <div class="cards-container-right">
+                    <div class="config-card security">
+                        <div class="card-header">
+                            <i class="fas fa-lock"></i>
+                            <h4>Segurança da Conta</h4>
                         </div>
-
-                        <div class="form-group">
-                            <label for="nomePropriedade">Nome da Propriedade</label>
-                            <input id="nomePropriedade" type="text" @bind="propriedade.NomePropriedade"
-                                   placeholder="Digite o nome da propriedade" class="form-control" />
-                        </div>
-
-                        <div class="form-group">
-                            <label for="localizacao">Localização</label>
-                            <input id="localizacao" type="text" @bind="propriedade.Localizacao"
-                                   placeholder="Digite a localização" class="form-control" />
-                        </div>
-
-                        <div class="form-grid-2-col">
+                        <div class="card-body">
                             <div class="form-group">
-                                <label for="areaTotal">Área Total</label>
-                                <input id="areaTotal" type="number" step="0.01" @bind="propriedade.AreaTotal"
-                                       placeholder="0,00" class="form-control" />
+                                <label for="novaSenha">Nova Senha</label>
+                                <input id="novaSenha" type="password" @bind="novaSenha" class="form-control"
+                                       placeholder="Mínimo de 6 caracteres" />
                             </div>
-
                             <div class="form-group">
-                                <label for="tipoUnidade">Unidade</label>
-                                <select id="tipoUnidade" @bind="propriedade.TipoUnidade" class="form-control">
-                                    <option value="0" disabled>Selecione...</option>
-                                    <option value="1">Alqueires Mineiros</option>
-                                    <option value="2">Alqueires Paulistas</option>
-                                    <option value="3">Hectares</option>
+                                <label for="confirmaSenha">Confirmar Senha</label>
+                                <input id="confirmaSenha" type="password" @bind="confirmaSenha" class="form-control"
+                                       placeholder="Confirme a nova senha" />
+                            </div>
+                        </div>
+                        <div class="card-footer">
+                            <button class="btn btn-primary" @onclick="AlterarSenha">
+                                <i class="fas fa-key"></i>
+                                Alterar Senha
+                            </button>
+                        @if (!string.IsNullOrEmpty(mensagemErroSenha))
+                        {
+                                    <div class="alert alert-danger">
+                                @mensagemErroSenha
+                                    </div>
+                        }
+                        </div>
+                    </div>
+
+                    <div class="config-card milking">
+                        <div class="card-header">
+                            <i class="fas fa-clock"></i>
+                            <h4>Configurações de Ordenha</h4>
+                        </div>
+                        <div class="card-body">
+                            <div class="form-group">
+                                <label for="quantidadeOrdenhas">Ordenhas por Dia</label>
+                                <select id="quantidadeOrdenhas" @bind="quantidadeOrdenhas" class="form-control">
+                                    <option value="1">1 vez por dia</option>
+                                    <option value="2">2 vezes por dia</option>
+                                    <option value="3">3 vezes por dia</option>
                                 </select>
                             </div>
                         </div>
-                    </div>
-                </div>
-
-                <div class="card-footer">
-                    <button class="btn btn-primary" @onclick="SalvarPropriedade">
-                        <i class="fas fa-save"></i>
-                        Salvar Alterações
-                    </button>
-                    @if (!string.IsNullOrEmpty(mensagemErroPropriedade))
-                    {
-                        <div class="alert alert-danger">
-                            @mensagemErroPropriedade
-                        </div>
-                    }
-                </div>
-            </div>
-
-            <div class="cards-container-right">
-                <div class="config-card security">
-                    <div class="card-header">
-                        <i class="fas fa-lock"></i>
-                        <h4>Segurança da Conta</h4>
-                    </div>
-
-                    <div class="card-body">
-                        <div class="form-group">
-                            <label for="novaSenha">Nova Senha</label>
-                            <input id="novaSenha" type="password" @bind="novaSenha" class="form-control"
-                                   placeholder="Mínimo de 6 caracteres" />
-                        </div>
-                        <div class="form-group">
-                            <label for="confirmaSenha">Confirmar Senha</label>
-                            <input id="confirmaSenha" type="password" @bind="confirmaSenha" class="form-control"
-                                   placeholder="Confirme a nova senha" />
-                        </div>
-                    </div>
-
-                    <div class="card-footer">
-                        <button class="btn btn-primary" @onclick="AlterarSenha">
-                            <i class="fas fa-key"></i>
-                            Alterar Senha
-                        </button>
-                        @if (!string.IsNullOrEmpty(mensagemErroSenha))
+                        <div class="card-footer">
+                            <button class="btn btn-primary" @onclick="SalvarConfiguracaoOrdenha">
+                                <i class="fas fa-save"></i>
+                                Salvar Ordenha
+                            </button>
+                        @if (!string.IsNullOrEmpty(mensagemErroOrdenha))
                         {
-                            <div class="alert alert-danger">
-                                @mensagemErroSenha
-                            </div>
+                                     <div class="alert alert-danger">
+                                @mensagemErroOrdenha
+                                     </div>
                         }
-                    </div>
-                </div>
-
-                <div class="config-card milking">
-                    <div class="card-header">
-                        <i class="fas fa-clock"></i>
-                        <h4>Configurações de Ordenha</h4>
-                    </div>
-                    <div class="card-body">
-                        <div class="form-group">
-                            <label for="quantidadeOrdenhas">Ordenhas por Dia</label>
-                            <select id="quantidadeOrdenhas" @bind="quantidadeOrdenhas" class="form-control">
-                                <option value="1">1 vez por dia</option>
-                                <option value="2">2 vezes por dia</option>
-                                <option value="3">3 vezes por dia</option>
-                            </select>
                         </div>
-                    </div>
-                    <div class="card-footer disabled-notice">
-                        <i class="fas fa-info-circle"></i> Funcionalidade em desenvolvimento
                     </div>
                 </div>
             </div>
-        </div>
     }
 </div>
 
 @if (exibirModalSucesso)
 {
-    <div class="modal-overlay" @onclick="FecharModal">
-        <div class="modal-content success-modal" @onclick:stopPropagation="true">
-            <div class="success-icon">
-                <i class="fas fa-check-circle"></i>
-            </div>
-            <h3>Sucesso!</h3>
-            <p class="modal-info-text">@mensagemSucesso</p>
-            <div class="footer-actions">
-                <button class="btn btn-primary" @onclick="FecharModal">
-                    Entendido
-                </button>
+        <div class="modal-overlay" @onclick="FecharModal">
+            <div class="modal-content success-modal" @onclick:stopPropagation="true">
+                <div class="success-icon">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <h3>Sucesso!</h3>
+                <p class="modal-info-text">@mensagemSucesso</p>
+                <div class="footer-actions">
+                    <button class="btn btn-primary" @onclick="FecharModal">
+                        Entendido
+                    </button>
+                </div>
             </div>
         </div>
-    </div>
 }
 
 <style>
@@ -469,22 +471,61 @@
     private Propriedade propriedade;
     private string novaSenha;
     private string confirmaSenha;
-    private int quantidadeOrdenhas = 2;
+    private int quantidadeOrdenhas;
+    private bool loading = true; 
 
     private string mensagemErroPropriedade;
     private string mensagemErroSenha;
+    private string mensagemErroOrdenha;
     private string mensagemSucesso;
     private bool exibirModalSucesso = false;
 
     protected override async Task OnInitializedAsync()
     {
+        // Busca a propriedade
         propriedade = PropriedadeService.ObterPropriedadeLogada();
-
         if (propriedade == null)
         {
             var lista = await PropriedadeService.ObterTodasPropriedadesAsync();
             propriedade = lista.FirstOrDefault();
         }
+
+        // Busca a configuração de ordenha mais recente
+        var ordenhaAtual = await QuantidadeOrdenhaService.ObterQuantidadeOrdenhaMaisRecente();
+        if (ordenhaAtual != null)
+        {
+            quantidadeOrdenhas = ordenhaAtual.Quantidade;
+        }
+        else
+        {
+            // Fallback caso não encontre nenhuma, embora o DatabaseService deva garantir uma.
+            quantidadeOrdenhas = 2;
+        }
+
+        loading = false; // Finaliza o carregamento
+    }
+
+    private async Task SalvarConfiguracaoOrdenha()
+    {
+        mensagemErroOrdenha = "";
+        try
+        {
+            var ordenhaSalva = await QuantidadeOrdenhaService.CadastrarQuantidadeOrdenha(quantidadeOrdenhas);
+            if (ordenhaSalva != null)
+            {
+                mensagemSucesso = "Configuração de ordenha salva com sucesso!";
+                exibirModalSucesso = true;
+            }
+            else
+            {
+                mensagemErroOrdenha = "Não foi possível salvar a configuração de ordenha.";
+            }
+        }
+        catch (Exception ex)
+        {
+            mensagemErroOrdenha = $"Erro: {ex.Message}";
+        }
+        StateHasChanged();
     }
 
     private async Task SalvarPropriedade()

@@ -47,14 +47,13 @@ public class DatabaseService
     {
         try
         {
-            // Criar tabelas
             await _database.CreateTableAsync<Propriedade>();
             await _database.CreateTableAsync<Animal>();
             await _database.CreateTableAsync<Lactacao>();
             await _database.CreateTableAsync<ProducaoLeiteira>();
             await _database.CreateTableAsync<Raca>();
+            await _database.CreateTableAsync<QuantidadeOrdenha>(); 
 
-            // Criar índices para simular foreign keys
             await _database.ExecuteAsync("CREATE INDEX IF NOT EXISTS IX_Animal_PropriedadeId ON Animal (PropriedadeId)");
             await _database.ExecuteAsync("CREATE INDEX IF NOT EXISTS IX_Animal_MaeId ON Animal (MaeId)");
             await _database.ExecuteAsync("CREATE INDEX IF NOT EXISTS IX_Animal_PaiId ON Animal (PaiId)");
@@ -65,8 +64,10 @@ public class DatabaseService
 
             Console.WriteLine($"Banco de dados criado em: {Constants.DatabasePath}");
 
-            // Mock de raças pré-configuradas
-            var racasMock = new List<Raca>
+            var racasExistentes = await _database.Table<Raca>().CountAsync();
+            if (racasExistentes == 0)
+            {
+                var racasMock = new List<Raca>
             {
                 new Raca { NomeRaca = "Angus", Status = "Sistema" },
                 new Raca { NomeRaca = "Brahman", Status = "Sistema" },
@@ -78,16 +79,19 @@ public class DatabaseService
                 new Raca { NomeRaca = "Nelore", Status = "Sistema" },
                 new Raca { NomeRaca = "Sindi", Status = "Sistema" },
             };
+                await _database.InsertAllAsync(racasMock);
+            }
 
-            // Verificar se já existem raças
-            var racasExistentes = await _database.Table<Raca>().CountAsync();
-            if (racasExistentes == 0)
+            // Verificar e criar a quantidade de ordenha padrão
+            var quantidadeOrdenhaExistente = await _database.Table<QuantidadeOrdenha>().CountAsync();
+            if (quantidadeOrdenhaExistente == 0)
             {
-                // Inserir raças mock
-                foreach (var raca in racasMock)
+                var ordenhaPadrao = new QuantidadeOrdenha
                 {
-                    await _database.InsertAsync(raca);
-                }
+                    Quantidade = 2,
+                    DataRegistro = DateTime.Now
+                };
+                await _database.InsertAsync(ordenhaPadrao);
             }
         }
         catch (Exception ex)
