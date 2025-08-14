@@ -1,17 +1,68 @@
-/* CSS base existente mantido */
+/* ---- INÍCIO DO CÓDIGO PARA COPIAR ---- */
+
+/* Novo container da sidebar fixa para desktop */
+.desktop-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh; /* Altura total da tela */
+    width: 250px; /* Largura da sidebar, ajuste se necessário */
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    background: #0d2c4b; /* Cor de fundo sólida para a sidebar */
+    box-shadow: 2px 0 5px rgba(0,0,0,0.5);
+    transition: left 0.3s ease-in-out; /* Para futuras animações se desejar */
+}
+
+/* Base da sidebar (mantido) */
 .navbar-toggler {
     appearance: none;
     cursor: pointer;
     width: 3.5rem;
     height: 2.5rem;
     color: white;
-    position: absolute;
+    position: fixed;
     top: 0.5rem;
     right: 1rem;
     border: 1px solid rgba(255, 255, 255, 0.2);
     background: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28255, 255, 255, 0.75%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e") no-repeat center/1.75rem rgba(255, 255, 255, 0.15);
     border-radius: 4px;
     transition: all 0.2s ease;
+}
+
+    .navbar-toggler:checked {
+        background-color: rgba(255, 255, 255, 0.25);
+        box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1);
+    }
+
+.top-row {
+    height: 3.7rem;
+    background-color: rgba(0,0,0,0.4);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    /* Garante que o top-row não encolha */
+    flex-shrink: 0;
+}
+
+.navbar-brand {
+    font-size: 1.25rem;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    display: flex;
+    align-items: initial;
+    gap: 1em;
+}
+
+/* Ícones (mantido) */
+.bi {
+    display: inline-block;
+    position: relative;
+    width: 1.25rem;
+    height: 1.25rem;
+    margin-right: 0.75rem;
+    top: -1px;
+    background-size: cover;
+    transition: transform 0.2s ease;
 }
 
 .bi-house-door-fill-nav-menu {
@@ -46,37 +97,8 @@
     background-image: url("/Icons/genetic.png");
 }
 
-.navbar-toggler:checked {
-    background-color: rgba(255, 255, 255, 0.25);
-    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1);
-}
 
-.top-row {
-    height: 3.7rem;
-    background-color: rgba(0,0,0,0.4);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.navbar-brand {
-    font-size: 1.25rem;
-    font-weight: 500;
-    letter-spacing: 0.5px;
-    display: flex;
-    align-items: initial;
-    gap: 1em;
-}
-
-.bi {
-    display: inline-block;
-    position: relative;
-    width: 1.25rem;
-    height: 1.25rem;
-    margin-right: 0.75rem;
-    top: -1px;
-    background-size: cover;
-    transition: transform 0.2s ease;
-}
-
+/* Itens de Navegação (mantido) */
 .nav-item {
     font-size: 0.9rem;
     transition: all 0.2s ease;
@@ -117,8 +139,10 @@
                 transform: scale(1.1);
             }
 
+/* Área de scroll (modificado) */
 .nav-scrollable {
-    display: none;
+    /* Não precisa mais de 'position: fixed' ou 'display: none' aqui */
+    /* A visibilidade será controlada pelo container pai (.desktop-sidebar) */
 }
 
 .navbar-toggler:checked ~ .nav-scrollable {
@@ -143,7 +167,8 @@
         opacity: 0.8;
     }
 
-/* Botão hamburger mobile */
+/* ---- MENU MOBILE (mantido) ---- */
+
 .mobile-menu-toggle {
     position: fixed !important;
     bottom: 20px !important;
@@ -169,7 +194,6 @@
         transform: scale(1.05);
     }
 
-/* Overlay do menu mobile */
 .mobile-menu-overlay {
     position: fixed;
     top: 0;
@@ -187,7 +211,6 @@
         display: flex;
     }
 
-/* Header do menu mobile */
 .mobile-menu-header {
     display: flex;
     align-items: center;
@@ -221,7 +244,6 @@
     line-height: 1;
 }
 
-/* Conteúdo do menu mobile */
 .mobile-menu-content {
     flex: 1;
     padding: 0;
@@ -263,15 +285,13 @@
         background-color: rgba(0, 0, 0, 0.2);
     }
 
-/* Media queries para responsividade */
-@media (max-width: 640px) {
-    /* Esconde a sidebar completamente no mobile */
-    .fixed-sidebar {
-        display: none !important;
-    }
+/* ---- RESPONSIVIDADE (MODIFICADO) ---- */
 
-    .main-content {
-        margin-left: 0 !important;
+/* Telas Pequenas (Mobile) */
+@media (max-width: 640px) {
+    /* Esconde a sidebar de desktop completamente no mobile */
+    .desktop-sidebar {
+        display: none !important;
     }
 
     /* Mostra o botão hamburger mobile */
@@ -279,24 +299,27 @@
         display: flex !important;
     }
 
-    /* Esconde o toggle original */
+    /* Esconde o toggle antigo da navbar */
     .navbar-toggler {
-        display: none !important;
-    }
-
-    .nav-scrollable {
         display: none !important;
     }
 }
 
+/* Telas Grandes (Desktop) */
 @media (min-width: 641px) {
+    /* Garante que a sidebar de desktop esteja visível */
+    .desktop-sidebar {
+        display: flex;
+    }
+
     .navbar-toggler {
         display: none;
     }
 
+    /* Faz a área de scroll preencher o espaço restante na sidebar */
     .nav-scrollable {
         display: block;
-        height: calc(100vh - 3.5rem);
+        flex-grow: 1;
         overflow-y: auto;
         scrollbar-width: thin;
         scrollbar-color: rgba(255,255,255,0.1) transparent;
@@ -315,9 +338,11 @@
         margin: 0 0.5rem;
     }
 
-    /* Esconde elementos mobile no desktop */
+    /* Esconde os elementos do menu mobile no desktop */
     .mobile-menu-toggle,
     .mobile-menu-overlay {
         display: none !important;
     }
 }
+
+/* ---- FIM DO CÓDIGO ---- */

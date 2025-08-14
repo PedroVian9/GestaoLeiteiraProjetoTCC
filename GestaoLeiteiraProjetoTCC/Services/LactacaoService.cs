@@ -26,25 +26,18 @@ namespace GestaoLeiteiraProjetoTCC.Services
 
         public async Task FinalizarLactacaoAsync(int id)
         {
-            // 1. Busca a lactação que será finalizada pelo ID.
             var lactacao = await _lactacaoRepository.ObterLactacaoPorIdDb(id);
 
-            // 2. Garante que a lactação existe e que ela ainda está ativa (não tem data de fim).
-            //    Isso evita re-finalizar uma lactação que já foi encerrada.
             if (lactacao != null && lactacao.DataFim == null)
             {
-                // 3. Define a data de fim e atualiza o registro da lactação no banco.
                 lactacao.DataFim = DateTime.Now;
                 await _lactacaoRepository.AtualizarLactacaoDb(lactacao);
 
-                // 4. Busca o animal associado a esta lactação.
                 var animal = await _animalService.ObterAnimalPorIdAsync(lactacao.AnimalId);
                 if (animal != null)
                 {
-                    // 5. Atualiza o status do animal para não-lactante.
                     animal.Lactante = false;
 
-                    // 6. Salva a alteração do animal no banco de dados.
                     await _animalService.AtualizarAnimalAsync(animal);
                 }
             }
