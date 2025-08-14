@@ -37,5 +37,10 @@ namespace GestaoLeiteiraProjetoTCC.Services
             var lactacao = _lactacaoRepository.ObterLactacaoPorIdDb(id).Result;
             return lactacao != null && lactacao.DataFim == null;
         }
+
+        public async Task<List<Lactacao>> ObterTodasLactacoesAtivasAsync(int propriedadeId)
+        {
+            return await _lactacaoRepository.ObterTodasLactacoesAtivasDb(propriedadeId);
+        }
     }
 }

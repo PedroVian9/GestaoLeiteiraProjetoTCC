@@ -12,5 +12,6 @@ namespace GestaoLeiteiraProjetoTCC.Repositories.Interfaces
         Task<List<Lactacao>> ObterLactacoesPorAnimalDb(int animalId);
         Task<Lactacao> ObterLactacaoPorIdDb(int id);
         Task AtualizarLactacaoDb(Lactacao lactacao);
+        Task<List<Lactacao>> ObterTodasLactacoesAtivasDb(int propriedadeId);
     }
 }

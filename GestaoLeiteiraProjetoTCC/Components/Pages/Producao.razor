@@ -5,6 +5,7 @@
 @inject IAnimalService AnimalService
 @inject IPropriedadeService PropriedadeService
 @inject IProducaoLeiteiraService ProducaoLeiteiraService
+@inject IQuantidadeOrdenhaService QuantidadeOrdenhaService
 
 <div class="page-container">
     <div class="dashboard-header">
@@ -27,11 +28,7 @@
             <p>Carregando dados...</p>
         </div>
     }
-    else if (VacasLactantes == null)
-    {
-        <p class="loading-message">Carregando...</p>
-    }
-    else if (!VacasLactantes.Any())
+    else if (VacasLactantes == null || !VacasLactantes.Any())
     {
         <p class="empty-message">Nenhuma vaca em lactação para registrar produção.</p>
     }
@@ -43,7 +40,13 @@
                 <div class="vaca-card">
                     <div class="card-header">
                         <span class="animal-name">@item.Animal.NomeAnimal (@item.Animal.NumeroIdentificador)</span>
-                        <span class="status-badge lactante">Em Lactação</span>
+
+                        <div class="ordenha-progress">
+                            @for (int i = 1; i <= quantidadeOrdenhasEsperadas; i++)
+                            {
+                                <span class="ordenha-dot @(i <= item.OrdenhasFeitasHoje ? "done" : "pending")"></span>
+                            }
+                        </div>
                     </div>
 
                     <div class="card-details">
@@ -65,16 +68,16 @@
                     </div>
 
                     <div class="card-actions">
-                        @if (ProducaoRegistradaHojeMap.ContainsKey(item.Lactacao.Id) && ProducaoRegistradaHojeMap[item.Lactacao.Id])
+                        @if (item.OrdenhasFeitasHoje >= quantidadeOrdenhasEsperadas)
                         {
                             <button class="btn-action ja-registrado" disabled>
-                                <i class="fas fa-check-circle"></i> Registrado Hoje
+                                <i class="fas fa-check-circle"></i> Todas Registradas
                             </button>
                         }
                         else
                         {
                             <button class="btn-action registrar" @onclick="() => AbrirModalProducao(item.Lactacao.Id, item.Animal.Id, item.Animal.NomeAnimal)">
-                                <i class="fas fa-plus-circle"></i> Registrar Produção
+                                <i class="fas fa-plus-circle"></i> Registrar Ordenha (@(item.OrdenhasFeitasHoje + 1)/@quantidadeOrdenhasEsperadas)
                             </button>
                         }
                     </div>
@@ -174,7 +177,7 @@
         border-radius: 10px;
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         padding: 20px;
-        border-left: 4px solid #17a2b8; /* Cor de destaque para Produção */
+        border-left: 4px solid #17a2b8;
     }
 
     .card-header {
@@ -191,18 +194,6 @@
         font-size: 18px;
         color: #023047;
     }
-
-    .status-badge {
-        font-size: 12px;
-        padding: 4px 10px;
-        border-radius: 20px;
-        font-weight: bold;
-    }
-
-        .status-badge.lactante {
-            background-color: #003566;
-            color: white;
-        }
 
     .card-details {
         margin-bottom: 15px;
@@ -248,21 +239,21 @@
     }
 
         .btn-action.ja-registrado {
-            background-color: #e9ecef;
-            color: #6c757d;
+            background-color: #6c757d;
+            color: white;
             cursor: not-allowed;
         }
 
         .btn-action.registrar {
-            background-color: #17a2b8;
+            background-color: #007bff;
             color: white;
         }
 
             .btn-action.registrar:hover {
-                background-color: #138496;
+                background-color: #0056b3;
             }
 
-    .loading-message, .empty-message {
+    .empty-message {
         text-align: center;
         color: #666;
         margin: 40px 0;
@@ -303,6 +294,30 @@
             transform: rotate(360deg);
         }
     }
+
+    /* === ESTILOS DO INDICADOR DE ORDENHA === */
+    .ordenha-progress {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+    }
+
+    .ordenha-dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        transition: background-color 0.3s ease;
+    }
+
+        .ordenha-dot.pending {
+            background-color: #e0e0e0;
+            border: 1px solid #ccc;
+        }
+
+        .ordenha-dot.done {
+            background-color: #28a745;
+            border: 1px solid #218838;
+        }
 
     /* === ESTILOS DOS MODAIS === */
     .modal-overlay {
@@ -435,14 +450,14 @@
     {
         public Animal Animal { get; set; }
         public Lactacao Lactacao { get; set; }
-        public GestaoLeiteiraProjetoTCC.Models.ProducaoLeiteira UltimaProducao { get; set; }
+        public ProducaoLeiteira UltimaProducao { get; set; }
+        public int OrdenhasFeitasHoje { get; set; }
     }
 
-    private List<Animal> Animais = new();
-    private List<Lactacao> Lactacoes = new();
     private List<VacaLactante> VacasLactantes = new();
     private Propriedade PropriedadeLogada;
     private bool carregandoDados = true;
+    private int quantidadeOrdenhasEsperadas;
 
     // Modal de produção
     private bool MostrarModalProducao = false;
@@ -453,15 +468,15 @@
     private string NomeAnimalSelecionado = "";
     private bool MostrarErroQuantidade = false;
 
-    // Controle de produções registradas
-    private Dictionary<int, bool> ProducaoRegistradaHojeMap = new();
-
     protected override async Task OnInitializedAsync()
     {
         try
         {
             carregandoDados = true;
             StateHasChanged();
+
+            var ordenhaConfig = await QuantidadeOrdenhaService.ObterQuantidadeOrdenhaMaisRecente();
+            quantidadeOrdenhasEsperadas = ordenhaConfig?.Quantidade ?? 2;
 
             PropriedadeLogada = PropriedadeService.ObterPropriedadeLogada();
             if (PropriedadeLogada != null)
@@ -478,83 +493,37 @@
 
     private async Task CarregarDados()
     {
-        // Carrega animais da propriedade
-        Animais = await AnimalService.ObterAnimaisDaPropriedadeAsync(PropriedadeLogada.Id);
+        var animais = await AnimalService.ObterAnimaisDaPropriedadeAsync(PropriedadeLogada.Id);
+        var lactacoesAtivas = await LactacaoService.ObterTodasLactacoesAtivasAsync(PropriedadeLogada.Id);
 
-        // Carrega lactações ativas
-        Lactacoes = new List<Lactacao>();
-        foreach (var animal in Animais.Where(a => a.Lactante))
+        var listaTemporaria = new List<VacaLactante>();
+        foreach (var lactacao in lactacoesAtivas)
         {
-            var lactacoesAnimal = await LactacaoService.ObterLactacoesPorAnimalAsync(animal.Id);
-            var lactacaoAtiva = lactacoesAnimal.FirstOrDefault(l => l.DataFim == null);
-            if (lactacaoAtiva != null)
-            {
-                Lactacoes.Add(lactacaoAtiva);
-            }
-        }
-
-        // Monta a lista de vacas lactantes com suas informações
-        VacasLactantes = new List<VacaLactante>();
-        foreach (var lactacao in Lactacoes)
-        {
-            var animal = Animais.FirstOrDefault(a => a.Id == lactacao.AnimalId);
+            var animal = animais.FirstOrDefault(a => a.Id == lactacao.AnimalId);
             if (animal != null)
             {
-                var ultimaProducao = await ObterUltimaProducao(lactacao.Id);
+                var producoesHoje = await ProducaoLeiteiraService.ObterProducoesPorLactacaoNoDiaAsync(lactacao.Id, DateTime.Today);
+                var ultimaProducao = producoesHoje.OrderByDescending(p => p.Data).FirstOrDefault() ?? await ObterUltimaProducaoGeral(lactacao.Id);
 
-                VacasLactantes.Add(new VacaLactante
+                listaTemporaria.Add(new VacaLactante
                     {
                         Animal = animal,
                         Lactacao = lactacao,
-                        UltimaProducao = ultimaProducao
+                        UltimaProducao = ultimaProducao,
+                        OrdenhasFeitasHoje = producoesHoje.Count
                     });
             }
         }
-
-        // Carrega status de produções registradas hoje
-        await CarregarProducoesRegistradas();
+        VacasLactantes = listaTemporaria;
     }
 
-    private async Task<GestaoLeiteiraProjetoTCC.Models.ProducaoLeiteira> ObterUltimaProducao(int lactacaoId)
+    private async Task<ProducaoLeiteira> ObterUltimaProducaoGeral(int lactacaoId)
     {
-        try
-        {
-            var producoes = await ProducaoLeiteiraService.ObterProducoesPorLactacaoAsync(lactacaoId);
-            return producoes.OrderByDescending(p => p.Data).FirstOrDefault();
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Erro ao obter última produção: {ex.Message}");
-            return null;
-        }
+        var producoes = await ProducaoLeiteiraService.ObterProducoesPorLactacaoAsync(lactacaoId);
+        return producoes.OrderByDescending(p => p.Data).FirstOrDefault();
     }
 
-    private async Task CarregarProducoesRegistradas()
-    {
-        foreach (var lactacao in Lactacoes)
-        {
-            ProducaoRegistradaHojeMap[lactacao.Id] = await ProducaoRegistradaHojeAsync(lactacao.Id);
-        }
-    }
-
-    private async Task<bool> ProducaoRegistradaHojeAsync(int lactacaoId)
-    {
-        try
-        {
-            var producoes = await ProducaoLeiteiraService.ObterProducoesPorLactacaoAsync(lactacaoId);
-            return producoes.Any(p => p.Data.Date == DateTime.Today);
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Erro ao verificar produções: {ex.Message}");
-            return false;
-        }
-    }
-
-    private int CalcularDiasCorridos(DateTime dataInicio)
-    {
-        return (DateTime.Now.Date - dataInicio.Date).Days;
-    }
+    private int CalcularDiasCorridos(DateTime dataInicio) => (DateTime.Now.Date - dataInicio.Date).Days;
 
     private void AbrirModalProducao(int lactacaoId, int animalId, string nomeAnimal)
     {
@@ -567,15 +536,11 @@
         MostrarModalProducao = true;
     }
 
-    private void FecharModalProducao()
-    {
-        MostrarModalProducao = false;
-    }
+    private void FecharModalProducao() => MostrarModalProducao = false;
 
     private async Task SalvarProducao()
     {
         MostrarErroQuantidade = false;
-
         if (QuantidadeLitros <= 0)
         {
             MostrarErroQuantidade = true;
@@ -584,10 +549,7 @@
 
         try
         {
-            carregandoDados = true;
-            StateHasChanged();
-
-            var novaProducao = new GestaoLeiteiraProjetoTCC.Models.ProducaoLeiteira
+            var novaProducao = new ProducaoLeiteira
                 {
                     AnimalId = AnimalSelecionadoParaProducaoId,
                     LactacaoId = LactacaoSelecionadaId,
@@ -598,13 +560,10 @@
 
             await ProducaoLeiteiraService.CriarProducaoLeiteiraAsync(novaProducao);
 
-            // Atualiza o status após salvar
-            ProducaoRegistradaHojeMap[LactacaoSelecionadaId] = true;
-
-            // Atualiza a última produção na lista
             var vacaLactante = VacasLactantes.FirstOrDefault(v => v.Lactacao.Id == LactacaoSelecionadaId);
             if (vacaLactante != null)
             {
+                vacaLactante.OrdenhasFeitasHoje++;
                 vacaLactante.UltimaProducao = novaProducao;
             }
 
@@ -616,7 +575,6 @@
         }
         finally
         {
-            carregandoDados = false;
             StateHasChanged();
         }
     }

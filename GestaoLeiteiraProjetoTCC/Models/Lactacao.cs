@@ -17,5 +17,7 @@ public class Lactacao
     [Required(ErrorMessage = "A data de início é obrigatória")]
     public DateTime DataInicio { get; set; }
 
-    public DateTime? DataFim { get; set; } 
+    public DateTime? DataFim { get; set; }
+    [Required(ErrorMessage = "A propriedade Id é obrigatoria")]
+    public int PropriedadeId { get; set; }
 }

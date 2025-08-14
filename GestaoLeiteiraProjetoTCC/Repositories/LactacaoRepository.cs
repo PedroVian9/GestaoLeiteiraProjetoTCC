@@ -1,9 +1,4 @@
-﻿using GestaoLeiteiraProjetoTCC.Data;
-using GestaoLeiteiraProjetoTCC.Models;
-using GestaoLeiteiraProjetoTCC.Repositories.Interfaces;
-using SQLite;
-using System.Collections.Generic;
-using System.Threading.Tasks;
+﻿using GestaoLeiteiraProjetoTCC.Repositories.Interfaces;
 
 namespace GestaoLeiteiraProjetoTCC.Repositories
 {
@@ -42,6 +37,14 @@ namespace GestaoLeiteiraProjetoTCC.Repositories
         {
             var db = await _databaseService.GetConnectionAsync();
             await db.UpdateAsync(lactacao);
+        }
+
+        public async Task<List<Lactacao>> ObterTodasLactacoesAtivasDb(int propriedadeId)
+        {
+            var db = await _databaseService.GetConnectionAsync();
+            return await db.Table<Lactacao>()
+                                  .Where(l => l.PropriedadeId == propriedadeId && l.DataFim == null)
+                                  .ToListAsync();
         }
     }
 }

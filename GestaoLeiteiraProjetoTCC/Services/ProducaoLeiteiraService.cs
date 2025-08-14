@@ -32,5 +32,10 @@ namespace GestaoLeiteiraProjetoTCC.Services
         {
             return await _producaoLeiteiraRepository.ObterPorPropriedadeAsync(propriedadeId);
         }
+
+        public async Task<List<ProducaoLeiteira>> ObterProducoesPorLactacaoNoDiaAsync(int lactacaoId, DateTime dia)
+        {
+            return await _producaoLeiteiraRepository.ObterProducoesPorLactacaoNoDiaAsync(lactacaoId, dia);
+        }
     }
 }

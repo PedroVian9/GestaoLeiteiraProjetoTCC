@@ -609,7 +609,8 @@
             var novaLactacao = new Lactacao
                 {
                     AnimalId = AnimalSelecionadoId.Value,
-                    DataInicio = DataInicio
+                    DataInicio = DataInicio,
+                    PropriedadeId = PropriedadeLogada.Id
                 };
 
             await LactacaoService.CriarLactacaoAsync(novaLactacao);

@@ -7,6 +7,7 @@
         Task<List<Lactacao>> ObterLactacoesPorAnimalAsync(int animalId);
 
         Task FinalizarLactacaoAsync(int id);
+        Task<List<Lactacao>> ObterTodasLactacoesAtivasAsync(int propriedadeId);
 
         bool PodeEditarLactacao(int id);
     }

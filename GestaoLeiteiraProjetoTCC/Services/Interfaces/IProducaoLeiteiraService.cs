@@ -13,5 +13,6 @@ namespace GestaoLeiteiraProjetoTCC.Services.Interfaces
         Task AtualizarProducaoLeiteiraAsync(ProducaoLeiteira producaoLeiteira);
         Task<List<ProducaoLeiteira>> ObterProducoesPorLactacaoAsync(int lactacaoId);
         Task<List<ProducaoLeiteira>> ObterPorPropriedadeAsync(int propriedadeId);
+        Task<List<ProducaoLeiteira>> ObterProducoesPorLactacaoNoDiaAsync(int lactacaoId, DateTime dia);
     }
 }

@@ -40,5 +40,16 @@ namespace GestaoLeiteiraProjetoTCC.Repositories
                            .ToListAsync();
         }
 
+        public async Task<List<ProducaoLeiteira>> ObterProducoesPorLactacaoNoDiaAsync(int lactacaoId, DateTime dia)
+        {
+            // Garante que estamos comparando apenas a data, ignorando a hora.
+            var db = await _databaseService.GetConnectionAsync();
+            var inicioDoDia = dia.Date;
+            var fimDoDia = dia.Date.AddDays(1).AddTicks(-1);
+
+            return await db.Table<ProducaoLeiteira>()
+                                  .Where(p => p.LactacaoId == lactacaoId && p.Data >= inicioDoDia && p.Data <= fimDoDia)
+                                  .ToListAsync();
+        }
     }
 }
