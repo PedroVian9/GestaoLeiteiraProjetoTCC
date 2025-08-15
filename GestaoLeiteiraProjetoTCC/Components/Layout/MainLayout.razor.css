@@ -103,18 +103,45 @@ article.content {
     }
 }
 
-/* Evita scroll horizontal em telas pequenas */
+/* Responsividade para mobile */
 @media (max-width: 640px) {
     html, body {
-        overflow-x: hidden;
-    }
-
-    .main-content{
-        margin-left: 0;
+        overflow-x: hidden; /* Evita scroll horizontal */
     }
 
     .page {
+        flex-direction: column;
         overflow-x: hidden;
         width: 100%;
+    }
+
+    .fixed-sidebar {
+        display: none !important;
+    }
+
+    .main-content {
+        margin-left: 0 !important;
+        width: 100%;
+    }
+
+    article.content {
+        padding: 0.5rem;
+        /* Adiciona espaço no final para não ser coberto pelo footer fixo.
+           Ajuste o valor (5rem) para corresponder à altura do seu footer + um respiro. */
+        padding-bottom: 5rem;
+    }
+
+    /* ===== AJUSTE DO FOOTER ===== */
+    .footer {
+        position: absolute; /* 1. Fixa o footer na tela */
+        bottom: 0; /* 2. Alinha na parte inferior */
+        left: 0; /* 3. Alinha à esquerda */
+        width: 100%; /* 4. Faz ocupar toda a largura */
+        z-index: 1000; /* 5. Garante que fique sobre o conteúdo */
+        /* Reseta/Ajusta estilos anteriores que não são mais necessários */
+        margin-top: 0;
+        padding-bottom: 0.5rem; /* Remove o padding extra e adiciona um pequeno respiro se necessário */
+        padding-top: 0.5rem;
+        height: auto; /* Deixa a altura ser definida pelo conteúdo */
     }
 }
