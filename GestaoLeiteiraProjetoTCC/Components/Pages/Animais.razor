@@ -18,9 +18,17 @@
                 <span>@DateTime.Now.ToString("dd/MM/yyyy")</span>
             </div>
         </div>
+        <div class="mobile-actions-bar">
+            <button class="btn-mobile-action" @onclick="AbrirModalFiltros">
+                <i class="fas fa-filter"></i> Filtrar e Ordenar
+            </button>
+            <button class="btn-mobile-action add" @onclick="AbrirModalNovo">
+                <i class="fas fa-plus"></i> Cadastrar Animal
+            </button>
+        </div>
     </div>
 
-    <div class="filters-container">
+    <div class="filters-container desktop-only">
         <div class="row align-items-end">
             <div class="col-md-4">
                 <div class="form-group">
@@ -29,7 +37,6 @@
                            @bind="filtroNome" @bind:event="oninput" @bind:after="AplicarFiltrosEOrdenacao" />
                 </div>
             </div>
-
             <div class="col-md-2">
                 <div class="form-group">
                     <label for="filtro-status">Status</label>
@@ -41,7 +48,6 @@
                     </select>
                 </div>
             </div>
-
             <div class="col-md-3">
                 <div class="form-group">
                     <label for="filtro-categoria">Categoria</label>
@@ -54,7 +60,6 @@
                     </select>
                 </div>
             </div>
-
             <div class="col-md-3">
                 <div class="form-group">
                     <label for="ordenacao">Ordenar por</label>
@@ -67,7 +72,7 @@
             </div>
         </div>
     </div>
-    <div class="animal-actions">
+    <div class="animal-actions desktop-only">
         <button class="btn-action add" @onclick="AbrirModalNovo">
             <span class="plus-icon">+</span> Cadastrar novo animal
         </button>
@@ -80,7 +85,7 @@
             <p>Carregando dados...</p>
         </div>
     }
-    else if (!animais.Any()) // Verifica se a lista principal está vazia
+    else if (!animais.Any())
     {
         <div class="empty-message-container">
             <div class="empty-message">
@@ -90,7 +95,7 @@
             </div>
         </div>
     }
-    else if (!animaisFiltrados.Any()) // Verifica se a lista filtrada está vazia
+    else if (!animaisFiltrados.Any())
     {
         <div class="empty-message-container">
             <div class="empty-message">
@@ -151,7 +156,6 @@
         <div class="modal-overlay" @onclick="FecharModal">
             <div class="modal-content" @onclick:stopPropagation>
                 <h3>@(animal.Id == 0 ? "Cadastrar Novo Animal" : "Editar Animal")</h3>
-
                 <EditForm Model="animal" OnValidSubmit="SalvarAnimal">
                     <DataAnnotationsValidator />
                     <div class="form-grid">
@@ -160,14 +164,12 @@
                             <InputText id="nomeAnimal" @bind-Value="animal.NomeAnimal" class="form-control" placeholder="Digite o nome do animal..." />
                             <ValidationMessage For="@(() => animal.NomeAnimal)" />
                         </div>
-
                         <div class="form-group">
                             <label for="numeroIdentificador">Brinco / RFID</label>
                             <InputText id="numeroIdentificador" @bind-Value="animal.NumeroIdentificador" class="form-control" placeholder="Digite o número do brinco ou RFID..." />
                             <ValidationMessage For="@(() => animal.NumeroIdentificador)" />
                         </div>
                     </div>
-
                     <div class="form-grid-2-col">
                         <div class="form-group">
                             <label for="sexo">Sexo</label>
@@ -178,7 +180,6 @@
                             </InputSelect>
                             <ValidationMessage For="@(() => animal.Sexo)" />
                         </div>
-
                         <div class="form-group">
                             <label for="categoriaAnimal">Categoria</label>
                             <InputSelect id="categoriaAnimal" @bind-Value="animal.CategoriaAnimal" @onchange="(e) => OnCategoriaChanged(e.Value.ToString())" class="form-control">
@@ -191,14 +192,12 @@
                             <ValidationMessage For="@(() => animal.CategoriaAnimal)" />
                         </div>
                     </div>
-
                     <div class="form-grid-2-col">
                         <div class="form-group">
                             <label for="dataNascimento">Data de Nascimento</label>
                             <InputDate id="dataNascimento" @bind-Value="animal.DataNascimento" class="form-control" />
                             <ValidationMessage For="@(() => animal.DataNascimento)" />
                         </div>
-
                         <div class="form-group">
                             <label for="racaId">Raça</label>
                             <InputSelect id="racaId" @bind-Value="animal.RacaId" class="form-control">
@@ -211,7 +210,6 @@
                             <ValidationMessage For="@(() => animal.RacaId)" />
                         </div>
                     </div>
-
                     <div class="form-grid-2-col">
                         <div class="form-group">
                             <label for="status">Status</label>
@@ -230,17 +228,60 @@
                             </div>
                         }
                     </div>
-
                     <div class="footer-actions">
                         <button type="button" class="btn btn-secondary" @onclick="FecharModal">Cancelar</button>
                         <button type="submit" class="btn btn-primary">Salvar</button>
                     </div>
                 </EditForm>
-
                 @if (mensagemSucesso != null)
                 {
                     <div class="alert alert-success mt-3">@mensagemSucesso</div>
                 }
+            </div>
+        </div>
+    }
+
+    @if (exibirModalFiltros)
+    {
+        <div class="modal-overlay" @onclick="FecharModalFiltros">
+            <div class="modal-content" @onclick:stopPropagation>
+                <h3>Filtrar e Ordenar</h3>
+                <div class="form-group">
+                    <label for="filtro-nome-modal">Buscar por Nome ou Brinco</label>
+                    <input id="filtro-nome-modal" type="text" class="form-control" placeholder="Digite para buscar..."
+                           @bind="filtroNome" />
+                </div>
+                <div class="form-group">
+                    <label for="filtro-status-modal">Status</label>
+                    <select id="filtro-status-modal" class="form-control" @bind="filtroStatus">
+                        <option value="Todos">Todos</option>
+                        <option value="Ativo">Ativo</option>
+                        <option value="Inativo">Inativo</option>
+                        <option value="Baixa">Baixa</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="filtro-categoria-modal">Categoria</label>
+                    <select id="filtro-categoria-modal" class="form-control" @bind="filtroCategoria">
+                        <option value="Todos">Todas</option>
+                        <option value="Bezerro">Bezerro</option>
+                        <option value="Novilha">Novilha</option>
+                        <option value="Vaca">Vaca</option>
+                        <option value="Touro">Touro</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="ordenacao-modal">Ordenar por</label>
+                    <select id="ordenacao-modal" class="form-control" @bind="ordenacaoSelecionada">
+                        <option value="nome_asc">Nome (A-Z)</option>
+                        <option value="data_desc">Mais Recentes (Nascimento)</option>
+                        <option value="data_asc">Mais Antigos (Nascimento)</option>
+                    </select>
+                </div>
+                <div class="footer-actions">
+                    <button type="button" class="btn btn-secondary" @onclick="FecharModalFiltros">Cancelar</button>
+                    <button type="button" class="btn btn-primary" @onclick="AplicarEFecharModalFiltros">Aplicar</button>
+                </div>
             </div>
         </div>
     }
@@ -296,7 +337,7 @@
         gap: 8px;
     }
 
-    /* === ESTILOS DOS FILTROS (NOVOS) === */
+    /* === ESTILOS DOS FILTROS === */
     .filters-container {
         background: white;
         padding: 15px 25px 5px 25px;
@@ -455,7 +496,7 @@
         flex-direction: column;
         justify-content: center;
         align-items: center;
-        z-index: 1000;
+        z-index: 1050; /* Aumentado para cobrir headers fixos */
         color: white;
     }
 
@@ -490,7 +531,7 @@
         display: flex;
         justify-content: center;
         align-items: center;
-        z-index: 1000;
+        z-index: 1050; /* Aumentado para cobrir headers fixos */
     }
 
     .modal-content {
@@ -683,32 +724,163 @@
         font-size: 12px;
         margin-top: 4px;
     }
+
+    .mobile-actions-bar {
+        display: none; /* Oculto por padrão */
+    }
+
+    .mobile-actions-bar {
+        display: none; /* Oculto por padrão */
+    }
+
+    @@media (max-width: 768px) {
+        body, html {
+            /* Garante que o conteúdo não comece por baixo dos headers fixos */
+            padding-top: 107px;
+        }
+
+        .page-container {
+            padding: 0 10px 10px 10px; /* Remove padding superior para colar no header fixo */
+        }
+        /* Cabeçalho Fixo e Unificado */
+        .dashboard-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1010; /* Z-index alto para ficar acima de tudo */
+            border-radius: 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 0; /* Remove padding para os filhos controlarem */
+            display: flex; /* Adicionado */
+            flex-direction: column; /* Adicionado */
+            background: white;
+        }
+
+        .header-content {
+            padding: 10px 15px;
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .welcome-section h1 {
+            font-size: 1.5rem; /* Tamanho do título bem reduzido */
+        }
+
+        .property-owner {
+            display: flex;
+            font-size: 1.0rem;/* Oculta o subtítulo para economizar espaço */
+        }
+
+        .header-date-section {
+            padding: 5px 10px;
+            font-size: 0.8rem;
+        }
+        /* Barra de Ações agora dentro do Header */
+        .mobile-actions-bar {
+            display: flex;
+            gap: 10px;
+            padding: 10px 15px;
+            background-color: #f8f9fa;
+            border-top: 1px solid #e0e7ee;
+            width: 100%;
+        }
+
+        .btn-mobile-action {
+            flex: 1; /* Faz os botões dividirem o espaço igualmente */
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #cbd5e0;
+            background-color: #fff;
+            color: #4a5568;
+            font-size: 0.8rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+            .btn-mobile-action.add {
+                background-color: #8a5a44;
+                color: white;
+                border-color: #8a5a44;
+            }
+        /* Oculta os filtros de desktop e o botão de ação antigo */
+        .desktop-only {
+            display: none;
+        }
+        /* Grid e Cards */
+        .animais-grid {
+            grid-template-columns: 1fr; /* Coluna única */
+            gap: 15px;
+            padding-top: 0; /* Não precisa mais, pois o body já tem o padding */
+        }
+
+        .animal-card {
+            padding: 15px;
+        }
+
+        .animal-name {
+            font-size: 1.1rem;
+        }
+        /* Detalhes dentro do card em 2 colunas */
+        .card-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr; /* Duas colunas */
+            gap: 5px 15px; /* Espaçamento vertical e horizontal */
+            margin-bottom: 15px;
+        }
+
+        .detail-item {
+            display: flex;
+            flex-direction: column; /* Empilha label e valor */
+            align-items: flex-start;
+            margin-bottom: 5px;
+            justify-content: space-between;
+        }
+
+        .detail-label {
+            font-size: 0.8rem;
+            color: #6c757d;
+            min-width: 0;
+        }
+
+        .detail-value {
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        /* Modal */
+        .modal-content .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-grid-2-col {
+            grid-template-columns: 1fr; /* Coluna única no formulário do modal */
+        }
+    }
 </style>
 
 @code {
-    // Lista principal que guarda todos os animais, servindo como cache
     private List<Animal> animais = new List<Animal>();
-    // Nova lista para exibir os animais após filtros e ordenação
     private List<Animal> animaisFiltrados = new List<Animal>();
-
     private Animal animal = new Animal();
     private List<Raca> racas = new();
-
     private bool exibirModal = false;
     private string mensagemSucesso;
     private int propriedadeId;
     private bool carregandoDados = true;
-
-    // ========= INÍCIO: NOVAS VARIÁVEIS DE ESTADO PARA FILTROS E ORDENAÇÃO =========
     private string filtroNome = string.Empty;
     private string filtroStatus = "Todos";
     private string filtroCategoria = "Todos";
-    private string ordenacaoSelecionada = "nome_asc"; // Valor padrão para ordenação
-    // ========= FIM: NOVAS VARIÁVEIS DE ESTADO =========
+    private string ordenacaoSelecionada = "nome_asc";
 
+    // NOVA VARIÁVEL PARA O MODAL DE FILTROS
+    private bool exibirModalFiltros = false;
 
-    private bool MostrarOpcoesVaca =>
-        animal.Sexo == "Fêmea" && animal.CategoriaAnimal == "Vaca";
+    private bool MostrarOpcoesVaca => animal.Sexo == "Fêmea" && animal.CategoriaAnimal == "Vaca";
 
     protected override async Task OnInitializedAsync()
     {
@@ -746,17 +918,13 @@
                 animal.Raca = racaEncontrada;
             }
         }
-        // Após carregar, aplica os filtros e ordenação iniciais
         AplicarFiltrosEOrdenacao();
     }
 
-    // ========= INÍCIO: NOVA LÓGICA PARA FILTRAR E ORDENAR =========
     private void AplicarFiltrosEOrdenacao()
     {
-        // 1. Começa com a lista completa de animais
         IEnumerable<Animal> query = animais;
 
-        // 2. Aplica filtro de Nome/Brinco
         if (!string.IsNullOrWhiteSpace(filtroNome))
         {
             query = query.Where(a =>
@@ -764,19 +932,16 @@
                 a.NumeroIdentificador.Contains(filtroNome, StringComparison.OrdinalIgnoreCase));
         }
 
-        // 3. Aplica filtro de Status
         if (filtroStatus != "Todos")
         {
             query = query.Where(a => a.Status == filtroStatus);
         }
 
-        // 4. Aplica filtro de Categoria
         if (filtroCategoria != "Todos")
         {
             query = query.Where(a => a.CategoriaAnimal == filtroCategoria);
         }
 
-        // 5. Aplica a Ordenação
         switch (ordenacaoSelecionada)
         {
             case "data_desc":
@@ -791,13 +956,17 @@
                 break;
         }
 
-        // 6. Atualiza a lista que será exibida na tela
         animaisFiltrados = query.ToList();
-
-        // O StateHasChanged() é chamado automaticamente pelo @bind:after
     }
-    // ========= FIM: NOVA LÓGICA PARA FILTRAR E ORDENAR =========
 
+    // NOVOS MÉTODOS PARA CONTROLAR O MODAL DE FILTROS
+    private void AbrirModalFiltros() => exibirModalFiltros = true;
+    private void FecharModalFiltros() => exibirModalFiltros = false;
+    private void AplicarEFecharModalFiltros()
+    {
+        AplicarFiltrosEOrdenacao();
+        FecharModalFiltros();
+    }
 
     private void AbrirModalNovo()
     {
@@ -817,7 +986,6 @@
 
     private void AbrirModalEditar(Animal a)
     {
-        // Cria uma cópia do animal para edição, para não alterar a lista principal em caso de cancelamento
         animal = new Animal
             {
                 Id = a.Id,
@@ -839,8 +1007,8 @@
     {
         try
         {
-            carregandoDados = true; // Mostra o spinner global
-            exibirModal = false; // Fecha o modal imediatamente para o usuário ver o spinner
+            carregandoDados = true;
+            exibirModal = false;
             StateHasChanged();
 
             if (!MostrarOpcoesVaca)
@@ -853,13 +1021,11 @@
             else
                 await AnimalService.AtualizarAnimalAsync(animal);
 
-            await CarregarAnimais(); // Recarrega e aplica os filtros novamente
+            await CarregarAnimais();
         }
         catch (Exception ex)
         {
-            // Lógica para tratar erro (ex: exibir um toast/notificação de erro)
             Console.WriteLine($"Erro ao salvar animal: {ex.Message}");
-            // Reabre o modal em caso de erro para o usuário não perder os dados
             exibirModal = true;
         }
         finally
