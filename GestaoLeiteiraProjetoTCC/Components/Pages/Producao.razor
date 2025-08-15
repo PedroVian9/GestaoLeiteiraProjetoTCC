@@ -19,6 +19,11 @@
                 <span>@DateTime.Now.ToString("dd/MM/yyyy")</span>
             </div>
         </div>
+        <div class="mobile-actions-bar">
+            <button class="btn-mobile-action" @onclick="AbrirModalFiltros">
+                <i class="fas fa-filter"></i> Filtrar e Ordenar
+            </button>
+        </div>
     </div>
 
     @if (carregandoDados)
@@ -39,7 +44,7 @@
     }
     else
     {
-        <div class="filters-container">
+        <div class="filters-container desktop-only">
             <div class="row align-items-end">
                 <div class="col-md-4">
                     <div class="form-group">
@@ -48,7 +53,6 @@
                                @bind="filtroNome" @bind:event="oninput" @bind:after="AplicarFiltrosEOrdenacao" />
                     </div>
                 </div>
-
                 <div class="col-md-4">
                     <div class="form-group">
                         <label for="filtro-status-ordenha">Status da Ordenha de Hoje</label>
@@ -59,7 +63,6 @@
                         </select>
                     </div>
                 </div>
-
                 <div class="col-md-4">
                     <div class="form-group">
                         <label for="ordenacao">Ordenar por</label>
@@ -73,6 +76,7 @@
                 </div>
             </div>
         </div>
+
         @if (!vacasLactantesFiltradas.Any())
         {
             <div class="empty-message-container">
@@ -90,7 +94,6 @@
                     <div class="vaca-card">
                         <div class="card-header">
                             <span class="animal-name">@item.Animal.NomeAnimal (@item.Animal.NumeroIdentificador)</span>
-
                             <div class="ordenha-progress" title="@($"{item.OrdenhasFeitasHoje} de {quantidadeOrdenhasEsperadas} ordenhas registradas hoje")">
                                 @for (int i = 1; i <= quantidadeOrdenhasEsperadas; i++)
                                 {
@@ -143,12 +146,10 @@
             <div class="modal-content" @onclick:stopPropagation>
                 <h3>Registrar Produção Diária</h3>
                 <p class="modal-info-text">Vaca: <strong>@NomeAnimalSelecionado</strong></p>
-
                 <div class="form-group">
                     <label>Data do Registro</label>
                     <input class="form-control" value="@DataProducao.ToString("dd/MM/yyyy")" disabled />
                 </div>
-
                 <div class="form-group">
                     <label for="quantidade">Quantidade (litros)</label>
                     <input id="quantidade" type="number" step="0.01" class="form-control" @bind="QuantidadeLitros" placeholder="Ex: 25.50" />
@@ -157,7 +158,6 @@
                         <span class="validation-message">Informe uma quantidade válida maior que zero.</span>
                     }
                 </div>
-
                 <div class="footer-actions">
                     <button class="btn btn-secondary" @onclick="FecharModalProducao">Cancelar</button>
                     <button class="btn btn-primary" @onclick="SalvarProducao">Salvar Registro</button>
@@ -165,9 +165,45 @@
             </div>
         </div>
     }
+
+    @if (exibirModalFiltros)
+    {
+        <div class="modal-overlay" @onclick="FecharModalFiltros">
+            <div class="modal-content" @onclick:stopPropagation>
+                <h3>Filtrar e Ordenar</h3>
+                <div class="form-group">
+                    <label for="filtro-nome-modal">Buscar por Animal</label>
+                    <input id="filtro-nome-modal" type="text" class="form-control" placeholder="Nome ou brinco..."
+                           @bind="filtroNome" />
+                </div>
+                <div class="form-group">
+                    <label for="filtro-status-ordenha-modal">Status da Ordenha de Hoje</label>
+                    <select id="filtro-status-ordenha-modal" class="form-control" @bind="filtroStatusOrdenha">
+                        <option value="Todas">Mostrar Todas</option>
+                        <option value="Pendentes">Apenas Pendentes</option>
+                        <option value="Concluidas">Apenas Concluídas</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="ordenacao-modal">Ordenar por</label>
+                    <select id="ordenacao-modal" class="form-control" @bind="ordenacaoSelecionada">
+                        <option value="pendentes_primeiro">Ordenhas Pendentes Primeiro</option>
+                        <option value="nome_asc">Nome do Animal (A-Z)</option>
+                        <option value="del_desc">Mais Dias em Lactação</option>
+                        <option value="del_asc">Menos Dias em Lactação</option>
+                    </select>
+                </div>
+                <div class="footer-actions">
+                    <button type="button" class="btn btn-secondary" @onclick="FecharModalFiltros">Cancelar</button>
+                    <button type="button" class="btn btn-primary" @onclick="AplicarEFecharModalFiltros">Aplicar</button>
+                </div>
+            </div>
+        </div>
+    }
 </div>
 
 <style>
+    /* Estilos gerais */
     .page-container {
         max-width: 1200px;
         margin: 0 auto;
@@ -217,7 +253,6 @@
         gap: 8px;
     }
 
-    /* === ESTILOS DOS FILTROS (NOVOS) === */
     .filters-container {
         background: white;
         padding: 15px 25px 5px 25px;
@@ -233,15 +268,14 @@
         gap: 20px;
     }
 
-    /* ===== MUDANÇA 1: AJUSTE NO CARD PRINCIPAL ===== */
     .vaca-card {
         background: white;
         border-radius: 10px;
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         padding: 20px;
         border-left: 4px solid #17a2b8;
-        display: flex; /* Adicionado */
-        flex-direction: column; /* Adicionado */
+        display: flex;
+        flex-direction: column;
     }
 
     .card-header {
@@ -259,10 +293,9 @@
         color: #023047;
     }
 
-    /* ===== MUDANÇA 2: AJUSTE NA ÁREA DE DETALHES ===== */
     .card-details {
         margin-bottom: 15px;
-        flex-grow: 1; /* Adicionado: faz esta área crescer e empurrar o botão para baixo */
+        flex-grow: 1;
     }
 
     .detail-item {
@@ -288,8 +321,8 @@
     .card-actions {
         display: flex;
         justify-content: flex-end;
-        margin-top: auto; /* Garante que ele comece após o espaço expandido */
-        padding-top: 10px; /* Adiciona um respiro */
+        margin-top: auto;
+        padding-top: 10px;
     }
 
     .btn-action {
@@ -353,7 +386,7 @@
         flex-direction: column;
         justify-content: center;
         align-items: center;
-        z-index: 1000;
+        z-index: 1060; /* Prioridade máxima */
         color: white;
     }
 
@@ -377,7 +410,6 @@
         }
     }
 
-    /* === ESTILOS DO INDICADOR DE ORDENHA === */
     .ordenha-progress {
         display: flex;
         gap: 6px;
@@ -401,7 +433,6 @@
             border: 1px solid #218838;
         }
 
-    /* === ESTILOS DOS MODAIS === */
     .modal-overlay {
         position: fixed;
         top: 0;
@@ -412,7 +443,7 @@
         display: flex;
         justify-content: center;
         align-items: center;
-        z-index: 1000;
+        z-index: 1050; /* Prioridade alta para cobrir o header */
     }
 
     .modal-content {
@@ -467,7 +498,7 @@
         transition: border-color 0.2s ease, box-shadow 0.2s ease;
         box-sizing: border-box;
     }
-    /* Estilo para Selects dos Filtros */
+
     select.form-control {
         -webkit-appearance: none;
         -moz-appearance: none;
@@ -478,7 +509,6 @@
         background-position: right 1rem center;
         background-size: 16px 12px;
     }
-
 
     .form-control:focus {
         outline: none;
@@ -537,10 +567,125 @@
         display: block;
     }
 
+    .mobile-actions-bar {
+        display: none;
+    }
+
+    @@media (max-width: 768px) {
+        body, html {
+            padding-top: 107px;
+        }
+
+        .page-container {
+            padding: 0 10px 10px 10px;
+        }
+
+        .dashboard-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1010;
+            border-radius: 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            background: white;
+        }
+
+        .header-content {
+            padding: 10px 15px;
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .welcome-section h1 {
+            font-size: 1.5rem;
+        }
+
+        .property-owner {
+            display: flex;
+            font-size: 1.0rem;
+        }
+
+        .header-date-section {
+            padding: 5px 10px;
+            font-size: 0.8rem;
+        }
+
+        .mobile-actions-bar {
+            display: flex;
+            gap: 10px;
+            padding: 10px 15px;
+            background-color: #f8f9fa;
+            border-top: 1px solid #e0e7ee;
+            width: 100%;
+        }
+
+        .btn-mobile-action {
+            flex: 1;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #cbd5e0;
+            background-color: #fff;
+            color: #4a5568;
+            font-size: 0.8rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .desktop-only {
+            display: none;
+        }
+
+        .vacas-grid {
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+
+        .vaca-card {
+            padding: 15px;
+        }
+
+        .animal-name {
+            font-size: 1.1rem;
+        }
+
+        .card-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 5px 15px;
+        }
+
+        .detail-item {
+            flex-direction: column;
+            align-items: flex-start;
+            margin-bottom: 5px;
+        }
+
+        .detail-label {
+            font-size: 0.8rem;
+            color: #6c757d;
+        }
+
+        .detail-value {
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .modal-content .form-group {
+            margin-bottom: 1rem;
+        }
+    }
 </style>
 
 @code {
-    // Classe interna para agrupar dados
     public class VacaLactante
     {
         public Animal Animal { get; set; }
@@ -549,16 +694,11 @@
         public int OrdenhasFeitasHoje { get; set; }
     }
 
-    // Listas de dados
     private List<VacaLactante> VacasLactantes = new();
-    private List<VacaLactante> vacasLactantesFiltradas = new(); // NOVA LISTA PARA EXIBIÇÃO
-
-    // Variáveis de estado gerais
+    private List<VacaLactante> vacasLactantesFiltradas = new();
     private Propriedade PropriedadeLogada;
     private bool carregandoDados = true;
     private int quantidadeOrdenhasEsperadas;
-
-    // Variáveis de estado para modal
     private bool MostrarModalProducao = false;
     private DateTime DataProducao = DateTime.Now;
     private double QuantidadeLitros;
@@ -566,12 +706,11 @@
     private int AnimalSelecionadoParaProducaoId;
     private string NomeAnimalSelecionado = "";
     private bool MostrarErroQuantidade = false;
-
-    // ========= INÍCIO: NOVAS VARIÁVEIS DE ESTADO PARA FILTROS E ORDENAÇÃO =========
     private string filtroNome = string.Empty;
-    private string filtroStatusOrdenha = "Todas"; // "Todas", "Pendentes", "Concluidas"
-    private string ordenacaoSelecionada = "pendentes_primeiro"; // Padrão
-    // ========= FIM: NOVAS VARIÁVEIS DE ESTADO =========
+    private string filtroStatusOrdenha = "Todas";
+    private string ordenacaoSelecionada = "pendentes_primeiro";
+
+    private bool exibirModalFiltros = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -579,10 +718,8 @@
         {
             carregandoDados = true;
             StateHasChanged();
-
             var ordenhaConfig = await QuantidadeOrdenhaService.ObterQuantidadeOrdenhaMaisRecente();
             quantidadeOrdenhasEsperadas = ordenhaConfig?.Quantidade ?? 2;
-
             PropriedadeLogada = PropriedadeService.ObterPropriedadeLogada();
             if (PropriedadeLogada != null)
             {
@@ -600,7 +737,6 @@
     {
         var animais = await AnimalService.ObterAnimaisDaPropriedadeAsync(PropriedadeLogada.Id);
         var lactacoesAtivas = await LactacaoService.ObterTodasLactacoesAtivasAsync(PropriedadeLogada.Id);
-
         var listaTemporaria = new List<VacaLactante>();
         foreach (var lactacao in lactacoesAtivas)
         {
@@ -622,24 +758,18 @@
             }
         }
         VacasLactantes = listaTemporaria;
-        AplicarFiltrosEOrdenacao(); // Aplica filtros após carregar os dados
+        AplicarFiltrosEOrdenacao();
     }
 
-    // ========= INÍCIO: NOVA LÓGICA PARA FILTRAR E ORDENAR =========
     private void AplicarFiltrosEOrdenacao()
     {
-        // 1. Inicia com a lista completa de vacas em lactação
         IEnumerable<VacaLactante> query = VacasLactantes;
-
-        // 2. Aplica filtro de Nome/Brinco
         if (!string.IsNullOrWhiteSpace(filtroNome))
         {
             query = query.Where(v =>
                 v.Animal.NomeAnimal.Contains(filtroNome, StringComparison.OrdinalIgnoreCase) ||
                 v.Animal.NumeroIdentificador.Contains(filtroNome, StringComparison.OrdinalIgnoreCase));
         }
-
-        // 3. Aplica filtro de Status da Ordenha
         if (filtroStatusOrdenha == "Pendentes")
         {
             query = query.Where(v => v.OrdenhasFeitasHoje < quantidadeOrdenhasEsperadas);
@@ -648,8 +778,6 @@
         {
             query = query.Where(v => v.OrdenhasFeitasHoje >= quantidadeOrdenhasEsperadas);
         }
-
-        // 4. Aplica a Ordenação
         switch (ordenacaoSelecionada)
         {
             case "nome_asc":
@@ -663,17 +791,20 @@
                 break;
             case "pendentes_primeiro":
             default:
-                // Ordena por um booleano (false vem primeiro), depois pelo nome para desempate
                 query = query.OrderBy(v => v.OrdenhasFeitasHoje >= quantidadeOrdenhasEsperadas)
                              .ThenBy(v => v.Animal.NomeAnimal);
                 break;
         }
-
-        // 5. Atualiza a lista que será exibida na tela
         vacasLactantesFiltradas = query.ToList();
     }
-    // ========= FIM: NOVA LÓGICA PARA FILTRAR E ORDENAR =========
 
+    private void AbrirModalFiltros() => exibirModalFiltros = true;
+    private void FecharModalFiltros() => exibirModalFiltros = false;
+    private void AplicarEFecharModalFiltros()
+    {
+        AplicarFiltrosEOrdenacao();
+        FecharModalFiltros();
+    }
 
     private async Task<ProducaoLeiteira> ObterUltimaProducaoGeral(int lactacaoId)
     {
@@ -704,7 +835,6 @@
             MostrarErroQuantidade = true;
             return;
         }
-
         try
         {
             var novaProducao = new ProducaoLeiteira
@@ -715,18 +845,15 @@
                     Quantidade = QuantidadeLitros,
                     PropriedadeId = PropriedadeLogada.Id
                 };
-
             await ProducaoLeiteiraService.CriarProducaoLeiteiraAsync(novaProducao);
-
             var vacaLactante = VacasLactantes.FirstOrDefault(v => v.Lactacao.Id == LactacaoSelecionadaId);
             if (vacaLactante != null)
             {
                 vacaLactante.OrdenhasFeitasHoje++;
                 vacaLactante.UltimaProducao = novaProducao;
             }
-
             FecharModalProducao();
-            AplicarFiltrosEOrdenacao(); // Re-aplica filtros e ordenação para atualizar a UI
+            AplicarFiltrosEOrdenacao();
         }
         catch (Exception ex)
         {
