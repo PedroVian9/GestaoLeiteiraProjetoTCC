@@ -19,6 +19,28 @@
         </div>
     </div>
 
+    <div class="filters-container">
+        <div class="row align-items-end">
+            <div class="col-md-7">
+                <div class="form-group mb-md-0">
+                    <label for="filtro-nome">Buscar por Animal (Nome ou Brinco)</label>
+                    <input id="filtro-nome" type="text" class="form-control" placeholder="Digite para buscar..."
+                           @bind="filtroNome" @bind:event="oninput" @bind:after="AplicarFiltrosEOrdenacao" />
+                </div>
+            </div>
+
+            <div class="col-md-5">
+                <div class="form-group mb-md-0">
+                    <label for="ordenacao">Ordenar por</label>
+                    <select id="ordenacao" class="form-control" @bind="ordenacaoSelecionada" @bind:after="AplicarFiltrosEOrdenacao">
+                        <option value="data_desc">Início Mais Recente</option>
+                        <option value="data_asc">Início Mais Antigo</option>
+                        <option value="nome_asc">Nome do Animal (A-Z)</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
     <div class="actions-container">
         <button class="btn-action add" @onclick="AbrirModal">
             <span class="plus-icon">+</span> Nova Lactação
@@ -32,18 +54,29 @@
             <p>Carregando dados...</p>
         </div>
     }
-    else if (AnimaisLactacoes == null)
-    {
-        <p class="loading-message">Carregando...</p>
-    }
     else if (!LactacoesAtivas.Any())
     {
-        <p class="empty-message">Nenhuma lactação ativa no momento.</p>
+        <div class="empty-message-container">
+            <div class="empty-message">
+                <i class="fas fa-mug-hot"></i>
+                <p>Nenhuma lactação ativa no momento.</p>
+                <button class="btn btn-primary mt-3" @onclick="AbrirModal">Iniciar uma nova lactação</button>
+            </div>
+        </div>
+    }
+    else if (!lactacoesAtivasFiltradas.Any())
+    {
+        <div class="empty-message-container">
+            <div class="empty-message">
+                <i class="fas fa-search"></i>
+                <p>Nenhum animal em lactação encontrado para a sua busca.</p>
+            </div>
+        </div>
     }
     else
     {
         <div class="lactacoes-grid">
-            @foreach (var lactacao in LactacoesAtivas)
+            @foreach (var lactacao in lactacoesAtivasFiltradas)
             {
                 <div class="lactacao-card">
                     <div class="card-header">
@@ -186,6 +219,16 @@
         gap: 8px;
     }
 
+    /* === ESTILOS DOS FILTROS (NOVOS) === */
+    .filters-container {
+        background: white;
+        padding: 15px 25px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        border: 1px solid #e0e7ee;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+
     .actions-container {
         display: flex;
         justify-content: flex-end;
@@ -298,12 +341,24 @@
                 background-color: #c82333;
             }
 
-    .loading-message, .empty-message {
-        text-align: center;
-        color: #666;
-        margin: 40px 0;
-        font-size: 16px;
+    .empty-message-container {
+        background-color: white;
+        border-radius: 8px;
+        padding: 40px;
+        border: 1px solid #e0e7ee;
+        margin-top: 20px;
     }
+
+    .empty-message {
+        text-align: center;
+        color: #6c757d;
+    }
+
+        .empty-message i {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            opacity: 0.5;
+        }
 
     .loading-overlay {
         position: fixed;
@@ -484,23 +539,35 @@
         margin-top: 5px;
         display: block;
     }
-
 </style>
 
 @code {
+    // Listas de dados
     private List<Animal> Animais = new();
     private List<Animal> AnimaisAptos = new();
     private List<Lactacao> AnimaisLactacoes = new();
+
+    // Listas computadas e para exibição
     private List<Lactacao> LactacoesAtivas => AnimaisLactacoes.Where(l => l.DataFim == null).ToList();
-    private int? AnimalSelecionadoId;
+    private List<Lactacao> lactacoesAtivasFiltradas = new(); // NOVA LISTA PARA EXIBIÇÃO
+
+    // Variáveis de estado para modais
     private bool MostrarModal = false;
     private bool MostrarModalConfirmacao = false;
     private bool MostrarErroAnimal = false;
     private bool MostrarErroData = false;
+    private int? AnimalSelecionadoId;
     private DateTime DataInicio = DateTime.Now;
-    private Propriedade PropriedadeLogada;
     private int? LactacaoParaFinalizarId;
+
+    // Variáveis de estado gerais
+    private Propriedade PropriedadeLogada;
     private bool carregandoDados = true;
+
+    // ========= INÍCIO: NOVAS VARIÁVEIS DE ESTADO PARA FILTROS E ORDENAÇÃO =========
+    private string filtroNome = string.Empty;
+    private string ordenacaoSelecionada = "data_desc"; // Padrão: mais recentes primeiro
+    // ========= FIM: NOVAS VARIÁVEIS DE ESTADO =========
 
     protected override async Task OnInitializedAsync()
     {
@@ -523,6 +590,49 @@
         }
     }
 
+    private async Task CarregarLactacoes()
+    {
+        if (PropriedadeLogada != null)
+        {
+            AnimaisLactacoes = await LactacaoService.ObterLactacoesDaPropriedadeAsync(PropriedadeLogada.Id);
+            AplicarFiltrosEOrdenacao(); // Aplica filtros e ordenação após carregar
+        }
+    }
+
+    // ========= INÍCIO: NOVA LÓGICA PARA FILTRAR E ORDENAR =========
+    private void AplicarFiltrosEOrdenacao()
+    {
+        // 1. Inicia com a lista de lactações ATIVAS
+        IEnumerable<Lactacao> query = LactacoesAtivas;
+
+        // 2. Aplica filtro de Nome/Brinco
+        if (!string.IsNullOrWhiteSpace(filtroNome))
+        {
+            // O Contains precisa ser feito no nome do animal, que obtemos através da função auxiliar
+            query = query.Where(l => ObterNomeAnimal(l.AnimalId).Contains(filtroNome, StringComparison.OrdinalIgnoreCase));
+        }
+
+        // 3. Aplica a Ordenação
+        switch (ordenacaoSelecionada)
+        {
+            case "data_asc":
+                query = query.OrderBy(l => l.DataInicio);
+                break;
+            case "nome_asc":
+                query = query.OrderBy(l => ObterNomeAnimal(l.AnimalId));
+                break;
+            case "data_desc":
+            default:
+                query = query.OrderByDescending(l => l.DataInicio);
+                break;
+        }
+
+        // 4. Atualiza a lista que será exibida na tela
+        lactacoesAtivasFiltradas = query.ToList();
+    }
+    // ========= FIM: NOVA LÓGICA PARA FILTRAR E ORDENAR =========
+
+
     private string ObterNomeAnimal(int animalId)
     {
         var animal = Animais.FirstOrDefault(a => a.Id == animalId);
@@ -534,21 +644,11 @@
         return (DateTime.Now.Date - dataInicio.Date).Days;
     }
 
-    private async Task CarregarLactacoes()
-    {
-        if (PropriedadeLogada != null)
-        {
-            // Usando o método otimizado que já criamos
-            AnimaisLactacoes = await LactacaoService.ObterLactacoesDaPropriedadeAsync(PropriedadeLogada.Id);
-            AnimaisLactacoes = AnimaisLactacoes.OrderByDescending(l => l.DataInicio).ToList();
-        }
-    }
-
     private async Task AbrirModal()
     {
         try
         {
-            AnimalSelecionadoId = null; // Iniciar como nulo para o placeholder funcionar
+            AnimalSelecionadoId = 0;
             DataInicio = DateTime.Now;
             MostrarErroAnimal = false;
             MostrarErroData = false;
@@ -565,10 +665,6 @@
             Console.WriteLine($"Erro ao carregar animais aptos: {ex.Message}");
             AnimaisAptos = new List<Animal>();
             MostrarModal = true;
-        }
-        finally
-        {
-            StateHasChanged();
         }
     }
 
@@ -612,14 +708,7 @@
                 };
 
             await LactacaoService.CriarLactacaoAsync(novaLactacao);
-            var animalSelecionado = Animais.FirstOrDefault(a => a.Id == AnimalSelecionadoId.Value);
-
-            if (animalSelecionado != null)
-            {
-                animalSelecionado.Lactante = true;
-                await AnimalService.AtualizarAnimalAsync(animalSelecionado);
-            }
-            await CarregarLactacoes();
+            await CarregarLactacoes(); // Recarrega os dados, que já chama a aplicação de filtros
             FecharModal();
         }
         catch (Exception ex)
@@ -633,7 +722,6 @@
         }
     }
 
-    // MÉTODO AJUSTADO
     private async Task ConfirmarFinalizacao()
     {
         if (!LactacaoParaFinalizarId.HasValue) return;
@@ -643,15 +731,13 @@
             carregandoDados = true;
             StateHasChanged();
 
-            // Encontra a lactação antes de finalizar para saber qual animal atualizar
-            var lactacaoFinalizada = AnimaisLactacoes.FirstOrDefault(l => l.Id == LactacaoParaFinalizarId.Value);
-
-            // Chama o serviço que agora atualiza a lactação E o animal
             await LactacaoService.FinalizarLactacaoAsync(LactacaoParaFinalizarId.Value);
 
+            // Atualiza o estado do animal na lista local para a UI refletir a mudança
+            // sem precisar de uma nova chamada ao banco para a lista de animais
+            var lactacaoFinalizada = AnimaisLactacoes.FirstOrDefault(l => l.Id == LactacaoParaFinalizarId.Value);
             if (lactacaoFinalizada != null)
             {
-                // Atualiza o estado do animal na lista local para a UI refletir a mudança
                 var animal = Animais.FirstOrDefault(a => a.Id == lactacaoFinalizada.AnimalId);
                 if (animal != null)
                 {
@@ -659,8 +745,7 @@
                 }
             }
 
-            // Recarrega a lista de lactações para atualizar a tabela
-            await CarregarLactacoes();
+            await CarregarLactacoes(); // Recarrega os dados, que já chama a aplicação de filtros
         }
         catch (Exception ex)
         {

@@ -30,60 +30,111 @@
     }
     else if (VacasLactantes == null || !VacasLactantes.Any())
     {
-        <p class="empty-message">Nenhuma vaca em lactação para registrar produção.</p>
+        <div class="empty-message-container">
+            <div class="empty-message">
+                <i class="fas fa-info-circle"></i>
+                <p>Nenhuma vaca em lactação para registrar produção.</p>
+            </div>
+        </div>
     }
     else
     {
-        <div class="vacas-grid">
-            @foreach (var item in VacasLactantes)
-            {
-                <div class="vaca-card">
-                    <div class="card-header">
-                        <span class="animal-name">@item.Animal.NomeAnimal (@item.Animal.NumeroIdentificador)</span>
+        <div class="filters-container">
+            <div class="row align-items-end">
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label for="filtro-nome">Buscar por Animal</label>
+                        <input id="filtro-nome" type="text" class="form-control" placeholder="Nome ou brinco..."
+                               @bind="filtroNome" @bind:event="oninput" @bind:after="AplicarFiltrosEOrdenacao" />
+                    </div>
+                </div>
 
-                        <div class="ordenha-progress">
-                            @for (int i = 1; i <= quantidadeOrdenhasEsperadas; i++)
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label for="filtro-status-ordenha">Status da Ordenha de Hoje</label>
+                        <select id="filtro-status-ordenha" class="form-control" @bind="filtroStatusOrdenha" @bind:after="AplicarFiltrosEOrdenacao">
+                            <option value="Todas">Mostrar Todas</option>
+                            <option value="Pendentes">Apenas Pendentes</option>
+                            <option value="Concluidas">Apenas Concluídas</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label for="ordenacao">Ordenar por</label>
+                        <select id="ordenacao" class="form-control" @bind="ordenacaoSelecionada" @bind:after="AplicarFiltrosEOrdenacao">
+                            <option value="pendentes_primeiro">Ordenhas Pendentes Primeiro</option>
+                            <option value="nome_asc">Nome do Animal (A-Z)</option>
+                            <option value="del_desc">Mais Dias em Lactação</option>
+                            <option value="del_asc">Menos Dias em Lactação</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+        @if (!vacasLactantesFiltradas.Any())
+        {
+            <div class="empty-message-container">
+                <div class="empty-message">
+                    <i class="fas fa-search"></i>
+                    <p>Nenhuma vaca encontrada para os filtros selecionados.</p>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="vacas-grid">
+                @foreach (var item in vacasLactantesFiltradas)
+                {
+                    <div class="vaca-card">
+                        <div class="card-header">
+                            <span class="animal-name">@item.Animal.NomeAnimal (@item.Animal.NumeroIdentificador)</span>
+
+                            <div class="ordenha-progress" title="@($"{item.OrdenhasFeitasHoje} de {quantidadeOrdenhasEsperadas} ordenhas registradas hoje")">
+                                @for (int i = 1; i <= quantidadeOrdenhasEsperadas; i++)
+                                {
+                                    <span class="ordenha-dot @(i <= item.OrdenhasFeitasHoje ? "done" : "pending")"></span>
+                                }
+                            </div>
+                        </div>
+
+                        <div class="card-details">
+                            <div class="detail-item">
+                                <span class="detail-label">Início da Lactação:</span>
+                                <span class="detail-value">@item.Lactacao.DataInicio.ToString("dd/MM/yyyy")</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Dias em Lactação:</span>
+                                <span class="detail-value">@CalcularDiasCorridos(item.Lactacao.DataInicio) dias</span>
+                            </div>
+                            @if (item.UltimaProducao != null)
                             {
-                                <span class="ordenha-dot @(i <= item.OrdenhasFeitasHoje ? "done" : "pending")"></span>
+                                <div class="detail-item">
+                                    <span class="detail-label">Última Produção:</span>
+                                    <span class="detail-value">@item.UltimaProducao.Data.ToString("dd/MM/yyyy") - @item.UltimaProducao.Quantidade.ToString("F2") L</span>
+                                </div>
+                            }
+                        </div>
+
+                        <div class="card-actions">
+                            @if (item.OrdenhasFeitasHoje >= quantidadeOrdenhasEsperadas)
+                            {
+                                <button class="btn-action ja-registrado" disabled>
+                                    <i class="fas fa-check-circle"></i> Todas Registradas
+                                </button>
+                            }
+                            else
+                            {
+                                <button class="btn-action registrar" @onclick="() => AbrirModalProducao(item.Lactacao.Id, item.Animal.Id, item.Animal.NomeAnimal)">
+                                    <i class="fas fa-plus-circle"></i> Registrar Ordenha (@(item.OrdenhasFeitasHoje + 1)/@quantidadeOrdenhasEsperadas)
+                                </button>
                             }
                         </div>
                     </div>
-
-                    <div class="card-details">
-                        <div class="detail-item">
-                            <span class="detail-label">Início da Lactação:</span>
-                            <span class="detail-value">@item.Lactacao.DataInicio.ToString("dd/MM/yyyy")</span>
-                        </div>
-                        <div class="detail-item">
-                            <span class="detail-label">Dias em Lactação:</span>
-                            <span class="detail-value">@CalcularDiasCorridos(item.Lactacao.DataInicio) dias</span>
-                        </div>
-                        @if (item.UltimaProducao != null)
-                        {
-                            <div class="detail-item">
-                                <span class="detail-label">Última Produção:</span>
-                                <span class="detail-value">@item.UltimaProducao.Data.ToString("dd/MM/yyyy") - @item.UltimaProducao.Quantidade.ToString("F2") L</span>
-                            </div>
-                        }
-                    </div>
-
-                    <div class="card-actions">
-                        @if (item.OrdenhasFeitasHoje >= quantidadeOrdenhasEsperadas)
-                        {
-                            <button class="btn-action ja-registrado" disabled>
-                                <i class="fas fa-check-circle"></i> Todas Registradas
-                            </button>
-                        }
-                        else
-                        {
-                            <button class="btn-action registrar" @onclick="() => AbrirModalProducao(item.Lactacao.Id, item.Animal.Id, item.Animal.NomeAnimal)">
-                                <i class="fas fa-plus-circle"></i> Registrar Ordenha (@(item.OrdenhasFeitasHoje + 1)/@quantidadeOrdenhasEsperadas)
-                            </button>
-                        }
-                    </div>
-                </div>
-            }
-        </div>
+                }
+            </div>
+        }
     }
 
     @if (MostrarModalProducao)
@@ -166,18 +217,31 @@
         gap: 8px;
     }
 
+    /* === ESTILOS DOS FILTROS (NOVOS) === */
+    .filters-container {
+        background: white;
+        padding: 15px 25px 5px 25px;
+        border-radius: 8px;
+        margin-bottom: 30px;
+        border: 1px solid #e0e7ee;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+
     .vacas-grid {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
         gap: 20px;
     }
 
+    /* ===== MUDANÇA 1: AJUSTE NO CARD PRINCIPAL ===== */
     .vaca-card {
         background: white;
         border-radius: 10px;
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         padding: 20px;
         border-left: 4px solid #17a2b8;
+        display: flex; /* Adicionado */
+        flex-direction: column; /* Adicionado */
     }
 
     .card-header {
@@ -195,8 +259,10 @@
         color: #023047;
     }
 
+    /* ===== MUDANÇA 2: AJUSTE NA ÁREA DE DETALHES ===== */
     .card-details {
         margin-bottom: 15px;
+        flex-grow: 1; /* Adicionado: faz esta área crescer e empurrar o botão para baixo */
     }
 
     .detail-item {
@@ -222,43 +288,59 @@
     .card-actions {
         display: flex;
         justify-content: flex-end;
-        margin-top: 20px;
+        margin-top: auto; /* Garante que ele comece após o espaço expandido */
+        padding-top: 10px; /* Adiciona um respiro */
     }
 
     .btn-action {
-        padding: 10px 15px;
+        width: 100%;
+        padding: 11px 15px;
         border: none;
-        border-radius: 5px;
+        border-radius: 8px;
         cursor: pointer;
         font-size: 14px;
         display: flex;
         align-items: center;
+        justify-content: center;
         gap: 8px;
         font-weight: 600;
         transition: background-color 0.2s;
     }
 
         .btn-action.ja-registrado {
-            background-color: #6c757d;
-            color: white;
+            background-color: #f8f9fa;
+            color: #6c757d;
             cursor: not-allowed;
+            border: 1px solid #e0e7ee;
         }
 
         .btn-action.registrar {
-            background-color: #007bff;
+            background-color: #17a2b8;
             color: white;
         }
 
             .btn-action.registrar:hover {
-                background-color: #0056b3;
+                background-color: #138496;
             }
+
+    .empty-message-container {
+        background-color: white;
+        border-radius: 8px;
+        padding: 40px;
+        border: 1px solid #e0e7ee;
+        margin-top: 20px;
+    }
 
     .empty-message {
         text-align: center;
-        color: #666;
-        margin: 40px 0;
-        font-size: 16px;
+        color: #6c757d;
     }
+
+        .empty-message i {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            opacity: 0.5;
+        }
 
     .loading-overlay {
         position: fixed;
@@ -385,19 +467,31 @@
         transition: border-color 0.2s ease, box-shadow 0.2s ease;
         box-sizing: border-box;
     }
+    /* Estilo para Selects dos Filtros */
+    select.form-control {
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+        padding-right: 40px;
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
+        background-repeat: no-repeat;
+        background-position: right 1rem center;
+        background-size: 16px 12px;
+    }
 
-        .form-control:focus {
-            outline: none;
-            border-color: #17a2b8;
-            background-color: #fff;
-            box-shadow: 0 0 0 3px rgba(23, 162, 184, 0.15);
-        }
 
-        .form-control:disabled {
-            background-color: #e9ecef;
-            color: #6c757d;
-            cursor: not-allowed;
-        }
+    .form-control:focus {
+        outline: none;
+        border-color: #17a2b8;
+        background-color: #fff;
+        box-shadow: 0 0 0 3px rgba(23, 162, 184, 0.15);
+    }
+
+    .form-control:disabled {
+        background-color: #e9ecef;
+        color: #6c757d;
+        cursor: not-allowed;
+    }
 
     .footer-actions {
         display: flex;
@@ -446,6 +540,7 @@
 </style>
 
 @code {
+    // Classe interna para agrupar dados
     public class VacaLactante
     {
         public Animal Animal { get; set; }
@@ -454,12 +549,16 @@
         public int OrdenhasFeitasHoje { get; set; }
     }
 
+    // Listas de dados
     private List<VacaLactante> VacasLactantes = new();
+    private List<VacaLactante> vacasLactantesFiltradas = new(); // NOVA LISTA PARA EXIBIÇÃO
+
+    // Variáveis de estado gerais
     private Propriedade PropriedadeLogada;
     private bool carregandoDados = true;
     private int quantidadeOrdenhasEsperadas;
 
-    // Modal de produção
+    // Variáveis de estado para modal
     private bool MostrarModalProducao = false;
     private DateTime DataProducao = DateTime.Now;
     private double QuantidadeLitros;
@@ -467,6 +566,12 @@
     private int AnimalSelecionadoParaProducaoId;
     private string NomeAnimalSelecionado = "";
     private bool MostrarErroQuantidade = false;
+
+    // ========= INÍCIO: NOVAS VARIÁVEIS DE ESTADO PARA FILTROS E ORDENAÇÃO =========
+    private string filtroNome = string.Empty;
+    private string filtroStatusOrdenha = "Todas"; // "Todas", "Pendentes", "Concluidas"
+    private string ordenacaoSelecionada = "pendentes_primeiro"; // Padrão
+    // ========= FIM: NOVAS VARIÁVEIS DE ESTADO =========
 
     protected override async Task OnInitializedAsync()
     {
@@ -503,7 +608,9 @@
             if (animal != null)
             {
                 var producoesHoje = await ProducaoLeiteiraService.ObterProducoesPorLactacaoNoDiaAsync(lactacao.Id, DateTime.Today);
-                var ultimaProducao = producoesHoje.OrderByDescending(p => p.Data).FirstOrDefault() ?? await ObterUltimaProducaoGeral(lactacao.Id);
+                var ultimaProducao = producoesHoje.Any()
+                    ? producoesHoje.OrderByDescending(p => p.Data).First()
+                    : await ObterUltimaProducaoGeral(lactacao.Id);
 
                 listaTemporaria.Add(new VacaLactante
                     {
@@ -515,7 +622,58 @@
             }
         }
         VacasLactantes = listaTemporaria;
+        AplicarFiltrosEOrdenacao(); // Aplica filtros após carregar os dados
     }
+
+    // ========= INÍCIO: NOVA LÓGICA PARA FILTRAR E ORDENAR =========
+    private void AplicarFiltrosEOrdenacao()
+    {
+        // 1. Inicia com a lista completa de vacas em lactação
+        IEnumerable<VacaLactante> query = VacasLactantes;
+
+        // 2. Aplica filtro de Nome/Brinco
+        if (!string.IsNullOrWhiteSpace(filtroNome))
+        {
+            query = query.Where(v =>
+                v.Animal.NomeAnimal.Contains(filtroNome, StringComparison.OrdinalIgnoreCase) ||
+                v.Animal.NumeroIdentificador.Contains(filtroNome, StringComparison.OrdinalIgnoreCase));
+        }
+
+        // 3. Aplica filtro de Status da Ordenha
+        if (filtroStatusOrdenha == "Pendentes")
+        {
+            query = query.Where(v => v.OrdenhasFeitasHoje < quantidadeOrdenhasEsperadas);
+        }
+        else if (filtroStatusOrdenha == "Concluidas")
+        {
+            query = query.Where(v => v.OrdenhasFeitasHoje >= quantidadeOrdenhasEsperadas);
+        }
+
+        // 4. Aplica a Ordenação
+        switch (ordenacaoSelecionada)
+        {
+            case "nome_asc":
+                query = query.OrderBy(v => v.Animal.NomeAnimal);
+                break;
+            case "del_desc":
+                query = query.OrderByDescending(v => CalcularDiasCorridos(v.Lactacao.DataInicio));
+                break;
+            case "del_asc":
+                query = query.OrderBy(v => CalcularDiasCorridos(v.Lactacao.DataInicio));
+                break;
+            case "pendentes_primeiro":
+            default:
+                // Ordena por um booleano (false vem primeiro), depois pelo nome para desempate
+                query = query.OrderBy(v => v.OrdenhasFeitasHoje >= quantidadeOrdenhasEsperadas)
+                             .ThenBy(v => v.Animal.NomeAnimal);
+                break;
+        }
+
+        // 5. Atualiza a lista que será exibida na tela
+        vacasLactantesFiltradas = query.ToList();
+    }
+    // ========= FIM: NOVA LÓGICA PARA FILTRAR E ORDENAR =========
+
 
     private async Task<ProducaoLeiteira> ObterUltimaProducaoGeral(int lactacaoId)
     {
@@ -568,14 +726,11 @@
             }
 
             FecharModalProducao();
+            AplicarFiltrosEOrdenacao(); // Re-aplica filtros e ordenação para atualizar a UI
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Erro ao salvar produção: {ex.Message}");
-        }
-        finally
-        {
-            StateHasChanged();
         }
     }
 }

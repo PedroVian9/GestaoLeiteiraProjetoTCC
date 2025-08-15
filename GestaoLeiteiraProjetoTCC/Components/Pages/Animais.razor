@@ -1,4 +1,5 @@
 ﻿@page "/animais"
+@using System.Linq
 @using GestaoLeiteiraProjetoTCC.Models
 @using GestaoLeiteiraProjetoTCC.Services.Interfaces
 @inject IAnimalService AnimalService
@@ -19,6 +20,53 @@
         </div>
     </div>
 
+    <div class="filters-container">
+        <div class="row align-items-end">
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label for="filtro-nome">Buscar por Nome ou Brinco</label>
+                    <input id="filtro-nome" type="text" class="form-control" placeholder="Digite para buscar..."
+                           @bind="filtroNome" @bind:event="oninput" @bind:after="AplicarFiltrosEOrdenacao" />
+                </div>
+            </div>
+
+            <div class="col-md-2">
+                <div class="form-group">
+                    <label for="filtro-status">Status</label>
+                    <select id="filtro-status" class="form-control" @bind="filtroStatus" @bind:after="AplicarFiltrosEOrdenacao">
+                        <option value="Todos">Todos</option>
+                        <option value="Ativo">Ativo</option>
+                        <option value="Inativo">Inativo</option>
+                        <option value="Baixa">Baixa</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="col-md-3">
+                <div class="form-group">
+                    <label for="filtro-categoria">Categoria</label>
+                    <select id="filtro-categoria" class="form-control" @bind="filtroCategoria" @bind:after="AplicarFiltrosEOrdenacao">
+                        <option value="Todos">Todas</option>
+                        <option value="Bezerro">Bezerro</option>
+                        <option value="Novilha">Novilha</option>
+                        <option value="Vaca">Vaca</option>
+                        <option value="Touro">Touro</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="col-md-3">
+                <div class="form-group">
+                    <label for="ordenacao">Ordenar por</label>
+                    <select id="ordenacao" class="form-control" @bind="ordenacaoSelecionada" @bind:after="AplicarFiltrosEOrdenacao">
+                        <option value="nome_asc">Nome (A-Z)</option>
+                        <option value="data_desc">Mais Recentes (Nascimento)</option>
+                        <option value="data_asc">Mais Antigos (Nascimento)</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
     <div class="animal-actions">
         <button class="btn-action add" @onclick="AbrirModalNovo">
             <span class="plus-icon">+</span> Cadastrar novo animal
@@ -32,18 +80,29 @@
             <p>Carregando dados...</p>
         </div>
     }
-    else if (animais == null)
+    else if (!animais.Any()) // Verifica se a lista principal está vazia
     {
-        <p class="loading-message">Carregando...</p>
+        <div class="empty-message-container">
+            <div class="empty-message">
+                <i class="fas fa-paw"></i>
+                <p>Nenhum animal cadastrado ainda.</p>
+                <button class="btn btn-primary mt-3" @onclick="AbrirModalNovo">Cadastrar primeiro animal</button>
+            </div>
+        </div>
     }
-    else if (!animais.Any())
+    else if (!animaisFiltrados.Any()) // Verifica se a lista filtrada está vazia
     {
-        <p class="empty-message">Nenhum animal cadastrado.</p>
+        <div class="empty-message-container">
+            <div class="empty-message">
+                <i class="fas fa-search"></i>
+                <p>Nenhum animal encontrado para os filtros selecionados.</p>
+            </div>
+        </div>
     }
     else
     {
         <div class="animais-grid">
-            @foreach (var animal in animais)
+            @foreach (var animal in animaisFiltrados)
             {
                 <div class="animal-card">
                     <div class="card-header">
@@ -189,8 +248,6 @@
 
 <style>
     /* Estilos gerais */
-   
-
     .page-container {
         max-width: 1200px;
         margin: 0 auto;
@@ -238,7 +295,16 @@
         align-items: center;
         gap: 8px;
     }
-    /* === FIM DOS ESTILOS DO CABEÇALHO === */
+
+    /* === ESTILOS DOS FILTROS (NOVOS) === */
+    .filters-container {
+        background: white;
+        padding: 15px 25px 5px 25px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        border: 1px solid #e0e7ee;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
 
     .animal-actions {
         margin-bottom: 20px;
@@ -288,20 +354,20 @@
         font-weight: bold;
     }
 
-    .status-badge.ativo {
-        background-color: #8a5a44;
-        color: white;
-    }
+        .status-badge.ativo {
+            background-color: #28a745;
+            color: white;
+        }
 
-    .status-badge.inativo {
-        background-color: #ffc107;
-        color: #212529;
-    }
+        .status-badge.inativo {
+            background-color: #ffc107;
+            color: #212529;
+        }
 
-    .status-badge.baixa {
-        background-color: #dc3545;
-        color: white;
-    }
+        .status-badge.baixa {
+            background-color: #dc3545;
+            color: white;
+        }
 
     .card-details {
         margin-bottom: 15px;
@@ -344,26 +410,39 @@
         font-weight: 500;
     }
 
-    .btn-action.add {
-        background-color: #8a5a44;
-        color: white;
+        .btn-action.add {
+            background-color: #8a5a44;
+            color: white;
+        }
+
+        .btn-action.editar {
+            background-color: #17a2b8;
+            color: white;
+        }
+
+        .btn-action:hover {
+            opacity: 0.9;
+        }
+
+    .empty-message-container {
+        background-color: white;
+        border-radius: 8px;
+        padding: 40px;
+        border: 1px solid #e0e7ee;
+        margin-top: 20px;
     }
 
-    .btn-action.editar {
-        background-color: #17a2b8;
-        color: white;
-    }
-
-    .btn-action:hover {
-        opacity: 0.9;
-    }
-
-    .loading-message, .empty-message {
+    .empty-message {
         text-align: center;
-        color: #666;
-        margin: 40px 0;
-        font-size: 16px;
+        color: #6c757d;
     }
+
+        .empty-message i {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            opacity: 0.5;
+        }
+
 
     .loading-overlay {
         position: fixed;
@@ -391,11 +470,16 @@
     }
 
     @@keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
+        0% {
+            transform: rotate(0deg);
+        }
+
+        100% {
+            transform: rotate(360deg);
+        }
     }
 
-    /* === MODAL & FORM STYLES (NEW) === */
+    /* === MODAL & FORM STYLES === */
     .modal-overlay {
         position: fixed;
         top: 0;
@@ -420,23 +504,23 @@
         overflow-y: auto;
     }
 
-    .modal-content h3 {
-        margin-top: 0;
-        color: #023047;
-        font-size: 24px;
-        font-weight: 600;
-        padding-bottom: 20px;
-        border-bottom: 1px solid #e0e7ee;
-        margin-bottom: 25px;
-        text-align: center;
-    }
+        .modal-content h3 {
+            margin-top: 0;
+            color: #023047;
+            font-size: 24px;
+            font-weight: 600;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #e0e7ee;
+            margin-bottom: 25px;
+            text-align: center;
+        }
 
     .form-grid, .form-grid-2-col {
         display: grid;
         gap: 22px;
         margin-bottom: 22px;
     }
-    
+
     .form-grid-2-col {
         grid-template-columns: 1fr 1fr;
     }
@@ -445,13 +529,14 @@
         display: flex;
         flex-direction: column;
         gap: 8px;
+        margin-bottom: 0; /* Remove a margem extra */
     }
 
-    .form-group label {
-        font-weight: 500;
-        color: #4a5568;
-        font-size: 14px;
-    }
+        .form-group label {
+            font-weight: 500;
+            color: #4a5568;
+            font-size: 14px;
+        }
 
     .form-control {
         width: 100%;
@@ -463,17 +548,17 @@
         transition: border-color 0.2s ease, box-shadow 0.2s ease;
         box-sizing: border-box;
     }
-    
-    .form-control:focus {
-        outline: none;
-        border-color: #3a7ca5;
-        background-color: #fff;
-        box-shadow: 0 0 0 3px rgba(58, 124, 165, 0.15);
-    }
 
-    .form-control::placeholder {
-        color: #a0aec0;
-    }
+        .form-control:focus {
+            outline: none;
+            border-color: #3a7ca5;
+            background-color: #fff;
+            box-shadow: 0 0 0 3px rgba(58, 124, 165, 0.15);
+        }
+
+        .form-control::placeholder {
+            color: #a0aec0;
+        }
 
     select.form-control {
         -webkit-appearance: none;
@@ -488,11 +573,11 @@
 
     .checkbox-group {
         display: flex;
-        flex-direction: row-reverse; /* Puts checkbox first */
-        justify-content: flex-end; /* Aligns to the right */
+        flex-direction: row-reverse;
+        justify-content: flex-end;
         align-items: center;
         gap: 12px;
-        padding-top: 30px; /* Aligns with other form fields */
+        padding-top: 30px;
     }
 
     .form-check-label {
@@ -502,7 +587,7 @@
         font-size: 14px;
         cursor: pointer;
     }
-    
+
     .form-check-input {
         -webkit-appearance: none;
         appearance: none;
@@ -520,29 +605,29 @@
         transition: all 0.2s ease;
     }
 
-    .form-check-input::before {
-        content: "";
-        width: 0.65em;
-        height: 0.65em;
-        transform: scale(0);
-        transition: 120ms transform ease-in-out;
-        box-shadow: inset 1em 1em #3a7ca5;
-        transform-origin: bottom left;
-        clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
-    }
+        .form-check-input::before {
+            content: "";
+            width: 0.65em;
+            height: 0.65em;
+            transform: scale(0);
+            transition: 120ms transform ease-in-out;
+            box-shadow: inset 1em 1em #3a7ca5;
+            transform-origin: bottom left;
+            clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+        }
 
-    .form-check-input:checked {
-        border-color: #3a7ca5;
-    }
+        .form-check-input:checked {
+            border-color: #3a7ca5;
+        }
 
-    .form-check-input:checked::before {
-        transform: scale(1);
-    }
-    
-    .form-check-input:focus-visible {
-         outline: 2px solid #3a7ca5;
-         outline-offset: 2px;
-    }
+            .form-check-input:checked::before {
+                transform: scale(1);
+            }
+
+        .form-check-input:focus-visible {
+            outline: 2px solid #3a7ca5;
+            outline-offset: 2px;
+        }
 
     .footer-actions {
         display: flex;
@@ -568,18 +653,18 @@
         color: white;
     }
 
-    .btn-primary:hover {
-        background-color: #2c6284;
-    }
+        .btn-primary:hover {
+            background-color: #2c6284;
+        }
 
     .btn-secondary {
         background-color: #6c757d;
         color: white;
     }
 
-    .btn-secondary:hover {
-        background-color: #5a6268;
-    }
+        .btn-secondary:hover {
+            background-color: #5a6268;
+        }
 
     .alert {
         padding: 15px;
@@ -592,7 +677,7 @@
         color: #155724;
         border: 1px solid #c3e6cb;
     }
-    
+
     .validation-message {
         color: #e53e3e;
         font-size: 12px;
@@ -601,13 +686,26 @@
 </style>
 
 @code {
-    private List<Animal> animais;
+    // Lista principal que guarda todos os animais, servindo como cache
+    private List<Animal> animais = new List<Animal>();
+    // Nova lista para exibir os animais após filtros e ordenação
+    private List<Animal> animaisFiltrados = new List<Animal>();
+
     private Animal animal = new Animal();
+    private List<Raca> racas = new();
+
     private bool exibirModal = false;
     private string mensagemSucesso;
     private int propriedadeId;
     private bool carregandoDados = true;
-    private List<Raca> racas = new();
+
+    // ========= INÍCIO: NOVAS VARIÁVEIS DE ESTADO PARA FILTROS E ORDENAÇÃO =========
+    private string filtroNome = string.Empty;
+    private string filtroStatus = "Todos";
+    private string filtroCategoria = "Todos";
+    private string ordenacaoSelecionada = "nome_asc"; // Valor padrão para ordenação
+    // ========= FIM: NOVAS VARIÁVEIS DE ESTADO =========
+
 
     private bool MostrarOpcoesVaca =>
         animal.Sexo == "Fêmea" && animal.CategoriaAnimal == "Vaca";
@@ -622,7 +720,6 @@
             var propriedade = PropriedadeService.ObterPropriedadeLogada();
             propriedadeId = propriedade.Id;
 
-            // Carrega TODAS as raças ativas (Sistema + Usuario)
             racas = (await RacaService.ObterRacasOrdenadasPorNome())
                 .Where(r => r.Status == "Sistema" || r.Status == "Usuario")
                 .OrderBy(r => r.NomeRaca)
@@ -649,7 +746,58 @@
                 animal.Raca = racaEncontrada;
             }
         }
+        // Após carregar, aplica os filtros e ordenação iniciais
+        AplicarFiltrosEOrdenacao();
     }
+
+    // ========= INÍCIO: NOVA LÓGICA PARA FILTRAR E ORDENAR =========
+    private void AplicarFiltrosEOrdenacao()
+    {
+        // 1. Começa com a lista completa de animais
+        IEnumerable<Animal> query = animais;
+
+        // 2. Aplica filtro de Nome/Brinco
+        if (!string.IsNullOrWhiteSpace(filtroNome))
+        {
+            query = query.Where(a =>
+                a.NomeAnimal.Contains(filtroNome, StringComparison.OrdinalIgnoreCase) ||
+                a.NumeroIdentificador.Contains(filtroNome, StringComparison.OrdinalIgnoreCase));
+        }
+
+        // 3. Aplica filtro de Status
+        if (filtroStatus != "Todos")
+        {
+            query = query.Where(a => a.Status == filtroStatus);
+        }
+
+        // 4. Aplica filtro de Categoria
+        if (filtroCategoria != "Todos")
+        {
+            query = query.Where(a => a.CategoriaAnimal == filtroCategoria);
+        }
+
+        // 5. Aplica a Ordenação
+        switch (ordenacaoSelecionada)
+        {
+            case "data_desc":
+                query = query.OrderByDescending(a => a.DataNascimento);
+                break;
+            case "data_asc":
+                query = query.OrderBy(a => a.DataNascimento);
+                break;
+            case "nome_asc":
+            default:
+                query = query.OrderBy(a => a.NomeAnimal);
+                break;
+        }
+
+        // 6. Atualiza a lista que será exibida na tela
+        animaisFiltrados = query.ToList();
+
+        // O StateHasChanged() é chamado automaticamente pelo @bind:after
+    }
+    // ========= FIM: NOVA LÓGICA PARA FILTRAR E ORDENAR =========
+
 
     private void AbrirModalNovo()
     {
@@ -657,9 +805,8 @@
             {
                 PropriedadeId = propriedadeId,
                 DataNascimento = DateTime.Today,
-                Status = "Ativo", // Apenas o Status vem pré-definido
+                Status = "Ativo",
                 Prenha = false,
-                // Campos que devem vir vazios para o usuário selecionar
                 Sexo = "",
                 CategoriaAnimal = "",
                 RacaId = 0
@@ -670,6 +817,7 @@
 
     private void AbrirModalEditar(Animal a)
     {
+        // Cria uma cópia do animal para edição, para não alterar a lista principal em caso de cancelamento
         animal = new Animal
             {
                 Id = a.Id,
@@ -691,10 +839,10 @@
     {
         try
         {
-            carregandoDados = true;
+            carregandoDados = true; // Mostra o spinner global
+            exibirModal = false; // Fecha o modal imediatamente para o usuário ver o spinner
             StateHasChanged();
 
-            // Garantir que só possa ser prenha se for vaca e fêmea
             if (!MostrarOpcoesVaca)
             {
                 animal.Prenha = false;
@@ -705,14 +853,14 @@
             else
                 await AnimalService.AtualizarAnimalAsync(animal);
 
-            mensagemSucesso = "Animal salvo com sucesso!";
-            await CarregarAnimais();
-            await Task.Delay(2000);
-            FecharModal();
+            await CarregarAnimais(); // Recarrega e aplica os filtros novamente
         }
         catch (Exception ex)
         {
-            mensagemSucesso = $"Erro ao salvar animal: {ex.Message}";
+            // Lógica para tratar erro (ex: exibir um toast/notificação de erro)
+            Console.WriteLine($"Erro ao salvar animal: {ex.Message}");
+            // Reabre o modal em caso de erro para o usuário não perder os dados
+            exibirModal = true;
         }
         finally
         {
