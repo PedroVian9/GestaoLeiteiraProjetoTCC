@@ -17,9 +17,17 @@
                 <span>@DateTime.Now.ToString("dd/MM/yyyy")</span>
             </div>
         </div>
+        <div class="mobile-actions-bar">
+            <button class="btn-mobile-action" @onclick="AbrirModalFiltros">
+                <i class="fas fa-filter"></i> Filtrar e Ordenar
+            </button>
+            <button class="btn-mobile-action add" @onclick="AbrirModal">
+                <i class="fas fa-plus"></i> Nova Lactação
+            </button>
+        </div>
     </div>
 
-    <div class="filters-container">
+    <div class="filters-container desktop-only">
         <div class="row align-items-end">
             <div class="col-md-7">
                 <div class="form-group mb-md-0">
@@ -28,7 +36,6 @@
                            @bind="filtroNome" @bind:event="oninput" @bind:after="AplicarFiltrosEOrdenacao" />
                 </div>
             </div>
-
             <div class="col-md-5">
                 <div class="form-group mb-md-0">
                     <label for="ordenacao">Ordenar por</label>
@@ -41,7 +48,7 @@
             </div>
         </div>
     </div>
-    <div class="actions-container">
+    <div class="actions-container desktop-only">
         <button class="btn-action add" @onclick="AbrirModal">
             <span class="plus-icon">+</span> Nova Lactação
         </button>
@@ -83,7 +90,6 @@
                         <span class="animal-name">@ObterNomeAnimal(lactacao.AnimalId)</span>
                         <span class="status-badge active">Ativa</span>
                     </div>
-
                     <div class="card-details">
                         <div class="detail-item">
                             <span class="detail-label">Início da Lactação:</span>
@@ -94,7 +100,6 @@
                             <span class="detail-value">@CalcularDiasCorridos(lactacao.DataInicio) dias</span>
                         </div>
                     </div>
-
                     <div class="card-actions">
                         <button class="btn-action finalizar" @onclick="() => AbrirModalConfirmacao(lactacao.Id)">
                             <i class="fas fa-stop-circle"></i> Finalizar
@@ -111,7 +116,6 @@
             <div class="modal-content" @onclick:stopPropagation>
                 <h3>Registrar Nova Lactação</h3>
                 <p class="modal-info-text">Selecione uma vaca com status "Ativo" que não esteja em lactação para iniciar um novo ciclo.</p>
-
                 <div class="form-group">
                     <label for="animal">Animal</label>
                     <select id="animal" @bind="AnimalSelecionadoId" class="form-control">
@@ -133,7 +137,6 @@
                         <span class="validation-message">Por favor, selecione um animal.</span>
                     }
                 </div>
-
                 <div class="form-group">
                     <label for="dataInicio">Data de Início</label>
                     <input id="dataInicio" type="date" @bind="DataInicio" class="form-control" />
@@ -142,7 +145,6 @@
                         <span class="validation-message">A data de início não pode ser no futuro.</span>
                     }
                 </div>
-
                 <div class="footer-actions">
                     <button @onclick="FecharModal" class="btn btn-secondary">Cancelar</button>
                     <button @onclick="CriarLactacao" class="btn btn-primary" disabled="@(AnimaisAptos == null || !AnimaisAptos.Any())">Salvar</button>
@@ -159,10 +161,35 @@
                 <p class="modal-info-text">
                     Tem certeza que deseja finalizar esta lactação? A data de término será registrada como hoje. Esta ação não poderá ser desfeita.
                 </p>
-
                 <div class="footer-actions">
                     <button @onclick="FecharModalConfirmacao" class="btn btn-secondary">Cancelar</button>
                     <button @onclick="ConfirmarFinalizacao" class="btn btn-danger">Confirmar Finalização</button>
+                </div>
+            </div>
+        </div>
+    }
+
+    @if (exibirModalFiltros)
+    {
+        <div class="modal-overlay" @onclick="FecharModalFiltros">
+            <div class="modal-content" @onclick:stopPropagation>
+                <h3>Filtrar e Ordenar</h3>
+                <div class="form-group">
+                    <label for="filtro-nome-modal">Buscar por Animal (Nome ou Brinco)</label>
+                    <input id="filtro-nome-modal" type="text" class="form-control" placeholder="Digite para buscar..."
+                           @bind="filtroNome" />
+                </div>
+                <div class="form-group">
+                    <label for="ordenacao-modal">Ordenar por</label>
+                    <select id="ordenacao-modal" class="form-control" @bind="ordenacaoSelecionada">
+                        <option value="data_desc">Início Mais Recente</option>
+                        <option value="data_asc">Início Mais Antigo</option>
+                        <option value="nome_asc">Nome do Animal (A-Z)</option>
+                    </select>
+                </div>
+                <div class="footer-actions">
+                    <button type="button" class="btn btn-secondary" @onclick="FecharModalFiltros">Cancelar</button>
+                    <button type="button" class="btn btn-primary" @onclick="AplicarEFecharModalFiltros">Aplicar</button>
                 </div>
             </div>
         </div>
@@ -539,19 +566,152 @@
         margin-top: 5px;
         display: block;
     }
+
+    .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.5);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        z-index: 1060;
+        color: white;
+    }
+
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.6);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1050;
+    }
+
+    .mobile-actions-bar {
+        display: none; /* Oculto por padrão */
+    }
+
+    /* =============================================== */
+    /* ========= INÍCIO: ESTILOS PARA MOBILE ========= */
+    /* =============================================== */
+
+    @@media (max-width: 768px) {
+        body, html {
+            padding-top: 107px;
+        }
+
+        .page-container {
+            padding: 0 10px 10px 10px;
+        }
+        /* Cabeçalho Fixo e Unificado */
+        .dashboard-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1010;
+            border-radius: 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            background: white;
+        }
+
+        .header-content {
+            padding: 10px 15px;
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .welcome-section h1 {
+            font-size: 1.5rem;
+        }
+
+        .property-owner {
+            display: flex;
+            font-size: 1.0rem;
+        }
+
+        .header-date-section {
+            padding: 5px 10px;
+            font-size: 0.8rem;
+        }
+        /* Barra de Ações agora dentro do Header */
+        .mobile-actions-bar {
+            display: flex;
+            gap: 10px;
+            padding: 10px 15px;
+            background-color: #f8f9fa;
+            border-top: 1px solid #e0e7ee;
+            width: 100%;
+        }
+
+        .btn-mobile-action {
+            flex: 1;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #cbd5e0;
+            background-color: #fff;
+            color: #4a5568;
+            font-size: 0.8rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+            .btn-mobile-action.add {
+                background-color: #8a5a44;
+                color: white;
+                border-color: #8a5a44;
+            }
+        /* Oculta os filtros de desktop e o botão de ação antigo */
+        .desktop-only {
+            display: none;
+        }
+        /* Grid e Cards */
+        .lactacoes-grid {
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+
+        .lactacao-card {
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .animal-name {
+            font-size: 1.1rem;
+        }
+
+        .card-details {
+            flex-grow: 1;
+        }
+        /* Modal */
+        .modal-content .form-group {
+            margin-bottom: 1rem;
+        }
+    }
 </style>
 
 @code {
-    // Listas de dados
     private List<Animal> Animais = new();
     private List<Animal> AnimaisAptos = new();
     private List<Lactacao> AnimaisLactacoes = new();
-
-    // Listas computadas e para exibição
     private List<Lactacao> LactacoesAtivas => AnimaisLactacoes.Where(l => l.DataFim == null).ToList();
-    private List<Lactacao> lactacoesAtivasFiltradas = new(); // NOVA LISTA PARA EXIBIÇÃO
-
-    // Variáveis de estado para modais
+    private List<Lactacao> lactacoesAtivasFiltradas = new();
     private bool MostrarModal = false;
     private bool MostrarModalConfirmacao = false;
     private bool MostrarErroAnimal = false;
@@ -559,15 +719,12 @@
     private int? AnimalSelecionadoId;
     private DateTime DataInicio = DateTime.Now;
     private int? LactacaoParaFinalizarId;
-
-    // Variáveis de estado gerais
     private Propriedade PropriedadeLogada;
     private bool carregandoDados = true;
-
-    // ========= INÍCIO: NOVAS VARIÁVEIS DE ESTADO PARA FILTROS E ORDENAÇÃO =========
     private string filtroNome = string.Empty;
-    private string ordenacaoSelecionada = "data_desc"; // Padrão: mais recentes primeiro
-    // ========= FIM: NOVAS VARIÁVEIS DE ESTADO =========
+    private string ordenacaoSelecionada = "data_desc";
+
+    private bool exibirModalFiltros = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -595,24 +752,19 @@
         if (PropriedadeLogada != null)
         {
             AnimaisLactacoes = await LactacaoService.ObterLactacoesDaPropriedadeAsync(PropriedadeLogada.Id);
-            AplicarFiltrosEOrdenacao(); // Aplica filtros e ordenação após carregar
+            AplicarFiltrosEOrdenacao();
         }
     }
 
-    // ========= INÍCIO: NOVA LÓGICA PARA FILTRAR E ORDENAR =========
     private void AplicarFiltrosEOrdenacao()
     {
-        // 1. Inicia com a lista de lactações ATIVAS
         IEnumerable<Lactacao> query = LactacoesAtivas;
 
-        // 2. Aplica filtro de Nome/Brinco
         if (!string.IsNullOrWhiteSpace(filtroNome))
         {
-            // O Contains precisa ser feito no nome do animal, que obtemos através da função auxiliar
             query = query.Where(l => ObterNomeAnimal(l.AnimalId).Contains(filtroNome, StringComparison.OrdinalIgnoreCase));
         }
 
-        // 3. Aplica a Ordenação
         switch (ordenacaoSelecionada)
         {
             case "data_asc":
@@ -627,11 +779,16 @@
                 break;
         }
 
-        // 4. Atualiza a lista que será exibida na tela
         lactacoesAtivasFiltradas = query.ToList();
     }
-    // ========= FIM: NOVA LÓGICA PARA FILTRAR E ORDENAR =========
 
+    private void AbrirModalFiltros() => exibirModalFiltros = true;
+    private void FecharModalFiltros() => exibirModalFiltros = false;
+    private void AplicarEFecharModalFiltros()
+    {
+        AplicarFiltrosEOrdenacao();
+        FecharModalFiltros();
+    }
 
     private string ObterNomeAnimal(int animalId)
     {
@@ -668,10 +825,7 @@
         }
     }
 
-    private void FecharModal()
-    {
-        MostrarModal = false;
-    }
+    private void FecharModal() => MostrarModal = false;
 
     private void AbrirModalConfirmacao(int lactacaoId)
     {
@@ -690,25 +844,20 @@
         MostrarErroAnimal = AnimalSelecionadoId == null || AnimalSelecionadoId == 0;
         MostrarErroData = DataInicio.Date > DateTime.Now.Date;
 
-        if (MostrarErroAnimal || MostrarErroData)
-        {
-            return;
-        }
+        if (MostrarErroAnimal || MostrarErroData) return;
 
         try
         {
             carregandoDados = true;
             StateHasChanged();
-
             var novaLactacao = new Lactacao
                 {
                     AnimalId = AnimalSelecionadoId.Value,
                     DataInicio = DataInicio,
                     PropriedadeId = PropriedadeLogada.Id
                 };
-
             await LactacaoService.CriarLactacaoAsync(novaLactacao);
-            await CarregarLactacoes(); // Recarrega os dados, que já chama a aplicação de filtros
+            await CarregarLactacoes();
             FecharModal();
         }
         catch (Exception ex)
@@ -725,16 +874,11 @@
     private async Task ConfirmarFinalizacao()
     {
         if (!LactacaoParaFinalizarId.HasValue) return;
-
         try
         {
             carregandoDados = true;
             StateHasChanged();
-
             await LactacaoService.FinalizarLactacaoAsync(LactacaoParaFinalizarId.Value);
-
-            // Atualiza o estado do animal na lista local para a UI refletir a mudança
-            // sem precisar de uma nova chamada ao banco para a lista de animais
             var lactacaoFinalizada = AnimaisLactacoes.FirstOrDefault(l => l.Id == LactacaoParaFinalizarId.Value);
             if (lactacaoFinalizada != null)
             {
@@ -744,8 +888,7 @@
                     animal.Lactante = false;
                 }
             }
-
-            await CarregarLactacoes(); // Recarrega os dados, que já chama a aplicação de filtros
+            await CarregarLactacoes();
         }
         catch (Exception ex)
         {
