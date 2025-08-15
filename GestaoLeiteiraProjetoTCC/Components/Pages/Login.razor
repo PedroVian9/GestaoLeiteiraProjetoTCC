@@ -3,6 +3,7 @@
 @using GestaoLeiteiraProjetoTCC.Services.Interfaces
 @inject IPropriedadeService PropriedadeService
 @inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
 
 <div class="container-login">
     <div class="content-box">
@@ -69,7 +70,7 @@
 </div>
 
 <style>
-    /* Estilo do container principal */
+    /* Mantém todos os estilos existentes */
     .container-login {
         display: flex;
         justify-content: center;
@@ -78,7 +79,6 @@
         padding: 20px;
     }
 
-    /* Caixa de conteúdo centralizada */
     .content-box {
         background-color: #023047;
         border-radius: 8px;
@@ -88,7 +88,6 @@
         max-width: 500px;
     }
 
-    /* Título e subtítulo */
     .title {
         display: flex;
         justify-content: center;
@@ -109,7 +108,6 @@
         margin-bottom: 25px;
     }
 
-    /* Estilos para a lista de propriedades */
     .propriedades-lista {
         display: flex;
         flex-direction: column;
@@ -118,7 +116,6 @@
         width: 100%;
     }
 
-    /* Botão de propriedade */
     .propriedade-item {
         width: 100%;
         display: block;
@@ -139,7 +136,6 @@
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         }
 
-    /* Estilos para os botões */
     .btn {
         padding: 10px 20px;
         border-radius: 4px;
@@ -168,7 +164,6 @@
             background-color: #588157;
         }
 
-    /* Seção de login */
     .login-section {
         display: flex;
         flex-direction: column;
@@ -176,7 +171,6 @@
         color: white;
         font-size: 1em;
     }
-
 
     .back-button {
         background: none;
@@ -187,7 +181,6 @@
         margin-right: 15px;
     }
 
-    /* Grupo de formulário "Digite a senha"*/
     .form-group {
         display: flex;
         flex-direction: column;
@@ -202,7 +195,6 @@
         font-size: 16px;
     }
 
-    /* Mensagens de feedback */
     .message {
         min-height: 24px;
         font-size: 14px;
@@ -212,7 +204,6 @@
         color: #dc3545;
     }
 
-    /* Carregamento */
     .loading {
         display: flex;
         flex-direction: column;
@@ -220,13 +211,11 @@
         gap: 15px;
     }
 
-    /* Estado vazio */
     .empty-state {
         text-align: center;
         padding: 20px 0;
     }
 
-    /* Ações de rodapé */
     .footer-actions {
         display: flex;
         justify-content: center;
@@ -276,7 +265,6 @@
 
             try
             {
-                // Usando o novo método de login do serviço
                 var propriedadeLogada = await PropriedadeService.LoginPropriedadeAsync(
                     propriedadeSelecionada.NomeProprietario,
                     senha
@@ -287,7 +275,9 @@
                     mensagem = "Login realizado com sucesso!";
                     mensagemErro = false;
                     await Task.Delay(500);
-                    Navigation.NavigateTo("/inicio");
+
+                    // Detectar se é mobile ou desktop e redirecionar
+                    await RedirecionarBaseadoNoDispositivo();
                 }
                 else
                 {
@@ -304,6 +294,29 @@
         }
     }
 
+    private async Task RedirecionarBaseadoNoDispositivo()
+    {
+        try
+        {
+            // Detecta se é mobile usando JavaScript
+            bool isMobile = await JSRuntime.InvokeAsync<bool>("isMobileDevice");
+
+            if (isMobile)
+            {
+                Navigation.NavigateTo("/producao-leiteira");
+            }
+            else
+            {
+                Navigation.NavigateTo("/inicio");
+            }
+        }
+        catch
+        {
+            // Fallback para desktop em caso de erro
+            Navigation.NavigateTo("/inicio");
+        }
+    }
+
     private async Task SenhaKeyPress(KeyboardEventArgs e)
     {
         if (e.Key == "Enter")
@@ -317,3 +330,10 @@
         Navigation.NavigateTo("/cadastrar-propriedade");
     }
 }
+
+<script>
+    window.isMobileDevice = () => {
+        return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+            || window.innerWidth <= 768;
+    };
+</script>
