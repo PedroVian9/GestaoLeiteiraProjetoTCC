@@ -15,9 +15,17 @@
                 <span>@DateTime.Now.ToString("dd/MM/yyyy")</span>
             </div>
         </div>
+        <div class="mobile-actions-bar">
+            <button class="btn-mobile-action" @onclick="AbrirModalFiltros">
+                <i class="fas fa-filter"></i> Filtrar e Ordenar
+            </button>
+            <button class="btn-mobile-action add" @onclick="AbrirModalNova">
+                <i class="fas fa-plus"></i> Nova Raça
+            </button>
+        </div>
     </div>
 
-    <div class="filters-container">
+    <div class="filters-container desktop-only">
         <div class="row align-items-end">
             <div class="col-md-5">
                 <div class="form-group mb-md-0">
@@ -26,7 +34,6 @@
                            @bind="filtroNome" @bind:event="oninput" @bind:after="AplicarFiltrosEOrdenacao" />
                 </div>
             </div>
-
             <div class="col-md-3">
                 <div class="form-group mb-md-0">
                     <label for="filtro-status">Filtrar por Tipo</label>
@@ -37,7 +44,6 @@
                     </select>
                 </div>
             </div>
-
             <div class="col-md-4">
                 <div class="form-group mb-md-0">
                     <label for="ordenacao">Ordenar por</label>
@@ -49,7 +55,7 @@
             </div>
         </div>
     </div>
-    <div class="raca-actions">
+    <div class="raca-actions desktop-only">
         <button class="btn-action add" @onclick="AbrirModalNova">
             <span class="plus-icon">+</span> Cadastrar nova raça
         </button>
@@ -93,7 +99,6 @@
                             @(raca.Status == "Sistema" ? "Padrão do Sistema" : "Criado pelo Usuário")
                         </span>
                     </div>
-
                     <div class="card-body">
                         @if (PodeEditarOuExcluir(raca))
                         {
@@ -124,27 +129,22 @@
         <div class="modal-overlay" @onclick="FecharModal">
             <div class="modal-content" @onclick:stopPropagation>
                 <h3>@(racaAtual.Id == 0 ? "Cadastrar Nova Raça" : "Editar Raça")</h3>
-
                 <EditForm Model="racaAtual" OnValidSubmit="SalvarRaca">
                     <DataAnnotationsValidator />
-
                     <div class="form-group">
                         <label for="nomeRaca">Nome da Raça</label>
                         <InputText id="nomeRaca" @bind-Value="racaAtual.NomeRaca" class="form-control" placeholder="Ex: Holandesa, Gir Leiteiro..." />
                         <ValidationMessage For="@(() => racaAtual.NomeRaca)" />
                     </div>
-
                     <div class="footer-actions">
                         <button type="button" class="btn btn-secondary" @onclick="FecharModal">Cancelar</button>
                         <button type="submit" class="btn btn-primary">Salvar</button>
                     </div>
                 </EditForm>
-
                 @if (mensagemSucesso != null)
                 {
                     <div class="alert alert-success">@mensagemSucesso</div>
                 }
-
                 @if (!string.IsNullOrEmpty(MensagemErro))
                 {
                     <div class="alert alert-danger">@MensagemErro</div>
@@ -159,10 +159,42 @@
             <div class="modal-content" @onclick:stopPropagation>
                 <h3>Confirmar Exclusão</h3>
                 <p class="modal-info-text">Tem certeza de que deseja excluir a raça "<strong>@racaParaExcluir?.NomeRaca</strong>"? Esta ação não pode ser desfeita.</p>
-
                 <div class="footer-actions">
                     <button type="button" class="btn btn-secondary" @onclick="FecharModalExclusao">Cancelar</button>
                     <button type="button" class="btn btn-danger" @onclick="ConfirmarExclusao">Excluir Raça</button>
+                </div>
+            </div>
+        </div>
+    }
+
+    @if (exibirModalFiltros)
+    {
+        <div class="modal-overlay" @onclick="FecharModalFiltros">
+            <div class="modal-content" @onclick:stopPropagation>
+                <h3>Filtrar e Ordenar</h3>
+                <div class="form-group">
+                    <label for="filtro-nome-modal">Buscar por Nome</label>
+                    <input id="filtro-nome-modal" type="text" class="form-control" placeholder="Digite o nome da raça..."
+                           @bind="filtroNome" />
+                </div>
+                <div class="form-group">
+                    <label for="filtro-status-modal">Filtrar por Tipo</label>
+                    <select id="filtro-status-modal" class="form-control" @bind="filtroStatus">
+                        <option value="Todos">Todos os Tipos</option>
+                        <option value="Sistema">Padrão do Sistema</option>
+                        <option value="Usuario">Criado pelo Usuário</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="ordenacao-modal">Ordenar por</label>
+                    <select id="ordenacao-modal" class="form-control" @bind="ordenacaoSelecionada">
+                        <option value="nome_asc">Nome (A-Z)</option>
+                        <option value="nome_desc">Nome (Z-A)</option>
+                    </select>
+                </div>
+                <div class="footer-actions">
+                    <button type="button" class="btn btn-secondary" @onclick="FecharModalFiltros">Cancelar</button>
+                    <button type="button" class="btn btn-primary" @onclick="AplicarEFecharModalFiltros">Aplicar</button>
                 </div>
             </div>
         </div>
@@ -564,11 +596,147 @@
         font-size: 12px;
         margin-top: 4px;
     }
+
+    .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.5);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        z-index: 1060;
+        color: white;
+    }
+
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.6);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1050;
+    }
+
+    .mobile-actions-bar {
+        display: none; /* Oculto por padrão */
+    }
+
+    /* =============================================== */
+    /* ========= INÍCIO: ESTILOS PARA MOBILE ========= */
+    /* =============================================== */
+
+    @@media (max-width: 768px) {
+        body, html {
+            padding-top: 107px;
+        }
+
+        .page-container {
+            padding: 0 10px 10px 10px;
+        }
+        /* Cabeçalho Fixo e Unificado */
+        .dashboard-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1010;
+            border-radius: 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            background: white;
+        }
+
+        .header-content {
+            padding: 10px 15px;
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .welcome-section h1 {
+            font-size: 1.5rem;
+        }
+
+        .property-owner {
+            display: flex;
+            font-size: 1.0rem;
+        }
+
+        .header-date-section {
+            padding: 5px 10px;
+            font-size: 0.8rem;
+        }
+        /* Barra de Ações agora dentro do Header */
+        .mobile-actions-bar {
+            display: flex;
+            gap: 10px;
+            padding: 10px 15px;
+            background-color: #f8f9fa;
+            border-top: 1px solid #e0e7ee;
+            width: 100%;
+        }
+
+        .btn-mobile-action {
+            flex: 1;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #cbd5e0;
+            background-color: #fff;
+            color: #4a5568;
+            font-size: 0.8rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+            .btn-mobile-action.add {
+                background-color: #8a5a44;
+                color: white;
+                border-color: #8a5a44;
+            }
+        /* Oculta os filtros de desktop e o botão de ação antigo */
+        .desktop-only {
+            display: none;
+        }
+        /* Grid e Cards */
+        .racas-grid {
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+
+        .raca-card {
+            padding: 15px;
+        }
+
+        .raca-name {
+            font-size: 1.1rem;
+        }
+
+        .card-body {
+            padding: 15px;
+        }
+        /* Modal */
+        .modal-content .form-group {
+            margin-bottom: 1rem;
+        }
+    }
 </style>
 
 @code {
     private List<Raca> Racas = new();
-    private List<Raca> racasFiltradas = new(); // Nova lista para exibição
+    private List<Raca> racasFiltradas = new();
     private Raca racaAtual = new();
     private Raca racaParaExcluir;
     private string MensagemErro = string.Empty;
@@ -576,12 +744,12 @@
     private bool exibirModal = false;
     private bool exibirModalExclusao = false;
     private bool carregandoDados = true;
-
-    // ========= INÍCIO: NOVAS VARIÁVEIS DE ESTADO PARA FILTROS E ORDENAÇÃO =========
     private string filtroNome = string.Empty;
     private string filtroStatus = "Todos";
     private string ordenacaoSelecionada = "nome_asc";
-    // ========= FIM: NOVAS VARIÁVEIS DE ESTADO =========
+
+    // NOVA VARIÁVEL PARA O MODAL DE FILTROS
+    private bool exibirModalFiltros = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -601,28 +769,20 @@
     private async Task CarregarRacas()
     {
         Racas = await RacaService.ObterRacasOrdenadasPorNome();
-        AplicarFiltrosEOrdenacao(); // Aplica filtros após carregar os dados
+        AplicarFiltrosEOrdenacao();
     }
 
-    // ========= INÍCIO: NOVA LÓGICA PARA FILTRAR E ORDENAR =========
     private void AplicarFiltrosEOrdenacao()
     {
-        // 1. Inicia com a lista completa
         IEnumerable<Raca> query = Racas;
-
-        // 2. Aplica filtro de Nome
         if (!string.IsNullOrWhiteSpace(filtroNome))
         {
             query = query.Where(r => r.NomeRaca.Contains(filtroNome, StringComparison.OrdinalIgnoreCase));
         }
-
-        // 3. Aplica filtro de Status (Tipo)
         if (filtroStatus != "Todos")
         {
             query = query.Where(r => r.Status == filtroStatus);
         }
-
-        // 4. Aplica a Ordenação
         switch (ordenacaoSelecionada)
         {
             case "nome_desc":
@@ -633,12 +793,17 @@
                 query = query.OrderBy(r => r.NomeRaca);
                 break;
         }
-
-        // 5. Atualiza a lista que será exibida na tela
         racasFiltradas = query.ToList();
     }
-    // ========= FIM: NOVA LÓGICA PARA FILTRAR E ORDENAR =========
 
+    // NOVOS MÉTODOS PARA CONTROLAR O MODAL DE FILTROS
+    private void AbrirModalFiltros() => exibirModalFiltros = true;
+    private void FecharModalFiltros() => exibirModalFiltros = false;
+    private void AplicarEFecharModalFiltros()
+    {
+        AplicarFiltrosEOrdenacao();
+        FecharModalFiltros();
+    }
 
     private void AbrirModalNova()
     {
@@ -674,7 +839,6 @@
         {
             carregandoDados = true;
             StateHasChanged();
-
             if (racaAtual.Id == 0)
             {
                 await RacaService.Criar(racaAtual.NomeRaca);
@@ -685,9 +849,7 @@
                 await RacaService.AtualizarRacaPorId(racaAtual.Id, racaAtual.NomeRaca);
                 mensagemSucesso = "Raça atualizada com sucesso!";
             }
-
             await CarregarRacas();
-
             StateHasChanged();
             await Task.Delay(1500);
             FecharModal();
@@ -724,10 +886,8 @@
         {
             carregandoDados = true;
             StateHasChanged();
-
             await RacaService.ExcluirRaca(racaParaExcluir.Id);
             await CarregarRacas();
-
             FecharModalExclusao();
         }
         catch (Exception ex)
