@@ -44,8 +44,8 @@
                     <select id="filtro-status" class="form-control" @bind="filtroStatus" @bind:after="AplicarFiltrosEOrdenacao">
                         <option value="Todos">Todos</option>
                         <option value="Ativo">Ativo</option>
-                        <option value="Inativo">Inativo</option>
-                        <option value="Baixa">Baixa</option>
+                        <option value="Vendido">Vendido</option>
+                        <option value="Morto">Morto</option>
                     </select>
                 </div>
             </div>
@@ -114,7 +114,7 @@
                 <div class="animal-card">
                     <div class="card-header">
                         <span class="animal-name">@animal.NomeAnimal (@animal.NumeroIdentificador)</span>
-                        <span class="status-badge @animal.Status.ToLower()">@animal.Status</span>
+                        <span class="status-badge @(animal.Status?.ToLower() ?? "inativo")">@animal.Status</span>
                     </div>
 
                     <div class="card-details">
@@ -137,6 +137,12 @@
                     </div>
 
                     <div class="card-actions">
+                        <button class="btn-action genealogia"
+                                @onclick="() => AbrirModalProgênie(animal)"
+                                disabled="@(animal.CategoriaAnimal != "Vaca" && animal.CategoriaAnimal != "Touro")"
+                                title="@((animal.CategoriaAnimal != "Vaca" && animal.CategoriaAnimal != "Touro") ? "Disponível apenas para Vacas e Touros" : "Ver Progênie")">
+                            <i class="fas fa-sitemap"></i> Progênie
+                        </button>
                         <button class="btn-action editar" @onclick="() => AbrirModalEditar(animal)">
                             <i class="fas fa-edit"></i> Editar
                         </button>
@@ -146,6 +152,7 @@
         </div>
     }
 
+    @* Modal de Edição/Cadastro *@
     @if (exibirModal)
     {
         <div class="modal-overlay" @onclick="FecharModal">
@@ -261,6 +268,7 @@
         </div>
     }
 
+    @* Modal de Filtros (Mobile) *@
     @if (exibirModalFiltros)
     {
         <div class="modal-overlay" @onclick="FecharModalFiltros">
@@ -276,8 +284,8 @@
                     <select id="filtro-status-modal" class="form-control" @bind="filtroStatus">
                         <option value="Todos">Todos</option>
                         <option value="Ativo">Ativo</option>
-                        <option value="Inativo">Inativo</option>
-                        <option value="Baixa">Baixa</option>
+                        <option value="Vendido">Vendido</option>
+                        <option value="Morto">Morto</option>
                     </select>
                 </div>
                 <div class="form-group">
@@ -303,6 +311,84 @@
                 <div class="footer-actions">
                     <button type="button" class="btn btn-secondary" @onclick="FecharModalFiltros">Cancelar</button>
                     <button type="button" class="btn btn-primary" @onclick="AplicarEFecharModalFiltros">Aplicar</button>
+                </div>
+            </div>
+        </div>
+    }
+
+    @* Modal de Progênie (Dinâmico para Vaca e Touro) *@
+    @if (exibirModalProgênie)
+    {
+        <div class="modal-overlay" @onclick="FecharModalProgênie">
+            <div class="modal-content modal-progenie" @onclick:stopPropagation style="max-width: 800px;">
+
+                @if (parentSelecionado != null)
+                {
+                    <h3>Progênie de @parentSelecionado.NomeAnimal (@parentSelecionado.NumeroIdentificador)</h3>
+
+                    <div class="alert alert-info">
+                        <strong>@parentSelecionado.CategoriaAnimal:</strong> @parentSelecionado.NomeAnimal <br>
+                        <strong>Data de Nasc.:</strong> @parentSelecionado.DataNascimento?.ToString("dd/MM/yyyy") <br>
+                        <strong>Status:</strong> @parentSelecionado.Status
+                    </div>
+
+                    <h5 class="mt-4">Crias Registradas:</h5>
+
+                    @if (prole != null && prole.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover mt-3">
+                                <thead>
+                                    <tr>
+                                        <th>Nome da Cria</th>
+                                        <th>Brinco/RFID</th>
+                                        @if (parentSelecionado.Sexo == "Fêmea")
+                                        {
+                                            <th>Pai</th>
+                                        }
+                                        else
+                                        {
+                                            <th>Mãe</th>
+                                        }
+                                        <th>Data de Nasc.</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var cria in prole)
+                                    {
+                                        <tr>
+                                            <td>@cria.NomeAnimal</td>
+                                            <td>@cria.NumeroIdentificador</td>
+                                            @if (parentSelecionado.Sexo == "Fêmea")
+                                            {
+                                                <td>@ObterNomeAnimal(cria.PaiId)</td>
+                                            }
+                                            else
+                                            {
+                                                <td>@ObterNomeAnimal(cria.MaeId)</td>
+                                            }
+                                            <td>@cria.DataNascimento?.ToString("dd/MM/yyyy")</td>
+                                            <td>@cria.Status</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="empty-message-container mt-3">
+                            <div class="empty-message">
+                                <i class="fas fa-info-circle"></i>
+                                <p>Este animal não possui crias registradas no sistema.</p>
+                            </div>
+                        </div>
+                    }
+                }
+
+                <div class="footer-actions">
+                    <button type="button" class="btn btn-secondary" @onclick="FecharModalProgênie">Fechar</button>
                 </div>
             </div>
         </div>
@@ -384,6 +470,8 @@
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         padding: 20px;
         border-left: 4px solid #3a7ca5;
+        display: flex;
+        flex-direction: column;
     }
 
     .card-header {
@@ -412,25 +500,24 @@
         padding: 4px 10px;
         border-radius: 20px;
         font-weight: bold;
+        color: white;
     }
 
         .status-badge.ativo {
             background-color: #28a745;
-            color: white;
+        }
+
+        .status-badge.vendido, .status-badge.morto {
+            background-color: #dc3545;
         }
 
         .status-badge.inativo {
-            background-color: #ffc107;
-            color: #212529;
-        }
-
-        .status-badge.baixa {
-            background-color: #dc3545;
-            color: white;
+            background-color: #6c757d;
         }
 
     .card-details {
         margin-bottom: 15px;
+        flex-grow: 1;
     }
 
     .detail-item {
@@ -455,7 +542,8 @@
     .card-actions {
         display: flex;
         justify-content: flex-end;
-        margin-top: 15px;
+        gap: 10px;
+        margin-top: auto;
     }
 
     .btn-action {
@@ -468,7 +556,13 @@
         align-items: center;
         gap: 8px;
         font-weight: 500;
+        transition: opacity 0.2s, background-color 0.2s;
     }
+
+        .btn-action:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
 
         .btn-action.add {
             background-color: #8a5a44;
@@ -480,8 +574,13 @@
             color: white;
         }
 
-        .btn-action:hover {
-            opacity: 0.9;
+        .btn-action.genealogia {
+            background-color: #34495e; /* Cor alterada para Azul Ardósia */
+            color: white;
+        }
+
+        .btn-action:hover:not(:disabled) {
+            opacity: 0.85;
         }
 
     .empty-message-container {
@@ -514,7 +613,7 @@
         flex-direction: column;
         justify-content: center;
         align-items: center;
-        z-index: 1050;
+        z-index: 1060;
         color: white;
     }
 
@@ -526,6 +625,16 @@
         height: 40px;
         animation: spin 2s linear infinite;
         margin-bottom: 20px;
+    }
+
+    @@keyframes spin {
+        0% {
+            transform: rotate(0deg);
+        }
+
+        100% {
+            transform: rotate(360deg);
+        }
     }
 
     .modal-overlay {
@@ -562,6 +671,15 @@
             margin-bottom: 25px;
             text-align: center;
         }
+
+    .modal-progenie h3 {
+        border-bottom-color: #3a7ca5;
+    }
+
+    .modal-progenie .table thead {
+        background-color: #023047;
+        color: white;
+    }
 
     .form-grid, .form-grid-2-col {
         display: grid;
@@ -627,6 +745,11 @@
         color: white;
     }
 
+    .btn-secondary {
+        background-color: #6c757d;
+        color: white;
+    }
+
     .validation-message {
         color: #e53e3e;
         font-size: 12px;
@@ -654,241 +777,168 @@
         margin-bottom: 0;
     }
 
+    .alert.alert-info {
+        background-color: #e2f3f5;
+        border-color: #bdedf3;
+        color: #31708f;
+        padding: 15px;
+        border-radius: 8px;
+    }
+
+    .table-responsive {
+        overflow-x: auto;
+    }
+
     .mobile-actions-bar {
         display: none;
     }
 
     @@media (max-width: 768px) {
 
-                body, html {
-
-            /* Garante que o conteúdo não comece por baixo dos headers fixos */
-                        padding-top: 107px;
-
+        body, html {
+            padding-top: 107px;
         }
 
-
-
-                .page-container {
-                        padding: 0 10px 10px 10px; /* Remove padding superior para colar no header fixo */
-
-
+        .page-container {
+            padding: 0 10px 10px 10px;
         }
 
-
-        /* Cabeçalho Fixo e Unificado */
-                .dashboard-header {
-                        position: fixed;
-                        top: 0;
-                        left: 0;
-                        right: 0;
-                        z-index: 1010; /* Z-index alto para ficar acima de tudo */
-
-                        border-radius: 0;
-                        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-                        padding: 0; /* Remove padding para os filhos controlarem */
-
-                        display: flex; /* Adicionado */
-
-                        flex-direction: column; /* Adicionado */
-
-                        background: white;
-
+        .dashboard-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1010;
+            border-radius: 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            background: white;
         }
 
-
-
-                .header-content {
-                        padding: 10px 15px;
-                        flex-direction: row;
-                        justify-content: space-between;
-                        align-items: center;
-
+        .header-content {
+            padding: 10px 15px;
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: center;
         }
 
-
-
-                .welcome-section h1 {
-                        font-size: 1.5rem; /* Tamanho do título bem reduzido */
-
-
+        .welcome-section h1 {
+            font-size: 1.5rem;
         }
 
-
-
-                .property-owner {
-                        display: flex;
-                        font-size: 1.0rem;
-
+        .property-owner {
+            display: flex;
+            font-size: 1.0rem;
         }
 
-
-
-                .header-date-section {
-                        padding: 5px 10px;
-                        font-size: 0.8rem;
-
+        .header-date-section {
+            padding: 5px 10px;
+            font-size: 0.8rem;
         }
 
-
-        /* Barra de Ações agora dentro do Header */
-                .mobile-actions-bar {
-                        display: flex;
-                        gap: 10px;
-                        padding: 10px 15px;
-                        background-color: #f8f9fa;
-                        border-top: 1px solid #e0e7ee;
-                        width: 100%;
-
+        .mobile-actions-bar {
+            display: flex;
+            gap: 10px;
+            padding: 10px 15px;
+            background-color: #f8f9fa;
+            border-top: 1px solid #e0e7ee;
+            width: 100%;
         }
 
-
-
-                .btn-mobile-action {
-                        flex: 1; /* Faz os botões dividirem o espaço igualmente */
-
-                        padding: 10px;
-                        border-radius: 8px;
-                        border: 1px solid #cbd5e0;
-                        background-color: #fff;
-                        color: #4a5568;
-                        font-size: 0.8rem;
-                        font-weight: 600;
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                        gap: 8px;
-
+        .btn-mobile-action {
+            flex: 1;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #cbd5e0;
+            background-color: #fff;
+            color: #4a5568;
+            font-size: 0.8rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
         }
 
+            .btn-mobile-action.add {
+                background-color: #8a5a44;
+                color: white;
+                border-color: #8a5a44;
+            }
 
-
-                    .btn-mobile-action.add {
-                            background-color: #8a5a44;
-                            color: white;
-                            border-color: #8a5a44;
-
+        .desktop-only {
+            display: none;
         }
 
-
-        /* Oculta os filtros de desktop e o botão de ação antigo */
-                .desktop-only {
-                        display: none;
-
+        .animais-grid {
+            grid-template-columns: 1fr;
+            gap: 15px;
+            padding-top: 0;
         }
 
-
-        /* Grid e Cards */
-                .animais-grid {
-                        grid-template-columns: 1fr; /* Coluna única */
-
-                        gap: 15px;
-                        padding-top: 0; /* Não precisa mais, pois o body já tem o padding */
-
-
+        .animal-card {
+            padding: 15px;
         }
 
-
-
-                .animal-card {
-                        padding: 15px;
-
+        .animal-name {
+            font-size: 1.1rem;
         }
 
-
-
-                .animal-name {
-                        font-size: 1.1rem;
-
+        .card-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 5px 15px;
+            margin-bottom: 15px;
         }
 
-
-        /* Detalhes dentro do card em 2 colunas */
-                .card-details {
-                        display: grid;
-                        grid-template-columns: 1fr 1fr; /* Duas colunas */
-
-                        gap: 5px 15px; /* Espaçamento vertical e horizontal */
-
-                        margin-bottom: 15px;
-
+        .detail-item {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            margin-bottom: 5px;
+            justify-content: space-between;
         }
 
-
-
-                .detail-item {
-                        display: flex;
-                        flex-direction: column; /* Empilha label e valor */
-
-                        align-items: flex-start;
-                        margin-bottom: 5px;
-                        justify-content: space-between;
-
+        .detail-label {
+            font-size: 0.8rem;
+            color: #6c757d;
+            min-width: 0;
         }
 
-
-
-                .detail-label {
-                        font-size: 0.8rem;
-                        color: #6c757d;
-                        min-width: 0;
-
+        .detail-value {
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.9rem;
         }
 
-
-
-                .detail-value {
-                        text-align: left;
-                        font-weight: 600;
-                        font-size: 0.9rem;
-
+        .modal-content .form-group {
+            margin-bottom: 1rem;
         }
 
-
-        /* Modal */
-                .modal-content .form-group {
-                        margin-bottom: 1rem;
-
+        .form-grid-2-col {
+            grid-template-columns: 1fr;
         }
 
-
-
-                .form-grid-2-col {
-                        grid-template-columns: 1fr; /* Coluna única no formulário do modal */
-
-
+        .form-section-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #023047;
+            margin-top: 25px;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #e0e7ee;
         }
 
+            .form-section-title:first-of-type {
+                margin-top: 0;
+            }
 
-
-                .form-section-title {
-                        font-size: 1.1rem;
-                        font-weight: 600;
-                        color: #023047;
-                        margin-top: 25px;
-                        margin-bottom: 15px;
-                        padding-bottom: 8px;
-                        border-bottom: 2px solid #e0e7ee;
-
+        .vincular-animal-section {
+            grid-template-columns: 1fr;
         }
-
-
-
-                    .form-section-title:first-of-type {
-                            margin-top: 0;
-
-        }
-
-
-
-                .vincular-animal-section {
-                        display: grid;
-                        grid-template-columns: 1fr 1fr;
-                        gap: 22px;
-
-        }
-
-}
+    }
 </style>
 
 @code {
@@ -897,14 +947,20 @@
     private Animal animal = new Animal();
     private List<Raca> racas = new();
     private bool exibirModal = false;
-    private string mensagemSucesso;
     private int propriedadeId;
     private bool carregandoDados = true;
+
+    // Filtros e Ordenação
     private string filtroNome = string.Empty;
     private string filtroStatus = "Todos";
     private string filtroCategoria = "Todos";
     private string ordenacaoSelecionada = "nome_asc";
     private bool exibirModalFiltros = false;
+
+    // Variáveis para o modal de progênie
+    private bool exibirModalProgênie = false;
+    private Animal parentSelecionado;
+    private List<Animal> prole;
 
     protected override async Task OnInitializedAsync()
     {
@@ -920,23 +976,6 @@
                 .ToList();
 
             await CarregarAnimais();
-
-            var uri = new Uri(NavigationManager.Uri);
-            var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
-
-            if (query.Get("modo") == "cria")
-            {
-                var maeId = int.Parse(query.Get("maeId") ?? "0");
-                var paiId = int.Parse(query.Get("paiId") ?? "0");
-
-                if (maeId > 0)
-                {
-                    AbrirModalNovo();
-                    animal.CategoriaAnimal = "Bezerro"; // Será ajustado se o usuário selecionar Sexo
-                    animal.MaeId = maeId;
-                    animal.PaiId = paiId > 0 ? paiId : null;
-                }
-            }
         }
         finally
         {
@@ -965,8 +1004,8 @@
         if (!string.IsNullOrWhiteSpace(filtroNome))
         {
             query = query.Where(a =>
-                a.NomeAnimal.Contains(filtroNome, StringComparison.OrdinalIgnoreCase) ||
-                a.NumeroIdentificador.Contains(filtroNome, StringComparison.OrdinalIgnoreCase));
+                (a.NomeAnimal?.Contains(filtroNome, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                (a.NumeroIdentificador?.Contains(filtroNome, StringComparison.OrdinalIgnoreCase) ?? false));
         }
 
         if (filtroStatus != "Todos")
@@ -1016,7 +1055,6 @@
                 RacaId = 0
             };
         exibirModal = true;
-        mensagemSucesso = null;
     }
 
     private void AbrirModalEditar(Animal a)
@@ -1036,7 +1074,6 @@
                 PaiId = a.PaiId
             };
         exibirModal = true;
-        mensagemSucesso = null;
     }
 
     private async Task SalvarAnimal()
@@ -1078,6 +1115,44 @@
     private void FecharModal()
     {
         exibirModal = false;
-        mensagemSucesso = null;
+    }
+
+    // --- MÉTODOS PARA O MODAL DE PROGÊNIE ---
+
+    private void AbrirModalProgênie(Animal parent)
+    {
+        parentSelecionado = parent;
+
+        if (parent.Sexo == "Fêmea")
+        {
+            prole = animais.Where(cria => cria.MaeId == parent.Id)
+                           .OrderByDescending(cria => cria.DataNascimento)
+                           .ToList();
+        }
+        else // Macho
+        {
+            prole = animais.Where(cria => cria.PaiId == parent.Id)
+                           .OrderByDescending(cria => cria.DataNascimento)
+                           .ToList();
+        }
+
+        exibirModalProgênie = true;
+    }
+
+    private void FecharModalProgênie()
+    {
+        exibirModalProgênie = false;
+        parentSelecionado = null;
+        prole = null;
+    }
+
+    private string ObterNomeAnimal(int? animalId)
+    {
+        if (!animalId.HasValue || animalId == 0)
+        {
+            return "Não informado";
+        }
+        var animalEncontrado = animais.FirstOrDefault(a => a.Id == animalId.Value);
+        return animalEncontrado != null ? $"{animalEncontrado.NomeAnimal} ({animalEncontrado.NumeroIdentificador})" : "Desconhecido";
     }
 }
