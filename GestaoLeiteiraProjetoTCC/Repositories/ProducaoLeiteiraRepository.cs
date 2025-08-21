@@ -15,12 +15,14 @@ namespace GestaoLeiteiraProjetoTCC.Repositories
         public async Task<int> CriarProducaoLeiteiraDb(ProducaoLeiteira producaoLeiteira)
         {
             var db = await _databaseService.GetConnectionAsync();
+            producaoLeiteira.DataModificacaoUtc = DateTime.UtcNow;
             return await db.InsertAsync(producaoLeiteira);
         }
 
         public async Task AtualizarProducaoLeiteiraDb(ProducaoLeiteira producaoLeiteira)
         {
             var db = await _databaseService.GetConnectionAsync();
+            producaoLeiteira.DataModificacaoUtc = DateTime.UtcNow;
             await db.UpdateAsync(producaoLeiteira);
         }
 

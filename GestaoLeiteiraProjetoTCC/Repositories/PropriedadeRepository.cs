@@ -19,6 +19,7 @@ namespace GestaoLeiteiraProjetoTCC.Repositories
         public async Task<Propriedade> CadastrarPropriedadeDb(Propriedade propriedade)
         {
             propriedade.DataCadastro = DateTime.Now;
+            propriedade.DataModificacaoUtc = DateTime.UtcNow;
             await _database.InsertAsync(propriedade);
             return propriedade;
         }
@@ -56,6 +57,7 @@ namespace GestaoLeiteiraProjetoTCC.Repositories
             existente.Localizacao = propriedade.Localizacao;
             existente.AreaTotal = propriedade.AreaTotal;
             existente.TipoUnidade = propriedade.TipoUnidade;
+            existente.DataModificacaoUtc = DateTime.UtcNow;
 
             return await _database.UpdateAsync(existente) > 0;
         }
@@ -66,6 +68,7 @@ namespace GestaoLeiteiraProjetoTCC.Repositories
             if (existente == null) return false;
 
             existente.Senha = novaSenha;
+            existente.DataModificacaoUtc = DateTime.UtcNow;
             return await _database.UpdateAsync(existente) > 0;
         }
 

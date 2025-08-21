@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace GestaoLeiteiraProjetoTCC.Models
 {
-    public class Raca
+    public class Raca : BaseEntity
     {
         [PrimaryKey, AutoIncrement]
         public int Id { get; set; }
@@ -12,6 +12,6 @@ namespace GestaoLeiteiraProjetoTCC.Models
         public string NomeRaca { get; set; }
 
         [Required]
-        public string Status { get; set; } = "Usuario"; // Usuario ou Sistema
+        public string Status { get; set; } = "Usuario"; 
     }
 }

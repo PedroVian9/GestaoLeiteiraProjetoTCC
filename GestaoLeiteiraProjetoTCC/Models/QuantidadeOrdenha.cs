@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace GestaoLeiteiraProjetoTCC.Models
 {
-    public class QuantidadeOrdenha
+    public class QuantidadeOrdenha : BaseEntity
     {
         [PrimaryKey, AutoIncrement]
         public int Id { get; set; }

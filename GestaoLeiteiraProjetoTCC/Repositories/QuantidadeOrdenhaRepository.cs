@@ -15,6 +15,7 @@ namespace GestaoLeiteiraProjetoTCC.Repositories
         public async Task<QuantidadeOrdenha> CadastrarAsync(QuantidadeOrdenha quantidadeOrdenha)
         {
             var db = await _databaseService.GetConnectionAsync();
+            quantidadeOrdenha.DataModificacaoUtc = DateTime.UtcNow;
             await db.InsertAsync(quantidadeOrdenha);
             return quantidadeOrdenha;
         }

@@ -22,6 +22,9 @@
             <button class="btn-mobile-action add" @onclick="AbrirModalNova">
                 <i class="fas fa-plus"></i> Iniciar Gestação
             </button>
+            <button class="btn-mobile-action" @onclick="AbrirModalFiltros">
+                <i class="fas fa-filter"></i> Filtrar e Ordenar
+            </button>
         </div>
     </div>
 
@@ -49,39 +52,74 @@
     }
     else
     {
-        <div class="animais-grid">
-            @foreach (var gestacao in gestacoes)
-            {
-                var diasCorridos = (DateTime.Today - gestacao.DataInicio).Days;
-
-                <div class="animal-card">
-                    <div class="card-header">
-                        <span class="animal-name">@gestacao.Vaca?.NomeAnimal (@gestacao.Vaca?.NumeroIdentificador)</span>
-                    </div>
-
-                    <div class="card-details">
-                        <div class="detail-item">
-                            <span class="detail-label">Touro:</span>
-                            <span class="detail-value">@(gestacao.Touro?.NomeAnimal ?? "Não informado")</span>
-                        </div>
-                        <div class="detail-item">
-                            <span class="detail-label">Início da Gestação:</span>
-                            <span class="detail-value">@gestacao.DataInicio.ToString("dd/MM/yyyy")</span>
-                        </div>
-                        <div class="detail-item">
-                            <span class="detail-label">Dias Corridos:</span>
-                            <span class="detail-value">@diasCorridos dias</span>
-                        </div>
-                    </div>
-
-                    <div class="card-actions">
-                        <button class="btn-action editar" @onclick="() => AbrirModalFinalizar(gestacao)">
-                            <i class="fas fa-check"></i> Finalizar Gestação
-                        </button>
+        <div class="filters-container desktop-only">
+            <div class="row align-items-end">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="filtro-nome">Buscar por Vaca</label>
+                        <input id="filtro-nome" type="text" class="form-control" placeholder="Nome ou brinco..."
+                               @bind="filtroNome" @bind:event="oninput" @bind:after="AplicarFiltrosEOrdenacao" />
                     </div>
                 </div>
-            }
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="ordenacao">Ordenar por</label>
+                        <select id="ordenacao" class="form-control" @bind="ordenacaoSelecionada" @bind:after="AplicarFiltrosEOrdenacao">
+                            <option value="data_desc">Mais Recentes</option>
+                            <option value="nome_asc">Nome da Vaca (A-Z)</option>
+                            <option value="dias_desc">Mais Dias Corridos</option>
+                            <option value="dias_asc">Menos Dias Corridos</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
         </div>
+
+        @if (!gestacoesFiltradas.Any())
+        {
+            <div class="empty-message-container">
+                <div class="empty-message">
+                    <i class="fas fa-search"></i>
+                    <p>Nenhuma gestação encontrada para os filtros selecionados.</p>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="animais-grid">
+                @foreach (var gestacao in gestacoesFiltradas)
+                {
+                    var diasCorridos = (DateTime.Today - gestacao.DataInicio).Days;
+
+                    <div class="animal-card">
+                        <div class="card-header">
+                            <span class="animal-name">@gestacao.Vaca?.NomeAnimal (@gestacao.Vaca?.NumeroIdentificador)</span>
+                        </div>
+
+                        <div class="card-details">
+                            <div class="detail-item">
+                                <span class="detail-label">Touro:</span>
+                                <span class="detail-value">@(gestacao.Touro?.NomeAnimal ?? "Não informado")</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Início da Gestação:</span>
+                                <span class="detail-value">@gestacao.DataInicio.ToString("dd/MM/yyyy")</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Dias Corridos:</span>
+                                <span class="detail-value">@diasCorridos dias</span>
+                            </div>
+                        </div>
+
+                        <div class="card-actions">
+                            <button class="btn-action editar" @onclick="() => AbrirModalFinalizar(gestacao)">
+                                <i class="fas fa-check"></i> Finalizar Gestação
+                            </button>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
     }
 
     @* Modal 1: Iniciar Nova Gestação *@
@@ -149,31 +187,31 @@
                 <EditForm Model="novaCria" OnValidSubmit="SalvarCriaEFinalizarGestacao">
                     <DataAnnotationsValidator />
                     <div class="form-grid">
-                         <div class="form-group">
+                        <div class="form-group">
                             <label for="nomeAnimalCria">Nome da Cria</label>
-                            <InputText id="nomeAnimalCria" @bind-Value="novaCria.NomeAnimal" class="form-control" placeholder="Ex: Mimosa Filha"/>
+                            <InputText id="nomeAnimalCria" @bind-Value="novaCria.NomeAnimal" class="form-control" placeholder="Ex: Mimosa Filha" />
                             <ValidationMessage For="@(() => novaCria.NomeAnimal)" />
                         </div>
                         <div class="form-group">
                             <label for="numeroIdentificadorCria">Brinco / RFID</label>
-                            <InputText id="numeroIdentificadorCria" @bind-Value="novaCria.NumeroIdentificador" class="form-control" placeholder="Ex: 1234"/>
+                            <InputText id="numeroIdentificadorCria" @bind-Value="novaCria.NumeroIdentificador" class="form-control" placeholder="Ex: 1234" />
                             <ValidationMessage For="@(() => novaCria.NumeroIdentificador)" />
                         </div>
                     </div>
                     <div class="form-grid-2-col" style="margin-top: 1rem;">
-                         <div class="form-group">
+                        <div class="form-group">
                             <label for="sexoCria">Sexo</label>
                             <InputSelect id="sexoCria" @bind-Value="novaCria.Sexo" class="form-control">
                                 <option value="" disabled selected>Selecione o sexo...</option>
                                 <option value="Macho">Macho</option>
                                 <option value="Fêmea">Fêmea</option>
                             </InputSelect>
-                             <ValidationMessage For="@(() => novaCria.Sexo)" />
+                            <ValidationMessage For="@(() => novaCria.Sexo)" />
                         </div>
                         <div class="form-group">
                             <label for="dataNascimentoCria">Data de Nascimento</label>
                             <InputDate id="dataNascimentoCria" @bind-Value="novaCria.DataNascimento" class="form-control" />
-                             <ValidationMessage For="@(() => novaCria.DataNascimento)" />
+                            <ValidationMessage For="@(() => novaCria.DataNascimento)" />
                         </div>
                     </div>
                     <div class="footer-actions">
@@ -181,6 +219,34 @@
                         <button type="submit" class="btn btn-primary">Registrar Nascimento</button>
                     </div>
                 </EditForm>
+            </div>
+        </div>
+    }
+
+    @* Modal 3: Filtros (Mobile) *@
+    @if (exibirModalFiltros)
+    {
+        <div class="modal-overlay" @onclick="FecharModalFiltros">
+            <div class="modal-content" @onclick:stopPropagation>
+                <h3>Filtrar e Ordenar</h3>
+                <div class="form-group">
+                    <label for="filtro-nome-modal">Buscar por Vaca</label>
+                    <input id="filtro-nome-modal" type="text" class="form-control" placeholder="Nome ou brinco..."
+                           @bind="filtroNome" />
+                </div>
+                <div class="form-group">
+                    <label for="ordenacao-modal">Ordenar por</label>
+                    <select id="ordenacao-modal" class="form-control" @bind="ordenacaoSelecionada">
+                        <option value="data_desc">Mais Recentes</option>
+                        <option value="nome_asc">Nome da Vaca (A-Z)</option>
+                        <option value="dias_desc">Mais Dias Corridos</option>
+                        <option value="dias_asc">Menos Dias Corridos</option>
+                    </select>
+                </div>
+                <div class="footer-actions">
+                    <button type="button" class="btn btn-secondary" @onclick="FecharModalFiltros">Cancelar</button>
+                    <button type="button" class="btn btn-primary" @onclick="AplicarEFecharModalFiltros">Aplicar</button>
+                </div>
             </div>
         </div>
     }
@@ -240,6 +306,34 @@
         display: flex;
         justify-content: flex-end;
     }
+
+    /* === FILTERS CONTAINER STYLE === */
+    .filters-container {
+        background: white;
+        padding: 15px 25px 5px 25px;
+        border-radius: 8px;
+        margin-bottom: 30px;
+        border: 1px solid #e0e7ee;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+
+        .filters-container .row {
+            display: flex;
+            flex-wrap: wrap;
+            margin-left: -15px;
+            margin-right: -15px;
+        }
+
+        .filters-container .col-md-6 {
+            flex: 0 0 50%;
+            max-width: 50%;
+            padding-left: 15px;
+            padding-right: 15px;
+        }
+
+        .filters-container .align-items-end {
+            align-items: end;
+        }
 
     .animais-grid {
         display: grid;
@@ -376,6 +470,17 @@
         margin-bottom: 20px;
     }
 
+    @@keyframes spin {
+        0% {
+            transform: rotate(0deg);
+        }
+
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+
+
     /* === MODAL & FORM STYLES === */
     .modal-overlay {
         position: fixed;
@@ -416,7 +521,7 @@
         display: flex;
         flex-direction: column;
         gap: 8px;
-        margin-bottom: 0;
+        margin-bottom: 20px;
     }
 
         .form-group label {
@@ -502,135 +607,133 @@
     }
 
     @@media (max-width: 768px) {
-        body, html
-
-    {
-        padding-top: 107px;
-    }
-
-    .page-container {
-        padding: 0 10px 10px 10px;
-    }
-
-    .dashboard-header {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        z-index: 1010;
-        border-radius: 0;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        padding: 0;
-        display: flex;
-        flex-direction: column;
-        background: white;
-    }
-
-    .header-content {
-        padding: 10px 15px;
-        flex-direction: row;
-        justify-content: space-between;
-        align-items: center;
-    }
-
-    .welcome-section h1 {
-        font-size: 1.5rem;
-    }
-
-    .property-owner {
-        display: flex;
-        font-size: 1.0rem;
-    }
-
-    .header-date-section {
-        padding: 5px 10px;
-        font-size: 0.8rem;
-    }
-
-    .mobile-actions-bar {
-        display: flex;
-        gap: 10px;
-        padding: 10px 15px;
-        background-color: #f8f9fa;
-        border-top: 1px solid #e0e7ee;
-        width: 100%;
-    }
-
-    .btn-mobile-action {
-        flex: 1;
-        padding: 10px;
-        border-radius: 8px;
-        border: 1px solid #cbd5e0;
-        background-color: #fff;
-        color: #4a5568;
-        font-size: 0.8rem;
-        font-weight: 600;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-    }
-
-        .btn-mobile-action.add {
-            background-color: #8a5a44;
-            color: white;
-            border-color: #8a5a44;
+        body, html {
+            padding-top: 107px;
         }
 
-    .desktop-only {
-        display: none;
-    }
+        .page-container {
+            padding: 0 10px 10px 10px;
+        }
 
-    .animais-grid {
-        grid-template-columns: 1fr;
-        gap: 15px;
-        padding-top: 0;
-    }
+        .dashboard-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1010;
+            border-radius: 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            background: white;
+        }
 
-    .animal-card {
-        padding: 15px;
-    }
+        .header-content {
+            padding: 10px 15px;
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: center;
+        }
 
-    .animal-name {
-        font-size: 1.1rem;
-    }
+        .welcome-section h1 {
+            font-size: 1.5rem;
+        }
 
-    .card-details {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 5px 15px;
-        margin-bottom: 15px;
-    }
+        .property-owner {
+            display: flex;
+            font-size: 1.0rem;
+        }
 
-    .detail-item {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-start;
-        margin-bottom: 5px;
-        justify-content: space-between;
-    }
+        .header-date-section {
+            padding: 5px 10px;
+            font-size: 0.8rem;
+        }
 
-    .detail-label {
-        font-size: 0.8rem;
-        color: #6c757d;
-        min-width: 0;
-    }
+        .mobile-actions-bar {
+            display: flex;
+            gap: 10px;
+            padding: 10px 15px;
+            background-color: #f8f9fa;
+            border-top: 1px solid #e0e7ee;
+            width: 100%;
+        }
 
-    .detail-value {
-        text-align: left;
-        font-weight: 600;
-        font-size: 0.9rem;
-    }
+        .btn-mobile-action {
+            flex: 1;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #cbd5e0;
+            background-color: #fff;
+            color: #4a5568;
+            font-size: 0.8rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
 
-    .modal-content .form-group {
-        margin-bottom: 1rem;
-    }
+            .btn-mobile-action.add {
+                background-color: #8a5a44;
+                color: white;
+                border-color: #8a5a44;
+            }
 
+        .desktop-only {
+            display: none;
+        }
+
+        .animais-grid {
+            grid-template-columns: 1fr;
+            gap: 15px;
+            padding-top: 0;
+        }
+
+        .animal-card {
+            padding: 15px;
+        }
+
+        .animal-name {
+            font-size: 1.1rem;
+        }
+
+        .card-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 5px 15px;
+            margin-bottom: 15px;
+        }
+
+        .detail-item {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            margin-bottom: 5px;
+            justify-content: space-between;
+        }
+
+        .detail-label {
+            font-size: 0.8rem;
+            color: #6c757d;
+            min-width: 0;
+        }
+
+        .detail-value {
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .modal-content .form-group {
+            margin-bottom: 1rem;
+        }
     }
 </style>
 @code {
     private List<Gestacao> gestacoes = new();
-    
+    private List<Gestacao> gestacoesFiltradas = new();
+
     // Variáveis de estado para cada modal
     private Gestacao novaGestacao = new();
     private Gestacao gestacaoParaFinalizar;
@@ -643,8 +746,13 @@
     // Flags de controle para cada modal
     private bool exibirModalNovaGestacao = false;
     private bool exibirModalFinalizar = false;
+    private bool exibirModalFiltros = false;
     private bool carregandoDados = true;
     private int propriedadeId;
+
+    // Variáveis de filtro e ordenação
+    private string filtroNome = string.Empty;
+    private string ordenacaoSelecionada = "data_desc";
 
     protected override async Task OnInitializedAsync()
     {
@@ -679,18 +787,51 @@
             }
         }
 
-        gestacoes = gestacoes.OrderByDescending(g => g.DataInicio).ToList();
         vacasAptas = await AnimalService.ObterVacasAptasParaGestacao(propriedadeId);
         tourosAtivos = await AnimalService.ObterTourosAtivos(propriedadeId);
+
+        AplicarFiltrosEOrdenacao();
     }
+
+    private void AplicarFiltrosEOrdenacao()
+    {
+        IEnumerable<Gestacao> query = gestacoes;
+
+        if (!string.IsNullOrWhiteSpace(filtroNome))
+        {
+            query = query.Where(g => g.Vaca != null &&
+                (g.Vaca.NomeAnimal.Contains(filtroNome, StringComparison.OrdinalIgnoreCase) ||
+                 g.Vaca.NumeroIdentificador.Contains(filtroNome, StringComparison.OrdinalIgnoreCase)));
+        }
+
+        switch (ordenacaoSelecionada)
+        {
+            case "nome_asc":
+                query = query.OrderBy(g => g.Vaca?.NomeAnimal);
+                break;
+            case "dias_desc":
+                query = query.OrderByDescending(g => (DateTime.Today - g.DataInicio).Days);
+                break;
+            case "dias_asc":
+                query = query.OrderBy(g => (DateTime.Today - g.DataInicio).Days);
+                break;
+            case "data_desc":
+            default:
+                query = query.OrderByDescending(g => g.DataInicio);
+                break;
+        }
+
+        gestacoesFiltradas = query.ToList();
+    }
+
 
     private void AbrirModalNova()
     {
         novaGestacao = new Gestacao
-        {
-            DataInicio = DateTime.Today,
-            Status = "Ativa"
-        };
+            {
+                DataInicio = DateTime.Today,
+                Status = "Ativa"
+            };
         exibirModalNovaGestacao = true;
     }
 
@@ -718,20 +859,20 @@
     {
         gestacaoParaFinalizar = gestacao;
         novaCria = new Animal
-        {
-            PropriedadeId = propriedadeId,
-            DataNascimento = DateTime.Today,
-            Status = "Ativo",
-            CategoriaAnimal = "Bezerro",
-            MaeId = gestacao.VacaId,
-            PaiId = gestacao.TouroId
-        };
+            {
+                PropriedadeId = propriedadeId,
+                DataNascimento = DateTime.Today,
+                Status = "Ativo",
+                CategoriaAnimal = "Bezerro",
+                MaeId = gestacao.VacaId,
+                PaiId = gestacao.TouroId
+            };
         exibirModalFinalizar = true;
     }
 
     private async Task SalvarCriaEFinalizarGestacao()
     {
-         try
+        try
         {
             carregandoDados = true;
             exibirModalFinalizar = false;
@@ -747,9 +888,19 @@
         }
     }
 
+    private void AbrirModalFiltros() => exibirModalFiltros = true;
+    private void FecharModalFiltros() => exibirModalFiltros = false;
+
+    private void AplicarEFecharModalFiltros()
+    {
+        AplicarFiltrosEOrdenacao();
+        FecharModalFiltros();
+    }
+
     private void FecharTodosModais()
     {
         exibirModalNovaGestacao = false;
         exibirModalFinalizar = false;
+        exibirModalFiltros = false;
     }
 }

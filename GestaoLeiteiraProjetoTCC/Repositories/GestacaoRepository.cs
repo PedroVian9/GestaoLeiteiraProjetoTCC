@@ -25,6 +25,7 @@ namespace GestaoLeiteiraProjetoTCC.Repositories
         public async Task<Gestacao> IniciarGestacaoDb(Gestacao gestacao)
         {
             var db = await _databaseService.GetConnectionAsync();
+            gestacao.DataModificacaoUtc = DateTime.UtcNow;
             await db.InsertAsync(gestacao);
             return gestacao;
         }
@@ -32,6 +33,7 @@ namespace GestaoLeiteiraProjetoTCC.Repositories
         public async Task<Gestacao> AtualizarGestacaoDb(Gestacao gestacao)
         {
             var db = await _databaseService.GetConnectionAsync();
+            gestacao.DataModificacaoUtc = DateTime.UtcNow;
             await db.UpdateAsync(gestacao);
             return gestacao;
         }

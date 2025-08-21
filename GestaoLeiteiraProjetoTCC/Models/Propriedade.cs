@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace GestaoLeiteiraProjetoTCC.Models
 {
-    public class Propriedade
+    public class Propriedade : BaseEntity
     {
         [PrimaryKey, AutoIncrement]
         public int Id { get; set; }

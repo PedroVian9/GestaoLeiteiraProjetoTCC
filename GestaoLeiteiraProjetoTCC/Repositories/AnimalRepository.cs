@@ -61,6 +61,7 @@ namespace GestaoLeiteiraProjetoTCC.Repositories
         public async Task<Animal> CadastrarAnimalDb(Animal animal)
         {
             var db = await _databaseService.GetConnectionAsync();
+            animal.DataModificacaoUtc = DateTime.UtcNow;
             await db.InsertAsync(animal);
             return animal;
         }
@@ -68,6 +69,7 @@ namespace GestaoLeiteiraProjetoTCC.Repositories
         public async Task<Animal> AtualizarAnimalDb(Animal animal)
         {
             var db = await _databaseService.GetConnectionAsync();
+            animal.DataModificacaoUtc = DateTime.UtcNow;
             await db.UpdateAsync(animal);
             return animal;
         }
@@ -75,6 +77,8 @@ namespace GestaoLeiteiraProjetoTCC.Repositories
         public async Task<bool> ExcluirAnimalDb(int id)
         {
             var db = await _databaseService.GetConnectionAsync();
+            var animal = await ObterAnimalPorIdDb(id);
+            animal.Excluido = true;
             var resultado = await db.DeleteAsync<Animal>(id);
             return resultado > 0;
         }

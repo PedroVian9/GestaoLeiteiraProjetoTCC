@@ -1,8 +1,13 @@
 ﻿@page "/configuracoes"
+@using GestaoLeiteiraProjetoTCC.Data
 @using GestaoLeiteiraProjetoTCC.Models
 @using GestaoLeiteiraProjetoTCC.Services.Interfaces
+@using GestaoLeiteiraProjetoTCC.Services
+@using System.Diagnostics
 @inject IPropriedadeService PropriedadeService
-@inject IQuantidadeOrdenhaService QuantidadeOrdenhaService  // <<-- 1. SERVIÇO INJETADO
+@inject IQuantidadeOrdenhaService QuantidadeOrdenhaService
+@inject SyncService SyncService
+@inject IJSRuntime JSRuntime
 
 <div class="page-container">
     <div class="dashboard-header">
@@ -18,151 +23,226 @@
         </div>
     </div>
 
-    @if (propriedade == null || loading) // Adicionado 'loading' para melhor feedback
+    @if (propriedade == null || loading)
     {
-            <div class="loading-overlay">
-                <div class="spinner"></div>
-                <p>Carregando dados...</p>
-            </div>
+        <div class="loading-overlay">
+            <div class="spinner"></div>
+            <p>Carregando dados...</p>
+        </div>
     }
     else
     {
-            <div class="cards-container">
-                <div class="config-card">
-                     <div class="card-header">
-                         <i class="fas fa-home"></i>
-                         <h4>Informações da Propriedade</h4>
-                     </div>
-                     <div class="card-body">
-                         <div class="form-grid">
-                             <div class="form-group">
-                                 <label for="nomeProprietario">Nome do Proprietário</label>
-                                 <input id="nomeProprietario" type="text" @bind="propriedade.NomeProprietario"
-                                        placeholder="Digite o nome do proprietário" class="form-control" />
-                             </div>
-                             <div class="form-group">
-                                 <label for="nomePropriedade">Nome da Propriedade</label>
-                                 <input id="nomePropriedade" type="text" @bind="propriedade.NomePropriedade"
-                                        placeholder="Digite o nome da propriedade" class="form-control" />
-                             </div>
-                             <div class="form-group">
-                                 <label for="localizacao">Localização</label>
-                                 <input id="localizacao" type="text" @bind="propriedade.Localizacao"
-                                        placeholder="Digite a localização" class="form-control" />
-                             </div>
-                             <div class="form-grid-2-col">
-                                 <div class="form-group">
-                                     <label for="areaTotal">Área Total</label>
-                                     <input id="areaTotal" type="number" step="0.01" @bind="propriedade.AreaTotal"
-                                            placeholder="0,00" class="form-control" />
-                                 </div>
-                                 <div class="form-group">
-                                     <label for="tipoUnidade">Unidade</label>
-                                     <select id="tipoUnidade" @bind="propriedade.TipoUnidade" class="form-control">
-                                         <option value="0" disabled>Selecione...</option>
-                                         <option value="1">Alqueires Mineiros</option>
-                                         <option value="2">Alqueires Paulistas</option>
-                                         <option value="3">Hectares</option>
-                                     </select>
-                                 </div>
-                             </div>
-                         </div>
-                     </div>
-                     <div class="card-footer">
-                         <button class="btn btn-primary" @onclick="SalvarPropriedade">
-                             <i class="fas fa-save"></i>
-                             Salvar Alterações
-                         </button>
-                    @if (!string.IsNullOrEmpty(mensagemErroPropriedade))
-                    {
-                                 <div class="alert alert-danger">
-                            @mensagemErroPropriedade
-                                 </div>
-                    }
-                     </div>
+        <div class="cards-container">
+            <div class="config-card">
+                <div class="card-header">
+                    <i class="fas fa-home"></i>
+                    <h4>Informações da Propriedade</h4>
                 </div>
-
-                <div class="cards-container-right">
-                    <div class="config-card security">
-                        <div class="card-header">
-                            <i class="fas fa-lock"></i>
-                            <h4>Segurança da Conta</h4>
+                <div class="card-body">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="nomeProprietario">Nome do Proprietário</label>
+                            <input id="nomeProprietario" type="text" @bind="propriedade.NomeProprietario"
+                                   placeholder="Digite o nome do proprietário" class="form-control" />
                         </div>
-                        <div class="card-body">
+                        <div class="form-group">
+                            <label for="nomePropriedade">Nome da Propriedade</label>
+                            <input id="nomePropriedade" type="text" @bind="propriedade.NomePropriedade"
+                                   placeholder="Digite o nome da propriedade" class="form-control" />
+                        </div>
+                        <div class="form-group">
+                            <label for="localizacao">Localização</label>
+                            <input id="localizacao" type="text" @bind="propriedade.Localizacao"
+                                   placeholder="Digite a localização" class="form-control" />
+                        </div>
+                        <div class="form-grid-2-col">
                             <div class="form-group">
-                                <label for="novaSenha">Nova Senha</label>
-                                <input id="novaSenha" type="password" @bind="novaSenha" class="form-control"
-                                       placeholder="Mínimo de 6 caracteres" />
+                                <label for="areaTotal">Área Total</label>
+                                <input id="areaTotal" type="number" step="0.01" @bind="propriedade.AreaTotal"
+                                       placeholder="0,00" class="form-control" />
                             </div>
                             <div class="form-group">
-                                <label for="confirmaSenha">Confirmar Senha</label>
-                                <input id="confirmaSenha" type="password" @bind="confirmaSenha" class="form-control"
-                                       placeholder="Confirme a nova senha" />
-                            </div>
-                        </div>
-                        <div class="card-footer">
-                            <button class="btn btn-primary" @onclick="AlterarSenha">
-                                <i class="fas fa-key"></i>
-                                Alterar Senha
-                            </button>
-                        @if (!string.IsNullOrEmpty(mensagemErroSenha))
-                        {
-                                    <div class="alert alert-danger">
-                                @mensagemErroSenha
-                                    </div>
-                        }
-                        </div>
-                    </div>
-
-                    <div class="config-card milking">
-                        <div class="card-header">
-                            <i class="fas fa-clock"></i>
-                            <h4>Configurações de Ordenha</h4>
-                        </div>
-                        <div class="card-body">
-                            <div class="form-group">
-                                <label for="quantidadeOrdenhas">Ordenhas por Dia</label>
-                                <select id="quantidadeOrdenhas" @bind="quantidadeOrdenhas" class="form-control">
-                                    <option value="1">1 vez por dia</option>
-                                    <option value="2">2 vezes por dia</option>
-                                    <option value="3">3 vezes por dia</option>
+                                <label for="tipoUnidade">Unidade</label>
+                                <select id="tipoUnidade" @bind="propriedade.TipoUnidade" class="form-control">
+                                    <option value="0" disabled>Selecione...</option>
+                                    <option value="1">Alqueires Mineiros</option>
+                                    <option value="2">Alqueires Paulistas</option>
+                                    <option value="3">Hectares</option>
                                 </select>
                             </div>
                         </div>
-                        <div class="card-footer">
-                            <button class="btn btn-primary" @onclick="SalvarConfiguracaoOrdenha">
-                                <i class="fas fa-save"></i>
-                                Salvar Ordenha
-                            </button>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <button class="btn btn-primary" @onclick="SalvarPropriedade">
+                        <i class="fas fa-save"></i>
+                        Salvar Alterações
+                    </button>
+                    @if (!string.IsNullOrEmpty(mensagemErroPropriedade))
+                    {
+                        <div class="alert alert-danger">
+                            @mensagemErroPropriedade
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <div class="cards-container-right">
+                <div class="config-card security">
+                    <div class="card-header">
+                        <i class="fas fa-lock"></i>
+                        <h4>Segurança da Conta</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label for="novaSenha">Nova Senha</label>
+                            <input id="novaSenha" type="password" @bind="novaSenha" class="form-control"
+                                   placeholder="Mínimo de 6 caracteres" />
+                        </div>
+                        <div class="form-group">
+                            <label for="confirmaSenha">Confirmar Senha</label>
+                            <input id="confirmaSenha" type="password" @bind="confirmaSenha" class="form-control"
+                                   placeholder="Confirme a nova senha" />
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <button class="btn btn-primary" @onclick="AlterarSenha">
+                            <i class="fas fa-key"></i>
+                            Alterar Senha
+                        </button>
+                        @if (!string.IsNullOrEmpty(mensagemErroSenha))
+                        {
+                            <div class="alert alert-danger">
+                                @mensagemErroSenha
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <div class="config-card milking">
+                    <div class="card-header">
+                        <i class="fas fa-clock"></i>
+                        <h4>Configurações de Ordenha</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label for="quantidadeOrdenhas">Ordenhas por Dia</label>
+                            <select id="quantidadeOrdenhas" @bind="quantidadeOrdenhas" class="form-control">
+                                <option value="1">1 vez por dia</option>
+                                <option value="2">2 vezes por dia</option>
+                                <option value="3">3 vezes por dia</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <button class="btn btn-primary" @onclick="SalvarConfiguracaoOrdenha">
+                            <i class="fas fa-save"></i>
+                            Salvar Ordenha
+                        </button>
                         @if (!string.IsNullOrEmpty(mensagemErroOrdenha))
                         {
-                                     <div class="alert alert-danger">
+                            <div class="alert alert-danger">
                                 @mensagemErroOrdenha
-                                     </div>
+                            </div>
                         }
+                    </div>
+                </div>
+
+                <!-- CARD DE SINCRONIZAÇÃO -->
+                <div class="config-card sync">
+                    <div class="card-header">
+                        <i class="fas fa-sync-alt @(isSyncing ? "spinning" : "")"></i>
+                        <h4>Sincronização de Dados</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="sync-info">
+                            <p class="sync-description">
+                                Sincronize os dados entre o computador e o dispositivo móvel conectado via USB.
+                            </p>
+
+                            <div class="connection-status">
+                                <div class="status-indicator @(deviceConnected ? "connected" : "disconnected")"></div>
+                                <span class="status-text">
+                                    @(deviceConnected ? "Dispositivo conectado" : "Nenhum dispositivo detectado")
+                                </span>
+                            </div>
+
+                            @if (!string.IsNullOrEmpty(syncStatus))
+                            {
+                                <div class="sync-progress">
+                                    <div class="progress-bar">
+                                        <div class="progress-fill" style="width: @(syncProgress)%"></div>
+                                    </div>
+                                    <small class="status-message">@syncStatus</small>
+                                </div>
+                            }
+
+                            @if (syncStats?.Count > 0)
+                            {
+                                <div class="sync-stats">
+                                    <h5>Últimas estatísticas:</h5>
+                                    <div class="stats-grid">
+                                        <div class="stat-item">
+                                            <span class="stat-label">Animais PC:</span>
+                                            <span class="stat-value">@(syncStats.GetValueOrDefault("PC_Animais", 0))</span>
+                                        </div>
+                                        <div class="stat-item">
+                                            <span class="stat-label">Animais Celular:</span>
+                                            <span class="stat-value">@(syncStats.GetValueOrDefault("Celular_Animais", 0))</span>
+                                        </div>
+                                        <div class="stat-item">
+                                            <span class="stat-label">Produções PC:</span>
+                                            <span class="stat-value">@(syncStats.GetValueOrDefault("PC_Producoes", 0))</span>
+                                        </div>
+                                        <div class="stat-item">
+                                            <span class="stat-label">Produções Celular:</span>
+                                            <span class="stat-value">@(syncStats.GetValueOrDefault("Celular_Producoes", 0))</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
                         </div>
+                    </div>
+                    <div class="card-footer">
+                        <button class="btn btn-primary @(isSyncing ? "disabled" : "")"
+                                @onclick="IniciarSincronizacao" disabled="@isSyncing">
+                            <i class="fas @(isSyncing ? "fa-spinner fa-spin" : "fa-sync-alt")"></i>
+                            @(isSyncing ? "Sincronizando..." : "Sincronizar Dados")
+                        </button>
+
+                        <button class="btn btn-secondary" @onclick="DetectarDispositivo" disabled="@isSyncing">
+                            <i class="fas fa-search"></i>
+                            Detectar Dispositivo
+                        </button>
+                        @if (!string.IsNullOrEmpty(mensagemErroSync))
+                        {
+                            <div class="alert alert-danger">
+                                @mensagemErroSync
+                            </div>
+                        }
                     </div>
                 </div>
             </div>
+        </div>
     }
 </div>
 
 @if (exibirModalSucesso)
 {
-        <div class="modal-overlay" @onclick="FecharModal">
-            <div class="modal-content success-modal" @onclick:stopPropagation="true">
-                <div class="success-icon">
-                    <i class="fas fa-check-circle"></i>
-                </div>
-                <h3>Sucesso!</h3>
-                <p class="modal-info-text">@mensagemSucesso</p>
-                <div class="footer-actions">
-                    <button class="btn btn-primary" @onclick="FecharModal">
-                        Entendido
-                    </button>
-                </div>
+    <div class="modal-overlay" @onclick="FecharModal">
+        <div class="modal-content success-modal" @onclick:stopPropagation="true">
+            <div class="success-icon">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <h3>Sucesso!</h3>
+            <p class="modal-info-text">@mensagemSucesso</p>
+            <div class="footer-actions">
+                <button class="btn btn-primary" @onclick="FecharModal">
+                    Entendido
+                </button>
             </div>
         </div>
+    </div>
 }
 
 <style>
@@ -230,7 +310,7 @@
         color: white;
     }
 
-    .spinner {
+    .spinner, .fa-spinner {
         border: 4px solid #f3f3f3;
         border-top: 4px solid #3a7ca5;
         border-radius: 50%;
@@ -240,14 +320,8 @@
         margin-bottom: 15px;
     }
 
-    @@keyframes spin {
-        0% {
-            transform: rotate(0deg);
-        }
-
-        100% {
-            transform: rotate(360deg);
-        }
+    .spinning {
+        animation: spin 1s linear infinite;
     }
 
     /* === ESTILOS DOS CARDS === */
@@ -281,6 +355,10 @@
             border-left-color: #17a2b8;
         }
 
+        .config-card.sync {
+            border-left-color: #28a745;
+        }
+
     .card-header {
         display: flex;
         align-items: center;
@@ -302,6 +380,10 @@
         color: #17a2b8;
     }
 
+    .config-card.sync .card-header i {
+        color: #28a745;
+    }
+
     .card-header h4 {
         margin: 0;
         font-size: 18px;
@@ -321,15 +403,104 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
+        flex-wrap: wrap;
+        gap: 10px;
     }
 
-    .disabled-notice {
-        color: #6c757d;
-        font-style: italic;
+    /* === ESTILOS DE SINCRONIZAÇÃO === */
+    .sync-info {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .sync-description {
+        color: #666;
         font-size: 14px;
+        margin: 0;
+        line-height: 1.4;
+    }
+
+    .connection-status {
         display: flex;
         align-items: center;
+        gap: 10px;
+    }
+
+    .status-indicator {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background-color: #dc3545;
+    }
+
+        .status-indicator.connected {
+            background-color: #28a745;
+            animation: pulse 2s infinite;
+        }
+
+    .status-text {
+        font-size: 14px;
+        font-weight: 500;
+    }
+
+    .sync-progress {
+        display: flex;
+        flex-direction: column;
         gap: 8px;
+    }
+
+    .progress-bar {
+        width: 100%;
+        height: 8px;
+        background-color: #e9ecef;
+        border-radius: 4px;
+        overflow: hidden;
+    }
+
+    .progress-fill {
+        height: 100%;
+        background-color: #28a745;
+        border-radius: 4px;
+        transition: width 0.3s ease;
+    }
+
+    .status-message {
+        color: #666;
+        font-size: 13px;
+    }
+
+    .sync-stats {
+        border-top: 1px solid #eee;
+        padding-top: 15px;
+    }
+
+        .sync-stats h5 {
+            margin: 0 0 10px 0;
+            font-size: 14px;
+            font-weight: 600;
+            color: #023047;
+        }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+    }
+
+    .stat-item {
+        display: flex;
+        justify-content: space-between;
+        font-size: 13px;
+    }
+
+    .stat-label {
+        color: #666;
+    }
+
+    .stat-value {
+        font-weight: 600;
+        color: #023047;
     }
 
     /* === ESTILOS DE FORMULÁRIO === */
@@ -401,14 +572,40 @@
         transition: all 0.3s ease;
     }
 
-        .btn-primary:hover {
+        .btn-primary:hover:not(.disabled) {
             background-color: #2c6284;
+        }
+
+        .btn-primary.disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
+
+    .btn-secondary {
+        background-color: #6c757d;
+        color: white;
+        padding: 10px 20px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 15px;
+        font-weight: 600;
+        border: none;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.3s ease;
+    }
+
+        .btn-secondary:hover {
+            background-color: #5a6268;
         }
 
     .alert {
         padding: 12px;
         border-radius: 8px;
         font-size: 14px;
+        margin-top: 10px;
+        width: 100%;
     }
 
     .alert-danger {
@@ -468,41 +665,423 @@
 </style>
 
 @code {
+    // --- Variáveis de estado para formulários e UI ---
     private Propriedade propriedade;
     private string novaSenha;
     private string confirmaSenha;
     private int quantidadeOrdenhas;
-    private bool loading = true; 
-
+    private bool loading = true;
+    private bool exibirModalSucesso = false;
+    private string mensagemSucesso;
     private string mensagemErroPropriedade;
     private string mensagemErroSenha;
     private string mensagemErroOrdenha;
-    private string mensagemSucesso;
-    private bool exibirModalSucesso = false;
+    private string mensagemErroSync;
+
+    // --- Variáveis de estado para Sincronização ---
+    private bool isSyncing = false;
+    private bool deviceConnected = false;
+    private string syncStatus = "";
+    private int syncProgress = 0;
+    private Dictionary<string, int> syncStats = new();
+
+    // --- Constantes para a Sincronização ADB ---
+    private const string NomePacoteApp = "com.companyname.gestaoleiteiraprojetotcc"; // Altere para o nome do pacote do seu App Android
+    private const string NomeBancoDeDados = "gestaoleiteira.db"; // Nome do arquivo do banco de dados
+    private string _caminhoDbCelularLocal; // Caminho temporário para o DB do celular no PC
 
     protected override async Task OnInitializedAsync()
     {
-        // Busca a propriedade
-        propriedade = PropriedadeService.ObterPropriedadeLogada();
-        if (propriedade == null)
+        SyncService.StatusChanged += OnSyncStatusChanged;
+
+        try
         {
-            var lista = await PropriedadeService.ObterTodasPropriedadesAsync();
-            propriedade = lista.FirstOrDefault();
+            // Carrega dados da propriedade e ordenha
+            propriedade = PropriedadeService.ObterPropriedadeLogada() ??
+                          (await PropriedadeService.ObterTodasPropriedadesAsync()).FirstOrDefault();
+
+            var ordenhaAtual = await QuantidadeOrdenhaService.ObterQuantidadeOrdenhaMaisRecente();
+            quantidadeOrdenhas = ordenhaAtual?.Quantidade ?? 2;
+        }
+        catch (Exception ex)
+        {
+            mensagemErroPropriedade = $"Erro ao carregar dados iniciais: {ex.Message}";
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private async void OnSyncStatusChanged(object sender, string status)
+    {
+        syncStatus = status;
+
+        // Atualiza a barra de progresso com base na mensagem de status
+        if (status.Contains("Iniciando")) syncProgress = 10;
+        else if (status.Contains("Propriedade")) syncProgress = 20;
+        else if (status.Contains("Raca")) syncProgress = 30;
+        else if (status.Contains("Animal")) syncProgress = 50;
+        else if (status.Contains("Lactacao")) syncProgress = 65;
+        else if (status.Contains("Gestacao")) syncProgress = 80;
+        else if (status.Contains("Producao")) syncProgress = 90;
+        else if (status.Contains("concluída")) syncProgress = 100;
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task DetectarDispositivo()
+    {
+        isSyncing = true;
+        mensagemErroSync = "";
+        syncStatus = "Inicializando...";
+        StateHasChanged();
+
+        try
+        {
+            // Garantir que ADB está disponível
+            await AutoAdbManager.EnsureAdbAsync(status =>
+            {
+                syncStatus = status;
+                InvokeAsync(StateHasChanged);
+            });
+
+            syncStatus = "Procurando dispositivos conectados...";
+            StateHasChanged();
+
+            // Verificar dispositivos conectados
+            var (output, error, exitCode) = await AutoAdbManager.ExecuteAdbCommandAsync("devices");
+
+            if (exitCode != 0)
+                throw new Exception($"ADB falhou: {error}");
+
+            if (!output.Contains("List of devices attached"))
+                throw new Exception("Resposta inválida do ADB");
+
+            // Analisar dispositivos conectados
+            var deviceLines = output.Split('\n')
+                .Where(line => !string.IsNullOrWhiteSpace(line) &&
+                              !line.Contains("List of devices attached") &&
+                              line.Contains("device"))
+                .ToList();
+
+            if (!deviceLines.Any())
+            {
+                deviceConnected = false;
+                syncStatus = "Nenhum dispositivo encontrado.";
+                mensagemErroSync = @"DISPOSITIVO NÃO DETECTADO
+
+✅ VERIFIQUE:
+• Cabo USB conectado corretamente
+• Depuração USB ativada no celular
+• Autorização concedida no popup do celular
+• Driver USB do dispositivo instalado
+
+💡 DICA: Desconecte e reconecte o cabo USB";
+                return;
+            }
+
+            var deviceInfo = deviceLines.First();
+            syncStatus = $"Dispositivo encontrado: {deviceInfo.Split('\t')[0].Substring(0, Math.Min(10, deviceInfo.Length))}...";
+            StateHasChanged();
+
+            // Verificar se o app está instalado
+            (output, error, exitCode) = await AutoAdbManager.ExecuteAdbCommandAsync($"shell pm list packages {NomePacoteApp}");
+
+            if (!output.Contains(NomePacoteApp))
+            {
+                deviceConnected = false;
+                syncStatus = "Aplicativo não encontrado no dispositivo.";
+                mensagemErroSync = $"O aplicativo '{NomePacoteApp}' não está instalado no dispositivo conectado. Instale o app primeiro.";
+                return;
+            }
+
+            syncStatus = "Aplicativo encontrado. Testando acesso aos dados...";
+            StateHasChanged();
+
+            // Tentar diferentes métodos de acesso aos dados
+            await TentarAcessarDadosAppAsync();
+        }
+        catch (Exception ex)
+        {
+            deviceConnected = false;
+            syncStatus = "Erro na detecção.";
+            mensagemErroSync = $"ERRO: {ex.Message}";
+        }
+        finally
+        {
+            isSyncing = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task TentarAcessarDadosAppAsync()
+    {
+        _caminhoDbCelularLocal = Path.Combine(Path.GetTempPath(), $"celular_{DateTime.Now:yyyyMMdd_HHmmss}_{NomeBancoDeDados}");
+
+        // Método 1: run-as (funciona se app é debuggable)
+        syncStatus = "Tentando acesso via run-as...";
+        StateHasChanged();
+
+        var (output, error, exitCode) = await AutoAdbManager.ExecuteAdbCommandAsync($"shell run-as {NomePacoteApp} ls files/");
+
+        if (exitCode == 0 && output.Contains(NomeBancoDeDados))
+        {
+            syncStatus = "Copiando banco de dados (modo debug)...";
+            StateHasChanged();
+
+            (output, error, exitCode) = await AutoAdbManager.ExecuteAdbCommandAsync($"shell run-as {NomePacoteApp} cat files/{NomeBancoDeDados}");
+
+            if (exitCode == 0 && !string.IsNullOrEmpty(output))
+            {
+                // Salvar dados binários corretamente
+                var bytes = System.Text.Encoding.Latin1.GetBytes(output);
+                await File.WriteAllBytesAsync(_caminhoDbCelularLocal, bytes);
+
+                if (new FileInfo(_caminhoDbCelularLocal).Length > 0)
+                {
+                    deviceConnected = true;
+                    syncStatus = "✅ Dispositivo pronto para sincronização!";
+                    return;
+                }
+            }
         }
 
-        // Busca a configuração de ordenha mais recente
-        var ordenhaAtual = await QuantidadeOrdenhaService.ObterQuantidadeOrdenhaMaisRecente();
-        if (ordenhaAtual != null)
+        // Método 2: Backup completo do app
+        syncStatus = "Tentando backup do aplicativo...";
+        StateHasChanged();
+
+        var backupPath = Path.Combine(Path.GetTempPath(), $"backup_{NomePacoteApp}_{DateTime.Now:yyyyMMdd_HHmmss}.ab");
+
+        (output, error, exitCode) = await AutoAdbManager.ExecuteAdbCommandAsync($"backup -f \"{backupPath}\" -apk {NomePacoteApp}");
+
+        // Aguardar confirmação do usuário no celular
+        syncStatus = "Confirme o backup no celular (pode aparecer popup)...";
+        StateHasChanged();
+        await Task.Delay(5000); // 5 segundos para o usuário confirmar
+
+        if (File.Exists(backupPath) && new FileInfo(backupPath).Length > 1024)
         {
-            quantidadeOrdenhas = ordenhaAtual.Quantidade;
+            deviceConnected = true;
+            syncStatus = "✅ Backup criado. Dispositivo pronto!";
+            _caminhoDbCelularLocal = backupPath;
+            return;
+        }
+
+        // Método 3: Acesso direto (pode falhar no Android 12+)
+        syncStatus = "Tentando acesso direto...";
+        StateHasChanged();
+
+        (output, error, exitCode) = await AutoAdbManager.ExecuteAdbCommandAsync($"pull /data/data/{NomePacoteApp}/files/{NomeBancoDeDados} \"{_caminhoDbCelularLocal}\"");
+
+        if (File.Exists(_caminhoDbCelularLocal) && new FileInfo(_caminhoDbCelularLocal).Length > 0)
+        {
+            deviceConnected = true;
+            syncStatus = "✅ Acesso direto bem-sucedido!";
+            return;
+        }
+
+        // Se chegou aqui, nenhum método funcionou
+        deviceConnected = false;
+        syncStatus = "❌ Não foi possível acessar os dados.";
+        mensagemErroSync = @"ACESSO AOS DADOS BLOQUEADO
+
+🔒 ANDROID 12+ tem restrições de segurança que impedem o acesso direto aos dados do app.
+
+✅ SOLUÇÕES POSSÍVEIS:
+1. Compile o app em modo DEBUG para ativar 'run-as'
+2. Ative as opções de desenvolvedor e autorize backup/restore
+3. Use um dispositivo com Android mais antigo (< 12)
+4. Root do dispositivo (avançado)
+
+💡 A opção mais simples é usar o modo DEBUG do app.";
+    }
+
+    // Método auxiliar para verificar se o app é debuggable
+    private async Task<bool> VerificarAppDebuggable()
+    {
+        try
+        {
+            var (output, error) = await ExecutarComandoProcesso("adb", $"shell dumpsys package {NomePacoteApp} | grep -i debuggable");
+            return output.Contains("debuggable=true");
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private async Task IniciarSincronizacao()
+    {
+        if (!deviceConnected || string.IsNullOrEmpty(_caminhoDbCelularLocal))
+        {
+            mensagemErroSync = "Nenhum dispositivo conectado ou banco de dados não localizado. Tente detectar o dispositivo novamente.";
+            return;
+        }
+
+        isSyncing = true;
+        mensagemErroSync = "";
+        syncProgress = 0;
+        syncStats.Clear();
+        StateHasChanged();
+
+        SQLite.SQLiteAsyncConnection dbPC = null;
+        SQLite.SQLiteAsyncConnection dbCelular = null;
+        string caminhoDbExtraido = null;
+
+        try
+        {
+            var dbPcPath = Constants.DatabasePath;
+            var dbCelularPath = _caminhoDbCelularLocal;
+
+            // ===== NOVA LÓGICA DE EXTRAÇÃO =====
+            if (dbCelularPath.EndsWith(".ab", StringComparison.OrdinalIgnoreCase))
+            {
+                syncStatus = "Extraindo banco de dados do backup...";
+                await InvokeAsync(StateHasChanged);
+
+                caminhoDbExtraido = AndroidBackupHelper.ExtractDbFromBackup(dbCelularPath, NomeBancoDeDados, NomePacoteApp);
+                dbCelularPath = caminhoDbExtraido; // Usar o arquivo extraído a partir de agora
+
+                syncStatus = "Extração concluída. Iniciando sincronização...";
+                await InvokeAsync(StateHasChanged);
+            }
+            // ===== FIM DA NOVA LÓGICA =====
+
+            dbPC = new SQLite.SQLiteAsyncConnection(dbPcPath);
+            dbCelular = new SQLite.SQLiteAsyncConnection(dbCelularPath); // AGORA abre o arquivo .db3 correto
+
+            await SyncService.SincronizarTudo(dbPC, dbCelular);
+
+            syncStats = await SyncService.ObterEstatisticasSincronizacao(dbPC, dbCelular);
+
+            await dbPC.CloseAsync();
+            await dbCelular.CloseAsync();
+            dbPC = null;
+            dbCelular = null;
+
+            syncStatus = "Enviando dados atualizados para o dispositivo...";
+            await InvokeAsync(StateHasChanged);
+            string remoteDbPath = $"/data/data/{NomePacoteApp}/files/{NomeBancoDeDados}";
+
+            // ATENÇÃO: O comando 'push' não funciona para restaurar um backup.
+            // A sincronização neste modo é apenas do celular para o PC.
+            // Vamos apenas informar o usuário.
+            syncStatus = "Sincronização do Celular -> PC concluída!";
+
+
+            mensagemSucesso = "Sincronização concluída com sucesso! Os dados do celular foram importados para o computador.";
+            exibirModalSucesso = true;
+        }
+        catch (Exception ex)
+        {
+            mensagemErroSync = $"Erro durante a sincronização: {ex.Message}";
+        }
+        finally
+        {
+            if (dbPC != null) await dbPC.CloseAsync();
+            if (dbCelular != null) await dbCelular.CloseAsync();
+
+            // Limpar o arquivo de backup e o DB extraído
+            try
+            {
+                if (File.Exists(_caminhoDbCelularLocal)) File.Delete(_caminhoDbCelularLocal);
+                if (File.Exists(caminhoDbExtraido)) File.Delete(caminhoDbExtraido);
+            }
+            catch { }
+
+            isSyncing = false;
+            syncProgress = 0;
+            syncStatus = "";
+            StateHasChanged();
+        }
+    }
+
+    private async Task<(string output, string error)> ExecutarComandoProcesso(string command, string args)
+    {
+        if (command == "adb")
+        {
+            var (output, error, exitCode) = await AutoAdbManager.ExecuteAdbCommandAsync(args);
+            return (output, error);
+        }
+
+        // Para outros comandos (se houver), usar implementação original
+        using var process = new Process
+            {
+                StartInfo = new ProcessStartInfo
+                {
+                    FileName = command,
+                    Arguments = args,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                }
+            };
+
+        process.Start();
+        string output_result = await process.StandardOutput.ReadToEndAsync();
+        string error_result = await process.StandardError.ReadToEndAsync();
+        await process.WaitForExitAsync();
+
+        return (output_result, error_result);
+    }
+    private void LimparCacheAdb()
+    {
+        try
+        {
+            AutoAdbManager.ClearAdbCacheAsync();
+            mensagemSucesso = "Cache do ADB limpo. Tente detectar o dispositivo novamente.";
+            exibirModalSucesso = true;
+        }
+        catch (Exception ex)
+        {
+            mensagemErroSync = $"Erro ao limpar cache: {ex.Message}";
+        }
+        StateHasChanged();
+    }
+    // --- Métodos para salvar formulários (permanecem os mesmos) ---
+    private async Task SalvarPropriedade()
+    {
+        mensagemErroPropriedade = "";
+        var sucesso = await PropriedadeService.EditarPropriedadeAsync(propriedade);
+        if (sucesso)
+        {
+            mensagemSucesso = "Informações da propriedade atualizadas com sucesso!";
+            exibirModalSucesso = true;
         }
         else
         {
-            // Fallback caso não encontre nenhuma, embora o DatabaseService deva garantir uma.
-            quantidadeOrdenhas = 2;
+            mensagemErroPropriedade = "Erro ao atualizar a propriedade.";
+        }
+    }
+
+    private async Task AlterarSenha()
+    {
+        mensagemErroSenha = "";
+        if (string.IsNullOrWhiteSpace(novaSenha) || novaSenha.Length < 6)
+        {
+            mensagemErroSenha = "A nova senha deve ter pelo menos 6 caracteres.";
+            return;
+        }
+        if (novaSenha != confirmaSenha)
+        {
+            mensagemErroSenha = "As senhas não coincidem.";
+            return;
         }
 
-        loading = false; // Finaliza o carregamento
+        var sucesso = await PropriedadeService.AlterarSenhaAsync(propriedade.Id, novaSenha);
+        if (sucesso)
+        {
+            novaSenha = "";
+            confirmaSenha = "";
+            mensagemSucesso = "Sua senha foi alterada com sucesso!";
+            exibirModalSucesso = true;
+        }
+        else
+        {
+            mensagemErroSenha = "Ocorreu um erro ao alterar a senha.";
+        }
     }
 
     private async Task SalvarConfiguracaoOrdenha()
@@ -528,55 +1107,13 @@
         StateHasChanged();
     }
 
-    private async Task SalvarPropriedade()
+    private void FecharModal() => exibirModalSucesso = false;
+
+    public void Dispose()
     {
-        mensagemErroPropriedade = "";
-        var sucesso = await PropriedadeService.EditarPropriedadeAsync(propriedade);
-
-        if (sucesso)
+        if (SyncService != null)
         {
-            mensagemSucesso = "Informações da propriedade atualizadas com sucesso!";
-            exibirModalSucesso = true;
+            SyncService.StatusChanged -= OnSyncStatusChanged;
         }
-        else
-        {
-            mensagemErroPropriedade = "Erro ao atualizar a propriedade.";
-        }
-    }
-
-    private async Task AlterarSenha()
-    {
-        mensagemErroSenha = "";
-
-        if (string.IsNullOrWhiteSpace(novaSenha) || novaSenha.Length < 6)
-        {
-            mensagemErroSenha = "A nova senha deve ter pelo menos 6 caracteres.";
-            return;
-        }
-
-        if (novaSenha != confirmaSenha)
-        {
-            mensagemErroSenha = "As senhas não coincidem.";
-            return;
-        }
-
-        var sucesso = await PropriedadeService.AlterarSenhaAsync(propriedade.Id, novaSenha);
-
-        if (sucesso)
-        {
-            novaSenha = "";
-            confirmaSenha = "";
-            mensagemSucesso = "Sua senha foi alterada com sucesso!";
-            exibirModalSucesso = true;
-        }
-        else
-        {
-            mensagemErroSenha = "Ocorreu um erro ao alterar a senha.";
-        }
-    }
-
-    private void FecharModal()
-    {
-        exibirModalSucesso = false;
     }
 }

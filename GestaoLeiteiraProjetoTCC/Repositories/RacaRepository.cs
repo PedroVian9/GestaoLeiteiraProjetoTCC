@@ -24,6 +24,7 @@ namespace GestaoLeiteiraProjetoTCC.Repositories
 
         public async Task CriarAsync(Raca raca)
         {
+            raca.DataModificacaoUtc = DateTime.UtcNow;
             await _database.InsertAsync(raca);
         }
 
@@ -41,12 +42,14 @@ namespace GestaoLeiteiraProjetoTCC.Repositories
 
         public async Task AtualizarAsync(Raca raca)
         {
+            raca.DataModificacaoUtc = DateTime.UtcNow;
             await _database.UpdateAsync(raca);
         }
 
         public async Task ExcluirAsync(int id)
         {
             var raca = await ObterPorIdAsync(id);
+            raca.Excluido = true;
             if (raca != null)
                 await _database.DeleteAsync(raca);
         }

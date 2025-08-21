@@ -37,6 +37,7 @@ public static class MauiProgram
         builder.Services.AddSingleton<IRacaService, RacaService>();
         builder.Services.AddSingleton<IQuantidadeOrdenhaService, QuantidadeOrdenhaService>();
         builder.Services.AddSingleton<IGestacaoService, GestacaoService>();
+        builder.Services.AddSingleton<SyncService>();
 
 #if DEBUG
         builder.Services.AddBlazorWebViewDeveloperTools();

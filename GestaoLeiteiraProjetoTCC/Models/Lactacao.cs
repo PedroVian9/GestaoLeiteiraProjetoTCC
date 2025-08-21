@@ -1,4 +1,5 @@
-﻿using SQLite;
+﻿using GestaoLeiteiraProjetoTCC.Models;
+using SQLite;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -6,7 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-public class Lactacao
+public class Lactacao : BaseEntity
 {
     [PrimaryKey, AutoIncrement]
     public int Id { get; set; }
