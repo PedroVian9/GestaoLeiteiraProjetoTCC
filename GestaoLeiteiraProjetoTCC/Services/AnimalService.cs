@@ -55,5 +55,15 @@ namespace GestaoLeiteiraProjetoTCC.Services
         {
             return await _animalRepository.ExcluirAnimalDb(id);
         }
+
+        public async Task<List<Animal>> ObterVacasAptasParaGestacao(int propriedadeId)
+        {
+            return await _animalRepository.ObterVacasAptasParaGestacaoDb(propriedadeId);
+        }
+
+        public async Task<List<Animal>> ObterTourosAtivos(int propriedadeId)
+        {
+            return await _animalRepository.ObterTourosAtivosDb(propriedadeId);
+        }
     }
 }

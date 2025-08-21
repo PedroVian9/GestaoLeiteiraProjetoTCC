@@ -13,5 +13,7 @@ namespace GestaoLeiteiraProjetoTCC.Repositories.Interfaces
         Task<Animal> AtualizarAnimalDb(Animal animal);
         Task<bool> ExcluirAnimalDb(int id);
         Task<Animal> ObterAnimalPorIdDb(int id);
+        Task<List<Animal>> ObterVacasAptasParaGestacaoDb(int propriedadeId);
+        Task<List<Animal>> ObterTourosAtivosDb(int propriedadeId);
     }
 }

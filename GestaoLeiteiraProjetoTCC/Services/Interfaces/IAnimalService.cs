@@ -13,5 +13,7 @@ namespace GestaoLeiteiraProjetoTCC.Services.Interfaces
         Task<Animal> CadastrarAnimalAsync(Animal animal);
         Task<Animal> AtualizarAnimalAsync(Animal animal);
         Task<bool> ExcluirAnimalAsync(int id);
+        Task<List<Animal>> ObterVacasAptasParaGestacao(int propriedadeId);
+        Task<List<Animal>> ObterTourosAtivos(int propriedadeId);
     }
 }

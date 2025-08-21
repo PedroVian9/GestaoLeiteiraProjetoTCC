@@ -1,0 +1,755 @@
+﻿@page "/gestacoes"
+@using System.Linq
+@using GestaoLeiteiraProjetoTCC.Models
+@using GestaoLeiteiraProjetoTCC.Services.Interfaces
+@inject IGestacaoService GestacaoService
+@inject IAnimalService AnimalService
+@inject IPropriedadeService PropriedadeService
+
+<div class="page-container">
+    <div class="dashboard-header">
+        <div class="header-content">
+            <div class="welcome-section">
+                <h1>Controle de Gestações</h1>
+                <p class="property-owner">Monitore as gestações ativas do seu rebanho</p>
+            </div>
+            <div class="header-date-section">
+                <i class="fas fa-calendar-alt"></i>
+                <span>@DateTime.Now.ToString("dd/MM/yyyy")</span>
+            </div>
+        </div>
+        <div class="mobile-actions-bar">
+            <button class="btn-mobile-action add" @onclick="AbrirModalNova">
+                <i class="fas fa-plus"></i> Iniciar Gestação
+            </button>
+        </div>
+    </div>
+
+    <div class="animal-actions desktop-only">
+        <button class="btn-action add" @onclick="AbrirModalNova">
+            <span class="plus-icon">+</span> Iniciar nova gestação
+        </button>
+    </div>
+
+    @if (carregandoDados)
+    {
+        <div class="loading-overlay">
+            <div class="spinner"></div>
+            <p>Carregando dados...</p>
+        </div>
+    }
+    else if (!gestacoes.Any())
+    {
+        <div class="empty-message-container">
+            <div class="empty-message">
+                <i class="fas fa-heartbeat"></i>
+                <p>Nenhuma gestação ativa no momento.</p>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="animais-grid">
+            @foreach (var gestacao in gestacoes)
+            {
+                var diasCorridos = (DateTime.Today - gestacao.DataInicio).Days;
+
+                <div class="animal-card">
+                    <div class="card-header">
+                        <span class="animal-name">@gestacao.Vaca?.NomeAnimal (@gestacao.Vaca?.NumeroIdentificador)</span>
+                    </div>
+
+                    <div class="card-details">
+                        <div class="detail-item">
+                            <span class="detail-label">Touro:</span>
+                            <span class="detail-value">@(gestacao.Touro?.NomeAnimal ?? "Não informado")</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Início da Gestação:</span>
+                            <span class="detail-value">@gestacao.DataInicio.ToString("dd/MM/yyyy")</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Dias Corridos:</span>
+                            <span class="detail-value">@diasCorridos dias</span>
+                        </div>
+                    </div>
+
+                    <div class="card-actions">
+                        <button class="btn-action editar" @onclick="() => AbrirModalFinalizar(gestacao)">
+                            <i class="fas fa-check"></i> Finalizar Gestação
+                        </button>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+
+    @* Modal 1: Iniciar Nova Gestação *@
+    @if (exibirModalNovaGestacao)
+    {
+        <div class="modal-overlay" @onclick="FecharTodosModais">
+            <div class="modal-content" @onclick:stopPropagation>
+                <h3>Iniciar Nova Gestação</h3>
+                <EditForm Model="novaGestacao" OnValidSubmit="SalvarNovaGestacao">
+                    <DataAnnotationsValidator />
+                    <div class="form-group">
+                        <label for="vacaId">Vaca</label>
+                        <InputSelect id="vacaId" @bind-Value="novaGestacao.VacaId" class="form-control">
+                            <option value="0" disabled selected>Selecione a vaca...</option>
+                            @foreach (var vaca in vacasAptas)
+                            {
+                                <option value="@vaca.Id">@vaca.NomeAnimal (@vaca.NumeroIdentificador)</option>
+                            }
+                        </InputSelect>
+                        <small class="form-text text-muted mt-2">
+                            Apenas vacas com status "Ativo" e que não possuem outra gestação em andamento são listadas.
+                        </small>
+                        <ValidationMessage For="@(() => novaGestacao.VacaId)" />
+                    </div>
+
+                    <div class="form-group mt-3">
+                        <label for="touroId">Touro (Opcional)</label>
+                        <InputSelect id="touroId" @bind-Value="novaGestacao.TouroId" class="form-control">
+                            <option value="0">Nenhum / Não informado</option>
+                            @foreach (var touro in tourosAtivos)
+                            {
+                                <option value="@touro.Id">@touro.NomeAnimal (@touro.NumeroIdentificador)</option>
+                            }
+                        </InputSelect>
+                    </div>
+
+                    <div class="form-group mt-3">
+                        <label for="dataInicio">Data de Início da Gestação</label>
+                        <InputDate id="dataInicio" @bind-Value="novaGestacao.DataInicio" class="form-control" />
+                        <ValidationMessage For="@(() => novaGestacao.DataInicio)" />
+                    </div>
+
+                    <div class="footer-actions">
+                        <button type="button" class="btn btn-secondary" @onclick="FecharTodosModais">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Salvar</button>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    }
+
+    @* Modal 2: Finalizar Gestação e Cadastrar Cria *@
+    @if (exibirModalFinalizar)
+    {
+        <div class="modal-overlay" @onclick="FecharTodosModais">
+            <div class="modal-content" @onclick:stopPropagation>
+                <h3>Registrar Nascimento (Mãe: @gestacaoParaFinalizar.Vaca?.NomeAnimal)</h3>
+
+                <div class="alert alert-info" style="background-color: #e2f3f5; border-color: #bdedf3; color: #31708f;">
+                    <strong>Vínculos de Parentesco:</strong><br>
+                    Mãe: @gestacaoParaFinalizar.Vaca?.NomeAnimal (@gestacaoParaFinalizar.Vaca?.NumeroIdentificador)<br>
+                    Pai: @(gestacaoParaFinalizar.Touro?.NomeAnimal ?? "Não informado")
+                </div>
+
+                <EditForm Model="novaCria" OnValidSubmit="SalvarCriaEFinalizarGestacao">
+                    <DataAnnotationsValidator />
+                    <div class="form-grid">
+                         <div class="form-group">
+                            <label for="nomeAnimalCria">Nome da Cria</label>
+                            <InputText id="nomeAnimalCria" @bind-Value="novaCria.NomeAnimal" class="form-control" placeholder="Ex: Mimosa Filha"/>
+                            <ValidationMessage For="@(() => novaCria.NomeAnimal)" />
+                        </div>
+                        <div class="form-group">
+                            <label for="numeroIdentificadorCria">Brinco / RFID</label>
+                            <InputText id="numeroIdentificadorCria" @bind-Value="novaCria.NumeroIdentificador" class="form-control" placeholder="Ex: 1234"/>
+                            <ValidationMessage For="@(() => novaCria.NumeroIdentificador)" />
+                        </div>
+                    </div>
+                    <div class="form-grid-2-col" style="margin-top: 1rem;">
+                         <div class="form-group">
+                            <label for="sexoCria">Sexo</label>
+                            <InputSelect id="sexoCria" @bind-Value="novaCria.Sexo" class="form-control">
+                                <option value="" disabled selected>Selecione o sexo...</option>
+                                <option value="Macho">Macho</option>
+                                <option value="Fêmea">Fêmea</option>
+                            </InputSelect>
+                             <ValidationMessage For="@(() => novaCria.Sexo)" />
+                        </div>
+                        <div class="form-group">
+                            <label for="dataNascimentoCria">Data de Nascimento</label>
+                            <InputDate id="dataNascimentoCria" @bind-Value="novaCria.DataNascimento" class="form-control" />
+                             <ValidationMessage For="@(() => novaCria.DataNascimento)" />
+                        </div>
+                    </div>
+                    <div class="footer-actions">
+                        <button type="button" class="btn btn-secondary" @onclick="FecharTodosModais">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Registrar Nascimento</button>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    }
+</div>
+<style>
+    /* Estilos gerais */
+    .page-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    /* === ESTILOS DO NOVO CABEÇALHO === */
+    .dashboard-header {
+        background: white;
+        border-radius: 8px;
+        padding: 20px 25px;
+        margin-bottom: 30px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+
+    .header-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 20px;
+    }
+
+    .welcome-section h1 {
+        font-size: 2.2rem;
+        color: #023047;
+        margin: 0;
+        font-weight: 700;
+    }
+
+    .property-owner {
+        color: #666;
+        font-size: 1.1rem;
+        margin: 4px 0 0 0;
+        font-weight: 400;
+    }
+
+    .header-date-section {
+        font-size: 1rem;
+        font-weight: 500;
+        color: #4a5568;
+        background-color: #f8f9fa;
+        padding: 10px 16px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .animal-actions {
+        margin-bottom: 20px;
+        display: flex;
+        justify-content: flex-end;
+    }
+
+    .animais-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+        gap: 20px;
+    }
+
+    .animal-card {
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        padding: 20px;
+        border-left: 4px solid #3a7ca5; /* Cor principal mantida */
+    }
+
+    .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #eee;
+    }
+
+    .plus-icon {
+        margin-right: 8px;
+        font-weight: bold;
+        font-size: 18px;
+    }
+
+    .animal-name {
+        font-weight: bold;
+        font-size: 18px;
+        color: #023047;
+    }
+
+    .card-details {
+        margin-bottom: 15px;
+    }
+
+    .detail-item {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 8px;
+        flex-wrap: wrap;
+    }
+
+    .detail-label {
+        font-weight: 500;
+        color: #555;
+        min-width: 120px;
+    }
+
+    .detail-value {
+        color: #333;
+        text-align: right;
+        flex: 1;
+    }
+
+    .card-actions {
+        display: flex;
+        justify-content: flex-end;
+        margin-top: 15px;
+    }
+
+    .btn-action {
+        padding: 10px 15px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 500;
+    }
+
+        .btn-action.add {
+            background-color: #8a5a44;
+            color: white;
+        }
+
+        .btn-action.editar {
+            background-color: #17a2b8; /* Cor do botão Editar mantida */
+            color: white;
+        }
+
+        .btn-action:hover {
+            opacity: 0.9;
+        }
+
+    .empty-message-container {
+        background-color: white;
+        border-radius: 8px;
+        padding: 40px;
+        border: 1px solid #e0e7ee;
+        margin-top: 20px;
+    }
+
+    .empty-message {
+        text-align: center;
+        color: #6c757d;
+    }
+
+        .empty-message i {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            opacity: 0.5;
+        }
+
+
+    .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.5);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        z-index: 1050;
+        color: white;
+    }
+
+    .spinner {
+        border: 4px solid #f3f3f3;
+        border-top: 4px solid #3498db;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        animation: spin 2s linear infinite;
+        margin-bottom: 20px;
+    }
+
+    /* === MODAL & FORM STYLES === */
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.6);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1050;
+    }
+
+    .modal-content {
+        background-color: #ffffff;
+        padding: 25px 35px;
+        border-radius: 15px;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
+        width: 90%;
+        max-width: 650px;
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+
+        .modal-content h3 {
+            margin-top: 0;
+            color: #023047;
+            font-size: 24px;
+            font-weight: 600;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #e0e7ee;
+            margin-bottom: 25px;
+            text-align: center;
+        }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 0;
+    }
+
+        .form-group label {
+            font-weight: 500;
+            color: #4a5568;
+            font-size: 14px;
+        }
+
+    .form-control {
+        width: 100%;
+        padding: 12px 16px;
+        border: 1px solid #cbd5e0;
+        border-radius: 8px;
+        font-size: 15px;
+        background-color: #f8f9fa;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        box-sizing: border-box;
+    }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #3a7ca5;
+            background-color: #fff;
+            box-shadow: 0 0 0 3px rgba(58, 124, 165, 0.15);
+        }
+
+    select.form-control {
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+        padding-right: 40px;
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
+        background-repeat: no-repeat;
+        background-position: right 1rem center;
+        background-size: 16px 12px;
+    }
+
+    .footer-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+        margin-top: 30px;
+        padding-top: 20px;
+        border-top: 1px solid #e0e7ee;
+    }
+
+    .btn {
+        padding: 12px 24px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 16px;
+        font-weight: 600;
+        border: none;
+        transition: all 0.3s ease;
+    }
+
+    .btn-primary {
+        background-color: #3a7ca5;
+        color: white;
+    }
+
+        .btn-primary:hover {
+            background-color: #2c6284;
+        }
+
+    .btn-secondary {
+        background-color: #6c757d;
+        color: white;
+    }
+
+        .btn-secondary:hover {
+            background-color: #5a6268;
+        }
+
+    .validation-message {
+        color: #e53e3e;
+        font-size: 12px;
+        margin-top: 4px;
+    }
+
+    .mobile-actions-bar {
+        display: none;
+    }
+
+    @@media (max-width: 768px) {
+        body, html
+
+    {
+        padding-top: 107px;
+    }
+
+    .page-container {
+        padding: 0 10px 10px 10px;
+    }
+
+    .dashboard-header {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 1010;
+        border-radius: 0;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        background: white;
+    }
+
+    .header-content {
+        padding: 10px 15px;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .welcome-section h1 {
+        font-size: 1.5rem;
+    }
+
+    .property-owner {
+        display: flex;
+        font-size: 1.0rem;
+    }
+
+    .header-date-section {
+        padding: 5px 10px;
+        font-size: 0.8rem;
+    }
+
+    .mobile-actions-bar {
+        display: flex;
+        gap: 10px;
+        padding: 10px 15px;
+        background-color: #f8f9fa;
+        border-top: 1px solid #e0e7ee;
+        width: 100%;
+    }
+
+    .btn-mobile-action {
+        flex: 1;
+        padding: 10px;
+        border-radius: 8px;
+        border: 1px solid #cbd5e0;
+        background-color: #fff;
+        color: #4a5568;
+        font-size: 0.8rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+
+        .btn-mobile-action.add {
+            background-color: #8a5a44;
+            color: white;
+            border-color: #8a5a44;
+        }
+
+    .desktop-only {
+        display: none;
+    }
+
+    .animais-grid {
+        grid-template-columns: 1fr;
+        gap: 15px;
+        padding-top: 0;
+    }
+
+    .animal-card {
+        padding: 15px;
+    }
+
+    .animal-name {
+        font-size: 1.1rem;
+    }
+
+    .card-details {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 5px 15px;
+        margin-bottom: 15px;
+    }
+
+    .detail-item {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        margin-bottom: 5px;
+        justify-content: space-between;
+    }
+
+    .detail-label {
+        font-size: 0.8rem;
+        color: #6c757d;
+        min-width: 0;
+    }
+
+    .detail-value {
+        text-align: left;
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+
+    .modal-content .form-group {
+        margin-bottom: 1rem;
+    }
+
+    }
+</style>
+@code {
+    private List<Gestacao> gestacoes = new();
+    
+    // Variáveis de estado para cada modal
+    private Gestacao novaGestacao = new();
+    private Gestacao gestacaoParaFinalizar;
+    private Animal novaCria = new();
+
+    private List<Animal> todosAnimais = new();
+    private List<Animal> vacasAptas = new();
+    private List<Animal> tourosAtivos = new();
+
+    // Flags de controle para cada modal
+    private bool exibirModalNovaGestacao = false;
+    private bool exibirModalFinalizar = false;
+    private bool carregandoDados = true;
+    private int propriedadeId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            carregandoDados = true;
+            StateHasChanged();
+
+            var propriedade = PropriedadeService.ObterPropriedadeLogada();
+            propriedadeId = propriedade.Id;
+
+            await CarregarDados();
+        }
+        finally
+        {
+            carregandoDados = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task CarregarDados()
+    {
+        todosAnimais = await AnimalService.ObterAnimaisDaPropriedadeAsync(propriedadeId);
+        gestacoes = await GestacaoService.ObterGestoesAtivas(propriedadeId);
+
+        foreach (var g in gestacoes)
+        {
+            g.Vaca = todosAnimais.FirstOrDefault(a => a.Id == g.VacaId);
+            if (g.TouroId.HasValue)
+            {
+                g.Touro = todosAnimais.FirstOrDefault(a => a.Id == g.TouroId);
+            }
+        }
+
+        gestacoes = gestacoes.OrderByDescending(g => g.DataInicio).ToList();
+        vacasAptas = await AnimalService.ObterVacasAptasParaGestacao(propriedadeId);
+        tourosAtivos = await AnimalService.ObterTourosAtivos(propriedadeId);
+    }
+
+    private void AbrirModalNova()
+    {
+        novaGestacao = new Gestacao
+        {
+            DataInicio = DateTime.Today,
+            Status = "Ativa"
+        };
+        exibirModalNovaGestacao = true;
+    }
+
+    private async Task SalvarNovaGestacao()
+    {
+        try
+        {
+            carregandoDados = true;
+            exibirModalNovaGestacao = false;
+            StateHasChanged();
+
+            if (novaGestacao.TouroId == 0) novaGestacao.TouroId = null;
+
+            await GestacaoService.IniciarGestacaoAsync(novaGestacao);
+            await CarregarDados();
+        }
+        finally
+        {
+            carregandoDados = false;
+            StateHasChanged();
+        }
+    }
+
+    private void AbrirModalFinalizar(Gestacao gestacao)
+    {
+        gestacaoParaFinalizar = gestacao;
+        novaCria = new Animal
+        {
+            PropriedadeId = propriedadeId,
+            DataNascimento = DateTime.Today,
+            Status = "Ativo",
+            CategoriaAnimal = "Bezerro",
+            MaeId = gestacao.VacaId,
+            PaiId = gestacao.TouroId
+        };
+        exibirModalFinalizar = true;
+    }
+
+    private async Task SalvarCriaEFinalizarGestacao()
+    {
+         try
+        {
+            carregandoDados = true;
+            exibirModalFinalizar = false;
+            StateHasChanged();
+
+            await GestacaoService.FinalizarGestacaoAsync(gestacaoParaFinalizar.Id, novaCria);
+            await CarregarDados();
+        }
+        finally
+        {
+            carregandoDados = false;
+            StateHasChanged();
+        }
+    }
+
+    private void FecharTodosModais()
+    {
+        exibirModalNovaGestacao = false;
+        exibirModalFinalizar = false;
+    }
+}

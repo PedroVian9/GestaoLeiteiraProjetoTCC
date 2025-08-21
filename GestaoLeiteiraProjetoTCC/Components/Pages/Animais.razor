@@ -5,6 +5,7 @@
 @inject IAnimalService AnimalService
 @inject IPropriedadeService PropriedadeService
 @inject IRacaService RacaService
+@inject NavigationManager NavigationManager
 
 <div class="page-container">
     <div class="dashboard-header">
@@ -54,6 +55,8 @@
                     <select id="filtro-categoria" class="form-control" @bind="filtroCategoria" @bind:after="AplicarFiltrosEOrdenacao">
                         <option value="Todos">Todas</option>
                         <option value="Bezerro">Bezerro</option>
+                        <option value="Bezerra">Bezerra</option>
+                        <option value="Novilho">Novilho</option>
                         <option value="Novilha">Novilha</option>
                         <option value="Vaca">Vaca</option>
                         <option value="Touro">Touro</option>
@@ -91,7 +94,6 @@
             <div class="empty-message">
                 <i class="fas fa-paw"></i>
                 <p>Nenhum animal cadastrado ainda.</p>
-                <button class="btn btn-primary mt-3" @onclick="AbrirModalNovo">Cadastrar primeiro animal</button>
             </div>
         </div>
     }
@@ -132,13 +134,6 @@
                             <span class="detail-label">Sexo:</span>
                             <span class="detail-value">@animal.Sexo</span>
                         </div>
-                        @if (animal.Sexo == "Fêmea" && animal.CategoriaAnimal == "Vaca")
-                        {
-                            <div class="detail-item">
-                                <span class="detail-label">Prenha:</span>
-                                <span class="detail-value">@(animal.Prenha ? "Sim" : "Não")</span>
-                            </div>
-                        }
                     </div>
 
                     <div class="card-actions">
@@ -156,40 +151,21 @@
         <div class="modal-overlay" @onclick="FecharModal">
             <div class="modal-content" @onclick:stopPropagation>
                 <h3>@(animal.Id == 0 ? "Cadastrar Novo Animal" : "Editar Animal")</h3>
+
                 <EditForm Model="animal" OnValidSubmit="SalvarAnimal">
                     <DataAnnotationsValidator />
+
+                    <div class="form-section-title">Dados Básicos</div>
                     <div class="form-grid">
                         <div class="form-group">
                             <label for="nomeAnimal">Nome do Animal</label>
-                            <InputText id="nomeAnimal" @bind-Value="animal.NomeAnimal" class="form-control" placeholder="Digite o nome do animal..." />
+                            <InputText id="nomeAnimal" @bind-Value="animal.NomeAnimal" class="form-control" placeholder="Digite o nome..." />
                             <ValidationMessage For="@(() => animal.NomeAnimal)" />
                         </div>
                         <div class="form-group">
                             <label for="numeroIdentificador">Brinco / RFID</label>
-                            <InputText id="numeroIdentificador" @bind-Value="animal.NumeroIdentificador" class="form-control" placeholder="Digite o número do brinco ou RFID..." />
+                            <InputText id="numeroIdentificador" @bind-Value="animal.NumeroIdentificador" class="form-control" placeholder="Digite o número..." />
                             <ValidationMessage For="@(() => animal.NumeroIdentificador)" />
-                        </div>
-                    </div>
-                    <div class="form-grid-2-col">
-                        <div class="form-group">
-                            <label for="sexo">Sexo</label>
-                            <InputSelect id="sexo" @bind-Value="animal.Sexo" @onchange="(e) => OnSexoChanged(e.Value.ToString())" class="form-control">
-                                <option value="" disabled selected>Clique para selecionar o sexo...</option>
-                                <option value="Macho">Macho</option>
-                                <option value="Fêmea">Fêmea</option>
-                            </InputSelect>
-                            <ValidationMessage For="@(() => animal.Sexo)" />
-                        </div>
-                        <div class="form-group">
-                            <label for="categoriaAnimal">Categoria</label>
-                            <InputSelect id="categoriaAnimal" @bind-Value="animal.CategoriaAnimal" @onchange="(e) => OnCategoriaChanged(e.Value.ToString())" class="form-control">
-                                <option value="" disabled selected>Clique para selecionar a categoria...</option>
-                                <option value="Bezerro">Bezerro</option>
-                                <option value="Novilha">Novilha</option>
-                                <option value="Vaca">Vaca</option>
-                                <option value="Touro">Touro</option>
-                            </InputSelect>
-                            <ValidationMessage For="@(() => animal.CategoriaAnimal)" />
                         </div>
                     </div>
                     <div class="form-grid-2-col">
@@ -201,7 +177,7 @@
                         <div class="form-group">
                             <label for="racaId">Raça</label>
                             <InputSelect id="racaId" @bind-Value="animal.RacaId" class="form-control">
-                                <option value="0" disabled selected>Clique para selecionar uma raça...</option>
+                                <option value="0" disabled selected>Selecione uma raça...</option>
                                 @foreach (var raca in racas)
                                 {
                                     <option value="@raca.Id">@raca.NomeRaca</option>
@@ -212,31 +188,75 @@
                     </div>
                     <div class="form-grid-2-col">
                         <div class="form-group">
-                            <label for="status">Status</label>
-                            <InputSelect id="status" @bind-Value="animal.Status" class="form-control">
-                                <option value="Ativo">Ativo</option>
-                                <option value="Inativo">Inativo</option>
-                                <option value="Baixa">Baixa</option>
+                            <label for="sexo">Sexo</label>
+                            <InputSelect id="sexo" @bind-Value="animal.Sexo" @onchange="(e) => OnSexoChanged(e.Value.ToString())" class="form-control">
+                                <option value="" disabled selected>Selecione o sexo...</option>
+                                <option value="Macho">Macho</option>
+                                <option value="Fêmea">Fêmea</option>
                             </InputSelect>
-                            <ValidationMessage For="@(() => animal.Status)" />
+                            <ValidationMessage For="@(() => animal.Sexo)" />
                         </div>
-                        @if (MostrarOpcoesVaca)
-                        {
-                            <div class="form-group checkbox-group">
-                                <label for="prenha" class="form-check-label">Prenha</label>
-                                <InputCheckbox id="prenha" @bind-Value="animal.Prenha" class="form-check-input" />
-                            </div>
-                        }
+                        <div class="form-group">
+                            <label for="categoriaAnimal">Categoria</label>
+                            <InputSelect id="categoriaAnimal" @bind-Value="animal.CategoriaAnimal" class="form-control" disabled="@(string.IsNullOrEmpty(animal.Sexo))">
+                                <option value="" disabled selected>Selecione a categoria...</option>
+                                @if (animal.Sexo == "Macho")
+                                {
+                                    <option value="Bezerro">Bezerro</option>
+                                    <option value="Novilho">Novilho</option>
+                                    <option value="Touro">Touro</option>
+                                }
+                                else if (animal.Sexo == "Fêmea")
+                                {
+                                    <option value="Bezerra">Bezerra</option>
+                                    <option value="Novilha">Novilha</option>
+                                    <option value="Vaca">Vaca</option>
+                                }
+                            </InputSelect>
+                            <ValidationMessage For="@(() => animal.CategoriaAnimal)" />
+                        </div>
                     </div>
+
+                    <div class="form-section-title">Vínculos Familiares</div>
+                    <div class="vincular-animal-section">
+                        <div class="form-group">
+                            <label>Mãe</label>
+                            <InputSelect @bind-Value="animal.MaeId" class="form-control" disabled="@(animal.MaeId > 0 && animal.Id != 0)">
+                                <option value="0">Não informada / Desconhecida</option>
+                                @foreach (var femea in animais.Where(a => a.Sexo == "Fêmea" && a.Id != animal.Id))
+                                {
+                                    <option value="@femea.Id">@femea.NomeAnimal (@femea.NumeroIdentificador)</option>
+                                }
+                            </InputSelect>
+                        </div>
+                        <div class="form-group">
+                            <label>Pai</label>
+                            <InputSelect @bind-Value="animal.PaiId" class="form-control" disabled="@(animal.PaiId > 0 && animal.Id != 0)">
+                                <option value="0">Não informado / Desconhecido</option>
+                                @foreach (var macho in animais.Where(a => a.Sexo == "Macho" && a.Id != animal.Id))
+                                {
+                                    <option value="@macho.Id">@macho.NomeAnimal (@macho.NumeroIdentificador)</option>
+                                }
+                            </InputSelect>
+                        </div>
+                    </div>
+
+                    <div class="form-section-title">Status do Animal</div>
+                    <div class="form-group" style="max-width: 250px;">
+                        <label for="status">Status</label>
+                        <InputSelect id="status" @bind-Value="animal.Status" class="form-control">
+                            <option value="Ativo">Ativo</option>
+                            <option value="Vendido">Vendido</option>
+                            <option value="Morto">Morto</option>
+                        </InputSelect>
+                        <ValidationMessage For="@(() => animal.Status)" />
+                    </div>
+
                     <div class="footer-actions">
                         <button type="button" class="btn btn-secondary" @onclick="FecharModal">Cancelar</button>
                         <button type="submit" class="btn btn-primary">Salvar</button>
                     </div>
                 </EditForm>
-                @if (mensagemSucesso != null)
-                {
-                    <div class="alert alert-success mt-3">@mensagemSucesso</div>
-                }
             </div>
         </div>
     }
@@ -265,6 +285,8 @@
                     <select id="filtro-categoria-modal" class="form-control" @bind="filtroCategoria">
                         <option value="Todos">Todas</option>
                         <option value="Bezerro">Bezerro</option>
+                        <option value="Bezerra">Bezerra</option>
+                        <option value="Novilho">Novilho</option>
                         <option value="Novilha">Novilha</option>
                         <option value="Vaca">Vaca</option>
                         <option value="Touro">Touro</option>
@@ -288,14 +310,12 @@
 </div>
 
 <style>
-    /* Estilos gerais */
     .page-container {
         max-width: 1200px;
         margin: 0 auto;
         padding: 20px;
     }
 
-    /* === ESTILOS DO NOVO CABEÇALHO === */
     .dashboard-header {
         background: white;
         border-radius: 8px;
@@ -337,7 +357,6 @@
         gap: 8px;
     }
 
-    /* === ESTILOS DOS FILTROS === */
     .filters-container {
         background: white;
         padding: 15px 25px 5px 25px;
@@ -484,7 +503,6 @@
             opacity: 0.5;
         }
 
-
     .loading-overlay {
         position: fixed;
         top: 0;
@@ -496,7 +514,7 @@
         flex-direction: column;
         justify-content: center;
         align-items: center;
-        z-index: 1050; /* Aumentado para cobrir headers fixos */
+        z-index: 1050;
         color: white;
     }
 
@@ -510,17 +528,6 @@
         margin-bottom: 20px;
     }
 
-    @@keyframes spin {
-        0% {
-            transform: rotate(0deg);
-        }
-
-        100% {
-            transform: rotate(360deg);
-        }
-    }
-
-    /* === MODAL & FORM STYLES === */
     .modal-overlay {
         position: fixed;
         top: 0;
@@ -531,7 +538,7 @@
         display: flex;
         justify-content: center;
         align-items: center;
-        z-index: 1050; /* Aumentado para cobrir headers fixos */
+        z-index: 1050;
     }
 
     .modal-content {
@@ -559,7 +566,6 @@
     .form-grid, .form-grid-2-col {
         display: grid;
         gap: 22px;
-        margin-bottom: 22px;
     }
 
     .form-grid-2-col {
@@ -570,14 +576,8 @@
         display: flex;
         flex-direction: column;
         gap: 8px;
-        margin-bottom: 0; /* Remove a margem extra */
+        margin-bottom: 1rem;
     }
-
-        .form-group label {
-            font-weight: 500;
-            color: #4a5568;
-            font-size: 14px;
-        }
 
     .form-control {
         width: 100%;
@@ -590,15 +590,16 @@
         box-sizing: border-box;
     }
 
+        .form-control:disabled {
+            background-color: #e9ecef;
+            cursor: not-allowed;
+        }
+
         .form-control:focus {
             outline: none;
             border-color: #3a7ca5;
             background-color: #fff;
             box-shadow: 0 0 0 3px rgba(58, 124, 165, 0.15);
-        }
-
-        .form-control::placeholder {
-            color: #a0aec0;
         }
 
     select.form-control {
@@ -612,64 +613,6 @@
         background-size: 16px 12px;
     }
 
-    .checkbox-group {
-        display: flex;
-        flex-direction: row-reverse;
-        justify-content: flex-end;
-        align-items: center;
-        gap: 12px;
-        padding-top: 30px;
-    }
-
-    .form-check-label {
-        margin: 0;
-        font-weight: 500;
-        color: #4a5568;
-        font-size: 14px;
-        cursor: pointer;
-    }
-
-    .form-check-input {
-        -webkit-appearance: none;
-        appearance: none;
-        background-color: #f8f9fa;
-        margin: 0;
-        font: inherit;
-        color: currentColor;
-        width: 1.25em;
-        height: 1.25em;
-        border: 1px solid #cbd5e0;
-        border-radius: 5px;
-        display: grid;
-        place-content: center;
-        cursor: pointer;
-        transition: all 0.2s ease;
-    }
-
-        .form-check-input::before {
-            content: "";
-            width: 0.65em;
-            height: 0.65em;
-            transform: scale(0);
-            transition: 120ms transform ease-in-out;
-            box-shadow: inset 1em 1em #3a7ca5;
-            transform-origin: bottom left;
-            clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
-        }
-
-        .form-check-input:checked {
-            border-color: #3a7ca5;
-        }
-
-            .form-check-input:checked::before {
-                transform: scale(1);
-            }
-
-        .form-check-input:focus-visible {
-            outline: 2px solid #3a7ca5;
-            outline-offset: 2px;
-        }
-
     .footer-actions {
         display: flex;
         justify-content: flex-end;
@@ -679,44 +622,9 @@
         border-top: 1px solid #e0e7ee;
     }
 
-    .btn {
-        padding: 12px 24px;
-        border-radius: 8px;
-        cursor: pointer;
-        font-size: 16px;
-        font-weight: 600;
-        border: none;
-        transition: all 0.3s ease;
-    }
-
     .btn-primary {
         background-color: #3a7ca5;
         color: white;
-    }
-
-        .btn-primary:hover {
-            background-color: #2c6284;
-        }
-
-    .btn-secondary {
-        background-color: #6c757d;
-        color: white;
-    }
-
-        .btn-secondary:hover {
-            background-color: #5a6268;
-        }
-
-    .alert {
-        padding: 15px;
-        border-radius: 8px;
-        margin-top: 20px;
-    }
-
-    .alert-success {
-        background-color: #d4edda;
-        color: #155724;
-        border: 1px solid #c3e6cb;
     }
 
     .validation-message {
@@ -725,142 +633,262 @@
         margin-top: 4px;
     }
 
-    .mobile-actions-bar {
-        display: none; /* Oculto por padrão */
+    .form-section-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #023047;
+        margin-top: 25px;
+        margin-bottom: 20px;
+        padding-bottom: 8px;
+        border-bottom: 2px solid #e0e7ee;
+    }
+
+        .form-section-title:first-of-type {
+            margin-top: 0;
+        }
+
+    .vincular-animal-section {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 22px;
+        margin-bottom: 0;
     }
 
     .mobile-actions-bar {
-        display: none; /* Oculto por padrão */
+        display: none;
     }
 
     @@media (max-width: 768px) {
-        body, html {
+
+                body, html {
+
             /* Garante que o conteúdo não comece por baixo dos headers fixos */
-            padding-top: 107px;
+                        padding-top: 107px;
+
         }
 
-        .page-container {
-            padding: 0 10px 10px 10px; /* Remove padding superior para colar no header fixo */
+
+
+                .page-container {
+                        padding: 0 10px 10px 10px; /* Remove padding superior para colar no header fixo */
+
+
         }
+
+
         /* Cabeçalho Fixo e Unificado */
-        .dashboard-header {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            z-index: 1010; /* Z-index alto para ficar acima de tudo */
-            border-radius: 0;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            padding: 0; /* Remove padding para os filhos controlarem */
-            display: flex; /* Adicionado */
-            flex-direction: column; /* Adicionado */
-            background: white;
+                .dashboard-header {
+                        position: fixed;
+                        top: 0;
+                        left: 0;
+                        right: 0;
+                        z-index: 1010; /* Z-index alto para ficar acima de tudo */
+
+                        border-radius: 0;
+                        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                        padding: 0; /* Remove padding para os filhos controlarem */
+
+                        display: flex; /* Adicionado */
+
+                        flex-direction: column; /* Adicionado */
+
+                        background: white;
+
         }
 
-        .header-content {
-            padding: 10px 15px;
-            flex-direction: row;
-            justify-content: space-between;
-            align-items: center;
+
+
+                .header-content {
+                        padding: 10px 15px;
+                        flex-direction: row;
+                        justify-content: space-between;
+                        align-items: center;
+
         }
 
-        .welcome-section h1 {
-            font-size: 1.5rem; /* Tamanho do título bem reduzido */
+
+
+                .welcome-section h1 {
+                        font-size: 1.5rem; /* Tamanho do título bem reduzido */
+
+
         }
 
-        .property-owner {
-            display: flex;
-            font-size: 1.0rem;
+
+
+                .property-owner {
+                        display: flex;
+                        font-size: 1.0rem;
+
         }
 
-        .header-date-section {
-            padding: 5px 10px;
-            font-size: 0.8rem;
+
+
+                .header-date-section {
+                        padding: 5px 10px;
+                        font-size: 0.8rem;
+
         }
+
+
         /* Barra de Ações agora dentro do Header */
-        .mobile-actions-bar {
-            display: flex;
-            gap: 10px;
-            padding: 10px 15px;
-            background-color: #f8f9fa;
-            border-top: 1px solid #e0e7ee;
-            width: 100%;
+                .mobile-actions-bar {
+                        display: flex;
+                        gap: 10px;
+                        padding: 10px 15px;
+                        background-color: #f8f9fa;
+                        border-top: 1px solid #e0e7ee;
+                        width: 100%;
+
         }
 
-        .btn-mobile-action {
-            flex: 1; /* Faz os botões dividirem o espaço igualmente */
-            padding: 10px;
-            border-radius: 8px;
-            border: 1px solid #cbd5e0;
-            background-color: #fff;
-            color: #4a5568;
-            font-size: 0.8rem;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
+
+
+                .btn-mobile-action {
+                        flex: 1; /* Faz os botões dividirem o espaço igualmente */
+
+                        padding: 10px;
+                        border-radius: 8px;
+                        border: 1px solid #cbd5e0;
+                        background-color: #fff;
+                        color: #4a5568;
+                        font-size: 0.8rem;
+                        font-weight: 600;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        gap: 8px;
+
         }
 
-            .btn-mobile-action.add {
-                background-color: #8a5a44;
-                color: white;
-                border-color: #8a5a44;
-            }
+
+
+                    .btn-mobile-action.add {
+                            background-color: #8a5a44;
+                            color: white;
+                            border-color: #8a5a44;
+
+        }
+
+
         /* Oculta os filtros de desktop e o botão de ação antigo */
-        .desktop-only {
-            display: none;
+                .desktop-only {
+                        display: none;
+
         }
+
+
         /* Grid e Cards */
-        .animais-grid {
-            grid-template-columns: 1fr; /* Coluna única */
-            gap: 15px;
-            padding-top: 0; /* Não precisa mais, pois o body já tem o padding */
+                .animais-grid {
+                        grid-template-columns: 1fr; /* Coluna única */
+
+                        gap: 15px;
+                        padding-top: 0; /* Não precisa mais, pois o body já tem o padding */
+
+
         }
 
-        .animal-card {
-            padding: 15px;
+
+
+                .animal-card {
+                        padding: 15px;
+
         }
 
-        .animal-name {
-            font-size: 1.1rem;
+
+
+                .animal-name {
+                        font-size: 1.1rem;
+
         }
+
+
         /* Detalhes dentro do card em 2 colunas */
-        .card-details {
-            display: grid;
-            grid-template-columns: 1fr 1fr; /* Duas colunas */
-            gap: 5px 15px; /* Espaçamento vertical e horizontal */
-            margin-bottom: 15px;
+                .card-details {
+                        display: grid;
+                        grid-template-columns: 1fr 1fr; /* Duas colunas */
+
+                        gap: 5px 15px; /* Espaçamento vertical e horizontal */
+
+                        margin-bottom: 15px;
+
         }
 
-        .detail-item {
-            display: flex;
-            flex-direction: column; /* Empilha label e valor */
-            align-items: flex-start;
-            margin-bottom: 5px;
-            justify-content: space-between;
+
+
+                .detail-item {
+                        display: flex;
+                        flex-direction: column; /* Empilha label e valor */
+
+                        align-items: flex-start;
+                        margin-bottom: 5px;
+                        justify-content: space-between;
+
         }
 
-        .detail-label {
-            font-size: 0.8rem;
-            color: #6c757d;
-            min-width: 0;
+
+
+                .detail-label {
+                        font-size: 0.8rem;
+                        color: #6c757d;
+                        min-width: 0;
+
         }
 
-        .detail-value {
-            text-align: left;
-            font-weight: 600;
-            font-size: 0.9rem;
+
+
+                .detail-value {
+                        text-align: left;
+                        font-weight: 600;
+                        font-size: 0.9rem;
+
         }
+
+
         /* Modal */
-        .modal-content .form-group {
-            margin-bottom: 1rem;
+                .modal-content .form-group {
+                        margin-bottom: 1rem;
+
         }
 
-        .form-grid-2-col {
-            grid-template-columns: 1fr; /* Coluna única no formulário do modal */
+
+
+                .form-grid-2-col {
+                        grid-template-columns: 1fr; /* Coluna única no formulário do modal */
+
+
         }
-    }
+
+
+
+                .form-section-title {
+                        font-size: 1.1rem;
+                        font-weight: 600;
+                        color: #023047;
+                        margin-top: 25px;
+                        margin-bottom: 15px;
+                        padding-bottom: 8px;
+                        border-bottom: 2px solid #e0e7ee;
+
+        }
+
+
+
+                    .form-section-title:first-of-type {
+                            margin-top: 0;
+
+        }
+
+
+
+                .vincular-animal-section {
+                        display: grid;
+                        grid-template-columns: 1fr 1fr;
+                        gap: 22px;
+
+        }
+
+}
 </style>
 
 @code {
@@ -876,19 +904,13 @@
     private string filtroStatus = "Todos";
     private string filtroCategoria = "Todos";
     private string ordenacaoSelecionada = "nome_asc";
-
-    // NOVA VARIÁVEL PARA O MODAL DE FILTROS
     private bool exibirModalFiltros = false;
-
-    private bool MostrarOpcoesVaca => animal.Sexo == "Fêmea" && animal.CategoriaAnimal == "Vaca";
 
     protected override async Task OnInitializedAsync()
     {
         try
         {
             carregandoDados = true;
-            StateHasChanged();
-
             var propriedade = PropriedadeService.ObterPropriedadeLogada();
             propriedadeId = propriedade.Id;
 
@@ -898,6 +920,23 @@
                 .ToList();
 
             await CarregarAnimais();
+
+            var uri = new Uri(NavigationManager.Uri);
+            var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
+
+            if (query.Get("modo") == "cria")
+            {
+                var maeId = int.Parse(query.Get("maeId") ?? "0");
+                var paiId = int.Parse(query.Get("paiId") ?? "0");
+
+                if (maeId > 0)
+                {
+                    AbrirModalNovo();
+                    animal.CategoriaAnimal = "Bezerro"; // Será ajustado se o usuário selecionar Sexo
+                    animal.MaeId = maeId;
+                    animal.PaiId = paiId > 0 ? paiId : null;
+                }
+            }
         }
         finally
         {
@@ -909,13 +948,11 @@
     private async Task CarregarAnimais()
     {
         animais = await AnimalService.ObterAnimaisDaPropriedadeAsync(propriedadeId);
-
         if (animais != null && racas != null)
         {
-            foreach (var animal in animais)
+            foreach (var an in animais)
             {
-                var racaEncontrada = racas.FirstOrDefault(r => r.Id == animal.RacaId);
-                animal.Raca = racaEncontrada;
+                an.Raca = racas.FirstOrDefault(r => r.Id == an.RacaId);
             }
         }
         AplicarFiltrosEOrdenacao();
@@ -959,7 +996,6 @@
         animaisFiltrados = query.ToList();
     }
 
-    // NOVOS MÉTODOS PARA CONTROLAR O MODAL DE FILTROS
     private void AbrirModalFiltros() => exibirModalFiltros = true;
     private void FecharModalFiltros() => exibirModalFiltros = false;
     private void AplicarEFecharModalFiltros()
@@ -975,7 +1011,6 @@
                 PropriedadeId = propriedadeId,
                 DataNascimento = DateTime.Today,
                 Status = "Ativo",
-                Prenha = false,
                 Sexo = "",
                 CategoriaAnimal = "",
                 RacaId = 0
@@ -995,9 +1030,10 @@
                 DataNascimento = a.DataNascimento,
                 Sexo = a.Sexo,
                 CategoriaAnimal = a.CategoriaAnimal,
-                Prenha = a.Prenha,
                 Status = a.Status,
-                PropriedadeId = a.PropriedadeId
+                PropriedadeId = a.PropriedadeId,
+                MaeId = a.MaeId,
+                PaiId = a.PaiId
             };
         exibirModal = true;
         mensagemSucesso = null;
@@ -1009,12 +1045,9 @@
         {
             carregandoDados = true;
             exibirModal = false;
-            StateHasChanged();
 
-            if (!MostrarOpcoesVaca)
-            {
-                animal.Prenha = false;
-            }
+            if (animal.MaeId == 0) animal.MaeId = null;
+            if (animal.PaiId == 0) animal.PaiId = null;
 
             if (animal.Id == 0)
                 await AnimalService.CadastrarAnimalAsync(animal);
@@ -1038,20 +1071,7 @@
     private void OnSexoChanged(string value)
     {
         animal.Sexo = value;
-        if (!MostrarOpcoesVaca)
-        {
-            animal.Prenha = false;
-        }
-        StateHasChanged();
-    }
-
-    private void OnCategoriaChanged(string value)
-    {
-        animal.CategoriaAnimal = value;
-        if (!MostrarOpcoesVaca)
-        {
-            animal.Prenha = false;
-        }
+        animal.CategoriaAnimal = "";
         StateHasChanged();
     }
 

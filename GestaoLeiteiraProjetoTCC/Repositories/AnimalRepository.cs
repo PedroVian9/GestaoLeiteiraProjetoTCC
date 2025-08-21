@@ -1,4 +1,5 @@
-﻿using GestaoLeiteiraProjetoTCC.Models;
+﻿using GestaoLeiteiraProjetoTCC.Components.Pages;
+using GestaoLeiteiraProjetoTCC.Models;
 using GestaoLeiteiraProjetoTCC.Repositories.Interfaces;
 
 namespace GestaoLeiteiraProjetoTCC.Repositories
@@ -84,6 +85,36 @@ namespace GestaoLeiteiraProjetoTCC.Repositories
             return await db.Table<Animal>()
                            .Where(a => a.Id == id)
                            .FirstOrDefaultAsync();
+        }
+
+        public async Task<List<Animal>> ObterVacasAptasParaGestacaoDb(int propriedadeId)
+        {
+            var db = await _databaseService.GetConnectionAsync();
+
+            var idsVacasComGestacaoAtiva = (await db.Table<Models.Gestacao>()
+                .Where(g => g.Status == "Ativa")
+                .ToListAsync())
+                .Select(g => g.VacaId);
+
+            return await db.Table<Animal>()
+                .Where(a => a.PropriedadeId == propriedadeId &&
+                            a.Sexo == "Fêmea" &&
+                            a.CategoriaAnimal == "Vaca" &&
+                            a.Status == "Ativo" &&
+                            !idsVacasComGestacaoAtiva.Contains(a.Id))
+                .OrderBy(a => a.NomeAnimal)
+                .ToListAsync();
+        }
+
+        public async Task<List<Animal>> ObterTourosAtivosDb(int propriedadeId)
+        {
+            var db = await _databaseService.GetConnectionAsync();
+            return await db.Table<Animal>()
+                .Where(a => a.PropriedadeId == propriedadeId &&
+                            a.Sexo == "Macho" &&
+                            a.Status == "Ativo")
+                .OrderBy(a => a.NomeAnimal)
+                .ToListAsync();
         }
     }
 }

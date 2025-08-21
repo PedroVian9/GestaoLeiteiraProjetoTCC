@@ -53,6 +53,7 @@ public class DatabaseService
             await _database.CreateTableAsync<ProducaoLeiteira>();
             await _database.CreateTableAsync<Raca>();
             await _database.CreateTableAsync<QuantidadeOrdenha>(); 
+            await _database.CreateTableAsync<Gestacao>();
 
             await _database.ExecuteAsync("CREATE INDEX IF NOT EXISTS IX_Animal_PropriedadeId ON Animal (PropriedadeId)");
             await _database.ExecuteAsync("CREATE INDEX IF NOT EXISTS IX_Animal_MaeId ON Animal (MaeId)");

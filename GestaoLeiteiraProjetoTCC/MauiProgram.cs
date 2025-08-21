@@ -28,6 +28,7 @@ public static class MauiProgram
         builder.Services.AddSingleton<IProducaoLeiteiraRepository, ProducaoLeiteiraRepository>();
         builder.Services.AddSingleton<IRacaRepository, RacaRepository>();
         builder.Services.AddSingleton<IQuantidadeOrdenhaRepository, QuantidadeOrdenhaRepository>();
+        builder.Services.AddSingleton<IGestacaoRepository, GestacaoRepository>();
 
         builder.Services.AddSingleton<IPropriedadeService, PropriedadeService>();
         builder.Services.AddSingleton<IAnimalService, AnimalService>();
@@ -35,6 +36,7 @@ public static class MauiProgram
         builder.Services.AddSingleton<IProducaoLeiteiraService, ProducaoLeiteiraService>();
         builder.Services.AddSingleton<IRacaService, RacaService>();
         builder.Services.AddSingleton<IQuantidadeOrdenhaService, QuantidadeOrdenhaService>();
+        builder.Services.AddSingleton<IGestacaoService, GestacaoService>();
 
 #if DEBUG
         builder.Services.AddBlazorWebViewDeveloperTools();

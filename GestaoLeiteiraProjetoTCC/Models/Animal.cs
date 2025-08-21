@@ -12,7 +12,7 @@ namespace GestaoLeiteiraProjetoTCC.Models
         [Required(ErrorMessage = "A raça do animal é obrigatória.")]
         public int RacaId { get; set; }
 
-        [Ignore] //Não mapear a navegação automaticamente
+        [Ignore] // Não mapear a navegação automaticamente para o objeto Raca
         public Raca Raca { get; set; }
 
         [Required(ErrorMessage = "O nome do animal é obrigatório.")]
@@ -29,6 +29,12 @@ namespace GestaoLeiteiraProjetoTCC.Models
         public string CategoriaAnimal { get; set; } // Bezerro, Novilha, Vaca, Touro
 
         public bool Lactante { get; set; } = false;
+
+        // ***** ALTERAÇÃO PRINCIPAL *****
+        // Esta propriedade agora é para controle de tela (UI) e lógica de negócio.
+        // O atributo [Ignore] impede que o SQLite crie uma coluna "Prenha" no banco.
+        // O valor desta propriedade será definido pela sua camada de serviço/lógica.
+        [Ignore]
         public bool Prenha { get; set; } = false;
 
         [Required(ErrorMessage = "O status do animal é obrigatório.")]
