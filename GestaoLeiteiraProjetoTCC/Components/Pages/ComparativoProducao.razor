@@ -1,0 +1,480 @@
+﻿@page "/comparativo-producao"
+@using GestaoLeiteiraProjetoTCC.Models
+@using GestaoLeiteiraProjetoTCC.Services.Interfaces
+@inject ILactacaoService LactacaoService
+@inject IAnimalService AnimalService
+@inject IPropriedadeService PropriedadeService
+@inject IProducaoLeiteiraService ProducaoLeiteiraService
+
+<div class="page-container">
+    <div class="dashboard-header">
+        <div class="header-content">
+            <div class="welcome-section">
+                <h1>Comparativo de Produção</h1>
+                <p class="property-owner">Analise o desempenho lado a lado de dois animais</p>
+            </div>
+            <div class="header-date-section">
+                <i class="fas fa-calendar-alt"></i>
+                <span>@DateTime.Now.ToString("dd/MM/yyyy")</span>
+            </div>
+        </div>
+    </div>
+
+    @if (carregandoDadosIniciais)
+    {
+        <div class="loading-overlay">
+            <div class="spinner"></div>
+            <p>Carregando dados...</p>
+        </div>
+    }
+    else
+    {
+        <div class="filters-container">
+            <div class="row">
+                <div class="col-md-6 border-end">
+                    <h5 class="text-center mb-3">Animal 1</h5>
+                    <div class="form-group">
+                        <label>Selecione a fêmea</label>
+                        <select @bind="animal1Id" @bind:after="OnAnimal1Change" class="form-control">
+                            <option value="0">-- Selecione --</option>
+                            @foreach (var animal in femeas)
+                            {
+                                <option value="@animal.Id">@animal.NomeAnimal (@animal.NumeroIdentificador)</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Selecione a lactação (opcional)</label>
+                        <select @bind="lactacao1Id" class="form-control" disabled="@(animal1Id == 0)">
+                            <option value="0">-- Todas as lactações --</option>
+                            @foreach (var lactacao in lactacoesAnimal1)
+                            {
+                                <option value="@lactacao.Id">
+                                    @lactacao.DataInicio.ToString("dd/MM/yyyy")
+                                    @(lactacao.DataFim.HasValue ? $" - {lactacao.DataFim.Value:dd/MM/yyyy}" : " (Ativa)")
+                                </option>
+                            }
+                        </select>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <h5 class="text-center mb-3">Animal 2</h5>
+                    <div class="form-group">
+                        <label>Selecione a fêmea</label>
+                        <select @bind="animal2Id" @bind:after="OnAnimal2Change" class="form-control">
+                            <option value="0">-- Selecione --</option>
+                            @foreach (var animal in femeas)
+                            {
+                                <option value="@animal.Id">@animal.NomeAnimal (@animal.NumeroIdentificador)</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Selecione a lactação (opcional)</label>
+                        <select @bind="lactacao2Id" class="form-control" disabled="@(animal2Id == 0)">
+                            <option value="0">-- Todas as lactações --</option>
+                            @foreach (var lactacao in lactacoesAnimal2)
+                            {
+                                <option value="@lactacao.Id">
+                                    @lactacao.DataInicio.ToString("dd/MM/yyyy")
+                                    @(lactacao.DataFim.HasValue ? $" - {lactacao.DataFim.Value:dd/MM/yyyy}" : " (Ativa)")
+                                </option>
+                            }
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <hr />
+
+            <div class="row mt-3 align-items-end">
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label>Data Início (opcional)</label>
+                        <input type="date" @bind="dataInicio" class="form-control" />
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label>Data Fim (opcional)</label>
+                        <input type="date" @bind="dataFim" class="form-control" />
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <button class="btn btn-primary w-100" @onclick="RealizarComparacao" disabled="@(processandoComparacao)">
+                            @if (processandoComparacao)
+                            {
+                                <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                <text> Processando...</text>
+                            }
+                            else
+                            {
+                                <i class="fas fa-chart-bar"></i>
+                                <text> Comparar</text>
+                            }
+                        </button>
+                    </div>
+                </div>
+            </div>
+            @if (!string.IsNullOrEmpty(erroComparacao))
+            {
+                <div class="alert alert-danger mt-3">@erroComparacao</div>
+            }
+        </div>
+
+        @if (buscaRealizada && resultado1 != null && resultado2 != null)
+        {
+            <div class="table-container">
+                <table class="table table-bordered">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Métrica</th>
+                            <th class="text-center">@resultado1.NomeAnimal</th>
+                            <th class="text-center">@resultado2.NomeAnimal</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Período Analisado</strong></td>
+                            <td class="text-center">@resultado1.Periodo</td>
+                            <td class="text-center">@resultado2.Periodo</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Duração do Período (Dias)</strong></td>
+                            <td class="text-center">@resultado1.DuracaoDias</td>
+                            <td class="text-center">@resultado2.DuracaoDias</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Número de Registros</strong></td>
+                            <td class="text-center">@resultado1.NumeroRegistros</td>
+                            <td class="text-center">@resultado2.NumeroRegistros</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Produção Total (L)</strong></td>
+                            <td class="text-center fs-5"><strong>@resultado1.ProducaoTotal.ToString("F2")</strong></td>
+                            <td class="text-center fs-5"><strong>@resultado2.ProducaoTotal.ToString("F2")</strong></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Média Diária de Produção (L)</strong></td>
+                            <td class="text-center fs-5"><strong>@resultado1.MediaDiaria.ToString("F2")</strong></td>
+                            <td class="text-center fs-5"><strong>@resultado2.MediaDiaria.ToString("F2")</strong></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        }
+        else if (buscaRealizada)
+        {
+            <div class="empty-message-container">
+                <div class="empty-message">
+                    <i class="fas fa-info-circle"></i>
+                    <p>Nenhum dado de produção encontrado para um ou ambos os animais com os filtros selecionados.</p>
+                </div>
+            </div>
+        }
+    }
+</div>
+
+@* Adicione este CSS na sua folha de estilos principal (ex: site.css) ou mantenha aqui *@
+<style>
+    .page-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    .dashboard-header {
+        background: white;
+        border-radius: 8px;
+        padding: 20px 25px;
+        margin-bottom: 30px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+
+    .header-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 20px;
+    }
+
+    .welcome-section h1 {
+        font-size: 2.2rem;
+        color: #023047;
+        margin: 0;
+        font-weight: 700;
+    }
+
+    .property-owner {
+        color: #666;
+        font-size: 1.1rem;
+        margin: 4px 0 0 0;
+        font-weight: 400;
+    }
+
+    .header-date-section {
+        font-size: 1rem;
+        font-weight: 500;
+        color: #4a5568;
+        background-color: #f8f9fa;
+        padding: 10px 16px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .filters-container {
+        background: white;
+        padding: 20px 25px;
+        border-radius: 8px;
+        margin-bottom: 30px;
+        border: 1px solid #e0e7ee;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+
+    .form-group {
+        margin-bottom: 1rem;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 10px 14px;
+        border: 1px solid #cbd5e0;
+        border-radius: 8px;
+        font-size: 15px;
+        background-color: #f8f9fa;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        box-sizing: border-box;
+    }
+
+    .btn {
+        padding: 11px 24px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 15px;
+        font-weight: 600;
+        border: none;
+        transition: all 0.3s ease;
+    }
+
+    .btn-primary {
+        background-color: #3a7ca5;
+        color: white;
+    }
+
+    .table-container {
+        background: white;
+        border-radius: 8px;
+        overflow: hidden;
+        border: 1px solid #e0e7ee;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+
+    .empty-message-container {
+        background-color: white;
+        border-radius: 8px;
+        padding: 40px;
+        border: 1px solid #e0e7ee;
+    }
+
+    .empty-message {
+        text-align: center;
+        color: #6c757d;
+    }
+
+        .empty-message i {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+            opacity: 0.5;
+        }
+
+    .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.5);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+        color: white;
+    }
+
+    .spinner {
+        border: 4px solid #f3f3f3;
+        border-top: 4px solid #3a7ca5;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+        margin-bottom: 15px;
+    }
+
+    @@keyframes spin {
+        0% {
+            transform: rotate(0deg);
+        }
+
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+</style>
+
+@code {
+    private Propriedade propriedadeLogada;
+    private List<Animal> femeas = new();
+    private List<Lactacao> lactacoesAnimal1 = new();
+    private List<Lactacao> lactacoesAnimal2 = new();
+
+    // Filtros
+    private int animal1Id;
+    private int animal2Id;
+    private int? lactacao1Id;
+    private int? lactacao2Id;
+    private DateTime? dataInicio;
+    private DateTime? dataFim;
+    private string erroComparacao;
+
+    // Resultados
+    private ComparativoResultado resultado1;
+    private ComparativoResultado resultado2;
+
+    // Estado da UI
+    private bool carregandoDadosIniciais = true;
+    private bool processandoComparacao = false;
+    private bool buscaRealizada = false;
+
+    // Classe auxiliar para armazenar os resultados da comparação
+    public class ComparativoResultado
+    {
+        public string NomeAnimal { get; set; }
+        public double ProducaoTotal { get; set; }
+        public double MediaDiaria { get; set; }
+        public int NumeroRegistros { get; set; }
+        public string Periodo { get; set; } = "N/A";
+        public int DuracaoDias { get; set; }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        propriedadeLogada = PropriedadeService.ObterPropriedadeLogada();
+        if (propriedadeLogada != null)
+        {
+            var animaisComLactacao = await AnimalService.ObterAnimaisQueTiveramLactacao(propriedadeLogada.Id);
+            femeas = animaisComLactacao.Where(a => a.Sexo == "Fêmea").OrderBy(a => a.NomeAnimal).ToList();
+        }
+        carregandoDadosIniciais = false;
+    }
+
+    private async Task OnAnimal1Change()
+    {
+        lactacao1Id = null;
+        lactacoesAnimal1.Clear();
+        if (animal1Id > 0)
+        {
+            var lactacoes = await LactacaoService.ObterLactacoesPorAnimalAsync(animal1Id);
+            lactacoesAnimal1 = lactacoes.OrderByDescending(l => l.DataInicio).ToList();
+        }
+        StateHasChanged();
+    }
+
+    private async Task OnAnimal2Change()
+    {
+        lactacao2Id = null;
+        lactacoesAnimal2.Clear();
+        if (animal2Id > 0)
+        {
+            var lactacoes = await LactacaoService.ObterLactacoesPorAnimalAsync(animal2Id);
+            lactacoesAnimal2 = lactacoes.OrderByDescending(l => l.DataInicio).ToList();
+        }
+        StateHasChanged();
+    }
+
+    private async Task RealizarComparacao()
+    {
+        erroComparacao = string.Empty;
+        if (animal1Id == 0 || animal2Id == 0)
+        {
+            erroComparacao = "Por favor, selecione dois animais para comparar.";
+            return;
+        }
+        if (animal1Id == animal2Id)
+        {
+            erroComparacao = "Por favor, selecione dois animais diferentes.";
+            return;
+        }
+
+        processandoComparacao = true;
+        buscaRealizada = false;
+        StateHasChanged();
+
+        try
+        {
+            var producoes1 = await ObterDadosProducaoFiltrados(animal1Id, lactacao1Id, dataInicio, dataFim);
+            var producoes2 = await ObterDadosProducaoFiltrados(animal2Id, lactacao2Id, dataInicio, dataFim);
+
+            resultado1 = CalcularResultados(producoes1, animal1Id);
+            resultado2 = CalcularResultados(producoes2, animal2Id);
+
+            buscaRealizada = true;
+        }
+        catch (Exception ex)
+        {
+            erroComparacao = "Ocorreu um erro ao processar a comparação.";
+            Console.WriteLine($"Erro na comparação: {ex.Message}");
+        }
+        finally
+        {
+            processandoComparacao = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task<List<ProducaoLeiteira>> ObterDadosProducaoFiltrados(int animalId, int? lactacaoId, DateTime? inicio, DateTime? fim)
+    {
+        // A busca é feita por propriedade e depois filtrada em memória
+        var todasAsProducoes = await ProducaoLeiteiraService.ObterPorPropriedadeAsync(propriedadeLogada.Id, inicio, fim);
+
+        var query = todasAsProducoes.Where(p => p.AnimalId == animalId);
+
+        if (lactacaoId.HasValue && lactacaoId > 0)
+        {
+            query = query.Where(p => p.LactacaoId == lactacaoId.Value);
+        }
+
+        return query.ToList();
+    }
+
+    private ComparativoResultado CalcularResultados(List<ProducaoLeiteira> producoes, int animalId)
+    {
+        var animalInfo = femeas.FirstOrDefault(a => a.Id == animalId);
+        if (animalInfo == null) return null;
+
+        var resultado = new ComparativoResultado
+            {
+                NomeAnimal = $"{animalInfo.NomeAnimal} ({animalInfo.NumeroIdentificador})"
+            };
+
+        if (producoes.Any())
+        {
+            var dataMin = producoes.Min(p => p.Data);
+            var dataMax = producoes.Max(p => p.Data);
+
+            resultado.ProducaoTotal = producoes.Sum(p => p.Quantidade);
+            resultado.MediaDiaria = producoes.Average(p => p.Quantidade);
+            resultado.NumeroRegistros = producoes.Count;
+            resultado.Periodo = $"{dataMin:dd/MM/yy} - {dataMax:dd/MM/yy}";
+            resultado.DuracaoDias = (dataMax - dataMin).Days + 1;
+        }
+
+        return resultado;
+    }
+}
