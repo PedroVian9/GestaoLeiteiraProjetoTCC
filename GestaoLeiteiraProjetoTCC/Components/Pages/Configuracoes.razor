@@ -830,20 +830,17 @@
             syncStatus = "Copiando banco de dados (modo debug)...";
             StateHasChanged();
 
-            (output, error, exitCode) = await AutoAdbManager.ExecuteAdbCommandAsync($"shell run-as {NomePacoteApp} cat files/{NomeBancoDeDados}");
+            // Bloco de código novo e corrigido
+            var (errorRunAs, exitCodeRunAs) = await AutoAdbManager.ExecuteAdbCommandAndStreamOutputToFileAsync(
+                $"shell run-as {NomePacoteApp} cat files/{NomeBancoDeDados}",
+                _caminhoDbCelularLocal
+            );
 
-            if (exitCode == 0 && !string.IsNullOrEmpty(output))
+            if (exitCodeRunAs == 0 && string.IsNullOrEmpty(errorRunAs) && new FileInfo(_caminhoDbCelularLocal).Length > 1024) // >1KB como verificação mínima
             {
-                // Salvar dados binários corretamente
-                var bytes = System.Text.Encoding.Latin1.GetBytes(output);
-                await File.WriteAllBytesAsync(_caminhoDbCelularLocal, bytes);
-
-                if (new FileInfo(_caminhoDbCelularLocal).Length > 0)
-                {
-                    deviceConnected = true;
-                    syncStatus = "✅ Dispositivo pronto para sincronização!";
-                    return;
-                }
+                deviceConnected = true;
+                syncStatus = "✅ Dispositivo pronto para sincronização!";
+                return;
             }
         }
 

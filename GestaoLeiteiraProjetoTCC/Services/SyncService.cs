@@ -27,58 +27,57 @@ namespace GestaoLeiteiraProjetoTCC.Services
 
             try
             {
-                // Buscar todos os registros (incluindo excluídos para sincronizar exclusões)
                 var listaDb1 = await db1.Table<T>().ToListAsync();
                 var listaDb2 = await db2.Table<T>().ToListAsync();
 
                 var dictDb1 = listaDb1.ToDictionary(x => x.GuidRegistro);
                 var dictDb2 = listaDb2.ToDictionary(x => x.GuidRegistro);
 
-                int inseridos = 0, atualizados = 0;
+                int inseridosDb1 = 0, inseridosDb2 = 0, atualizados = 0;
 
-                // Sincronizar de db1 para db2
-                foreach (var itemDb1 in listaDb1)
+                var allGuids = dictDb1.Keys.Union(dictDb2.Keys).ToHashSet();
+
+                foreach (var guid in allGuids)
                 {
-                    if (!dictDb2.TryGetValue(itemDb1.GuidRegistro, out var itemDb2))
+                    dictDb1.TryGetValue(guid, out var itemDb1);
+                    dictDb2.TryGetValue(guid, out var itemDb2);
+
+                    if (itemDb1 != null && itemDb2 == null)
                     {
-                        // Existe só no db1 -> adicionar no db2
+                        // Existe apenas no DB1 -> Inserir no DB2
                         await db2.InsertAsync(itemDb1);
-                        inseridos++;
+                        inseridosDb2++;
                     }
-                    else
+                    else if (itemDb1 == null && itemDb2 != null)
                     {
-                        // Existe nos dois -> escolher o mais recente
+                        // Existe apenas no DB2 -> Inserir no DB1
+                        await db1.InsertAsync(itemDb2);
+                        inseridosDb1++;
+                    }
+                    else if (itemDb1 != null && itemDb2 != null)
+                    {
+                        // Existe em ambos -> Sincronizar o mais recente
                         if (itemDb1.DataModificacaoUtc > itemDb2.DataModificacaoUtc)
                         {
-                            // Preservar o ID do db2 para fazer UPDATE
-                            var idOriginal = itemDb2.Id;
-                            itemDb1.Id = idOriginal;
+                            itemDb1.Id = itemDb2.Id; // Preserva o ID do destino
                             await db2.UpdateAsync(itemDb1);
                             atualizados++;
                         }
                         else if (itemDb2.DataModificacaoUtc > itemDb1.DataModificacaoUtc)
                         {
-                            // Preservar o ID do db1 para fazer UPDATE
-                            var idOriginal = itemDb1.Id;
-                            itemDb2.Id = idOriginal;
+                            itemDb2.Id = itemDb1.Id; // Preserva o ID do destino
                             await db1.UpdateAsync(itemDb2);
                             atualizados++;
                         }
-                        // Se as datas são iguais, não faz nada (já estão sincronizados)
+                        // Se as datas forem iguais, não faz nada.
                     }
                 }
 
-                // Sincronizar registros que só existem no db2
-                foreach (var itemDb2 in listaDb2)
+                var totalInseridos = inseridosDb1 + inseridosDb2;
+                if (totalInseridos > 0 || atualizados > 0)
                 {
-                    if (!dictDb1.ContainsKey(itemDb2.GuidRegistro))
-                    {
-                        await db1.InsertAsync(itemDb2);
-                        inseridos++;
-                    }
+                    OnStatusChanged($"{nomeTabela}: {totalInseridos} inseridos, {atualizados} atualizados.");
                 }
-
-                OnStatusChanged($"{nomeTabela}: {inseridos} inseridos, {atualizados} atualizados");
             }
             catch (Exception ex)
             {

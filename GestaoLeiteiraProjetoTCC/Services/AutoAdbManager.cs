@@ -64,7 +64,46 @@ namespace GestaoLeiteiraProjetoTCC.Services
             onStatusUpdate?.Invoke("ADB pronto para uso.");
             return _adbPath;
         }
+        // Adicionar dentro da classe AutoAdbManager
 
+        /// <summary>
+        /// Executa um comando ADB e redireciona a saída binária diretamente para um arquivo.
+        /// Ideal para comandos como 'cat' que transferem arquivos.
+        /// </summary>
+        public static async Task<(string error, int exitCode)> ExecuteAdbCommandAndStreamOutputToFileAsync(string arguments, string outputFilePath, Action<string> onStatusUpdate = null)
+        {
+            var adbPath = await EnsureAdbAsync(onStatusUpdate);
+
+            using var process = new Process
+            {
+                StartInfo = new ProcessStartInfo
+                {
+                    FileName = adbPath,
+                    Arguments = arguments,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
+                    WorkingDirectory = Path.GetDirectoryName(adbPath)
+                }
+            };
+
+            process.Start();
+
+            // Lê a stream de erro como texto
+            var errorTask = process.StandardError.ReadToEndAsync();
+
+            // Copia a stream de saída (binária) diretamente para o arquivo
+            await using (var fileStream = new FileStream(outputFilePath, FileMode.Create, FileAccess.Write, FileShare.None))
+            {
+                await process.StandardOutput.BaseStream.CopyToAsync(fileStream);
+            }
+
+            await process.WaitForExitAsync();
+            var error = await errorTask;
+
+            return (error, process.ExitCode);
+        }
         /// <summary>
         /// Executa um comando ADB e retorna o resultado.
         /// </summary>
