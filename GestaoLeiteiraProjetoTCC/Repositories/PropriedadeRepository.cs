@@ -3,7 +3,6 @@ using GestaoLeiteiraProjetoTCC.Repositories.Interfaces;
 using SQLite;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using System.Linq;
 
 namespace GestaoLeiteiraProjetoTCC.Repositories
 {
@@ -52,6 +51,8 @@ namespace GestaoLeiteiraProjetoTCC.Repositories
             if (existente == null) return false;
 
             existente.NomeProprietario = propriedade.NomeProprietario;
+            existente.NomeSocial = propriedade.NomeSocial; 
+            existente.Sexo = propriedade.Sexo;             
             existente.NomePropriedade = propriedade.NomePropriedade;
             existente.Localizacao = propriedade.Localizacao;
             existente.AreaTotal = propriedade.AreaTotal;
@@ -67,17 +68,6 @@ namespace GestaoLeiteiraProjetoTCC.Repositories
 
             existente.Senha = novaSenha;
             return await _database.UpdateAsync(existente) > 0;
-        }
-
-        public async Task<List<ProducaoLeiteira>> ObterProducoesPorLactacaoNoDiaAsync(int lactacaoId, DateTime dia)
-        {
-            // Garante que estamos comparando apenas a data, ignorando a hora.
-            var inicioDoDia = dia.Date;
-            var fimDoDia = dia.Date.AddDays(1).AddTicks(-1);
-
-            return await _database.Table<ProducaoLeiteira>()
-                                  .Where(p => p.LactacaoId == lactacaoId && p.Data >= inicioDoDia && p.Data <= fimDoDia)
-                                  .ToListAsync();
         }
     }
 }

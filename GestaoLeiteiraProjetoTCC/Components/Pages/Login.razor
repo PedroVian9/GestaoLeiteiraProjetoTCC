@@ -405,7 +405,7 @@
                 {
                     mensagem = "Login realizado com sucesso!";
                     mensagemErro = false;
-                    await JSRuntime.InvokeVoidAsync("StateHasChanged"); // Força a UI a atualizar a mensagem
+                    StateHasChanged();
                     await Task.Delay(500);
 
                     await RedirecionarBaseadoNoDispositivo();
