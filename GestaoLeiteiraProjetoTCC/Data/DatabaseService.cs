@@ -70,15 +70,11 @@ public class DatabaseService
             {
                 var racasMock = new List<Raca>
             {
-                new Raca { NomeRaca = "Angus", Status = "Sistema" },
-                new Raca { NomeRaca = "Brahman", Status = "Sistema" },
-                new Raca { NomeRaca = "Guzerá", Status = "Sistema" },
-                new Raca { NomeRaca = "Gir", Status = "Sistema" },
-                new Raca { NomeRaca = "Girolando", Status = "Sistema" },
                 new Raca { NomeRaca = "Holandesa", Status = "Sistema" },
                 new Raca { NomeRaca = "Jersey", Status = "Sistema" },
-                new Raca { NomeRaca = "Nelore", Status = "Sistema" },
-                new Raca { NomeRaca = "Sindi", Status = "Sistema" },
+                new Raca { NomeRaca = "Girolando", Status = "Sistema" },
+                new Raca { NomeRaca = "Gir Leiteiro", Status = "Sistema" },
+                new Raca { NomeRaca = "Guzerá Leiteiro", Status = "Sistema" },
             };
                 await _database.InsertAllAsync(racasMock);
             }
