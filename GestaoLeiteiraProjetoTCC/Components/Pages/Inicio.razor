@@ -6,9 +6,8 @@
 @inject IProducaoLeiteiraService ProducaoLeiteiraService
 
 <div class="dashboard-wrapper">
-    @if (propriedade != null)
+    @if (propriedade != null && animais != null)
     {
-        <!-- Header Section -->
         <div class="dashboard-header">
             <div class="header-content">
                 <div class="welcome-section">
@@ -18,23 +17,19 @@
                 <div class="property-info-card">
                     <div class="info-item">
                         <i class="fas fa-map-marker-alt"></i>
-                        <span>Cidade: @propriedade.Localizacao</span>
+                        <span>Município: @propriedade.Localizacao</span>
                     </div>
                     <div class="info-item">
                         <i class="fas fa-ruler-combined"></i>
                         <span>
                             Área total: @propriedade.AreaTotal
-                            @if (propriedade.TipoUnidade == 1)
+                            @if (propriedade.TipoUnidade == 3)
                             {
-                                <text> alqueires mineiros</text>
+                                <text> Hectare</text>
                             }
-                            else if (propriedade.TipoUnidade == 2)
+                            else
                             {
-                                <text> alqueires paulistas</text>
-                            }
-                            else if (propriedade.TipoUnidade == 3)
-                            {
-                                <text> hectares</text>
+                                <text> Alqueire</text>
                             }
                         </span>
                     </div>
@@ -42,53 +37,91 @@
             </div>
         </div>
 
-        <!-- Resumo do rebanho -->
-        <div class="stats-section">
+        <div class="herd-summary-section">
             <h3 class="section-title">
                 <i class="fas fa-cow"></i>
                 Resumo do Rebanho
             </h3>
-            <div class="stats-grid">
-                <div class="stat-card primary">
+            <div class="main-stats-grid">
+                <div class="stat-card total-animals">
+                    <div class="stat-icon"><i class="fas fa-paw"></i></div>
                     <div class="stat-content">
                         <div class="stat-number">@totalAnimais</div>
                         <div class="stat-label">Total de Animais</div>
                     </div>
                 </div>
-
-                <div class="stat-card females">
+                <div class="stat-card total-females">
+                    <div class="stat-icon"><i class="fas fa-venus"></i></div>
                     <div class="stat-content">
                         <div class="stat-number">@totalFemeas</div>
-                        <div class="stat-label">Fêmeas</div>
+                        <div class="stat-label">Total de Fêmeas</div>
                     </div>
                 </div>
-
-                <div class="stat-card lactation">
+                <div class="stat-card total-males">
+                    <div class="stat-icon"><i class="fas fa-mars"></i></div>
                     <div class="stat-content">
-                        <div class="stat-number">@animaisLactantes</div>
-                        <div class="stat-label">Em Lactação</div>
+                        <div class="stat-number">@totalMachos</div>
+                        <div class="stat-label">Total de Machos</div>
                     </div>
                 </div>
+            </div>
 
-                <div class="stat-card pregnant">
-                    <div class="stat-content">
-                        <div class="stat-number">@totalPrenhas</div>
-                        <div class="stat-label">Prenhas</div>
-                    </div>
+            <h4 class="sub-section-title">Raio-X das Fêmeas</h4>
+            <div class="detailed-stats-grid">
+                <div class="stat-card-small lactation">
+                    <div class="stat-number">@femeasLactantes</div>
+                    <div class="stat-label">Em Lactação</div>
                 </div>
-
-                <div class="stat-card calves">
-                    <div class="stat-content">
-                        <div class="stat-number">@totalBezerros</div>
-                        <div class="stat-label">Bezerros</div>
-                    </div>
+                <div class="stat-card-small dry">
+                    <div class="stat-number">@vacasSecas</div>
+                    <div class="stat-label">Vacas Secas</div>
+                </div>
+                <div class="stat-card-small heifers">
+                    <div class="stat-number">@novilhasPrePrimeiraCria</div>
+                    <div class="stat-label">Novilhas (Pré 1ª Cria)</div>
+                </div>
+                <div class="stat-card-small calves">
+                    <div class="stat-number">@bezerras</div>
+                    <div class="stat-label">Bezerras</div>
+                </div>
+                <div class="stat-card-small pregnant">
+                    <div class="stat-number">@femeasPrenhas</div>
+                    <div class="stat-label">Prenhas</div>
                 </div>
             </div>
         </div>
 
-        <!-- Main Content Grid - Reorganized -->
         <div class="dashboard-grid">
-            <!-- Alerts Section - Left Column -->
+            <div class="production-section">
+                <h3 class="section-title">
+                    <i class="fas fa-chart-line"></i>
+                    Produção de Leite do Rebanho
+                </h3>
+                <div class="production-grid">
+                    <div class="production-card">
+                        <div class="production-header">
+                            <i class="fas fa-calendar-day"></i>
+                            <h4>Produção Diária (Total)</h4>
+                        </div>
+                        <div class="production-value">@producaoHoje.ToString("F2")<span class="unit">L</span></div>
+                    </div>
+                    <div class="production-card">
+                        <div class="production-header">
+                            <i class="fas fa-calendar-alt"></i>
+                            <h4>Produção Mensal (Total)</h4>
+                        </div>
+                        <div class="production-value">@producaoTotalMes.ToString("F2")<span class="unit">L</span></div>
+                    </div>
+                    <div class="production-card">
+                        <div class="production-header">
+                            <i class="fas fa-calculator"></i>
+                            <h4>Média Diária (Mês)</h4>
+                        </div>
+                        <div class="production-value">@mediaProducaoDiaria.ToString("F2")<span class="unit">L</span></div>
+                    </div>
+                </div>
+            </div>
+
             <div class="alerts-section">
                 <h3 class="section-title">
                     <i class="fas fa-exclamation-triangle"></i>
@@ -114,39 +147,6 @@
                     }
                 </div>
             </div>
-
-            <!-- Production Section - Right Column -->
-            <div class="production-section">
-                <h3 class="section-title">
-                    <i class="fas fa-chart-line"></i>
-                    Produção de Leite
-                </h3>
-                <div class="production-grid">
-                    <div class="production-card today">
-                        <div class="production-header">
-                            <i class="fas fa-calendar-day"></i>
-                            <h4>Hoje</h4>
-                        </div>
-                        <div class="production-value">@producaoHoje<span class="unit">L</span></div>
-                    </div>
-
-                    <div class="production-card month">
-                        <div class="production-header">
-                            <i class="fas fa-calendar-alt"></i>
-                            <h4>Este mês</h4>
-                        </div>
-                        <div class="production-value">@producaoTotalMes<span class="unit">L</span></div>
-                    </div>
-
-                    <div class="production-card average">
-                        <div class="production-header">
-                            <i class="fas fa-calculator"></i>
-                            <h4>Média diária no mês</h4>
-                        </div>
-                        <div class="production-value">@mediaProducaoDiaria<span class="unit">L</span></div>
-                    </div>
-                </div>
-            </div>
         </div>
     }
     else
@@ -159,23 +159,34 @@
 </div>
 
 <style>
+    :root {
+        --primary-dark: #023047;
+        --primary-blue: #3a7ca5;
+        --light-bg: #f8f9fa;
+        --white: #ffffff;
+        --text-dark: #333;
+        --text-light: #666;
+        --shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        --border-radius: 8px;
+    }
+
     * {
         box-sizing: border-box;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
 
     .dashboard-wrapper {
-        background: #f8f9fa;
+        background: var(--light-bg);
         padding: 20px;
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
 
     /* Header Section */
     .dashboard-header {
-        background: white;
-        border-radius: 8px;
-        padding: 20px;
+        background: var(--white);
+        border-radius: var(--border-radius);
+        padding: 20px 25px;
         margin-bottom: 20px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        box-shadow: var(--shadow);
     }
 
     .header-content {
@@ -183,20 +194,20 @@
         justify-content: space-between;
         align-items: center;
         gap: 20px;
+        flex-wrap: wrap;
     }
 
     .welcome-section h1 {
-        font-size: 2.5rem;
-        color: #023047;
+        font-size: 2.2rem;
+        color: var(--primary-dark);
         margin: 0;
         font-weight: 700;
     }
 
     .property-owner {
-        color: #666;
-        font-size: 1.2rem;
+        color: var(--text-light);
+        font-size: 1.1rem;
         margin: 5px 0 0 0;
-        font-weight: 500;
     }
 
     .property-info-card {
@@ -214,11 +225,133 @@
     }
 
         .info-item i {
-            color: #3a7ca5;
+            color: var(--primary-blue);
             width: 20px;
+            text-align: center;
         }
 
-    /* Main Grid Layout - Reorganized to equal columns */
+    /* Section Titles */
+    .section-title {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 1.2rem;
+        color: var(--primary-dark);
+        margin: 0 0 15px 0;
+        font-weight: 600;
+    }
+
+        .section-title i {
+            color: var(--primary-blue);
+        }
+
+    .sub-section-title {
+        margin-top: 25px;
+        margin-bottom: 15px;
+        color: var(--primary-dark);
+        font-size: 1.1rem;
+        font-weight: 600;
+        border-bottom: 2px solid #e9ecef;
+        padding-bottom: 5px;
+    }
+
+    /* Herd Summary Section */
+    .herd-summary-section {
+        background: var(--white);
+        border-radius: var(--border-radius);
+        padding: 20px 25px;
+        box-shadow: var(--shadow);
+        margin-bottom: 20px;
+    }
+
+    .main-stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+    }
+
+    .stat-card {
+        background: var(--primary-blue);
+        color: var(--white);
+        border-radius: var(--border-radius);
+        padding: 20px;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+        .stat-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+    .stat-icon {
+        font-size: 2.5rem;
+        opacity: 0.5;
+    }
+
+    .stat-content {
+        text-align: left;
+    }
+
+    .stat-number {
+        font-size: 2.2rem;
+        font-weight: 700;
+        line-height: 1;
+    }
+
+    .stat-label {
+        font-size: 0.9rem;
+        opacity: 0.9;
+    }
+
+    .detailed-stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 12px;
+    }
+
+    .stat-card-small {
+        background-color: #f8f9fa;
+        border: 1px solid #e9ecef;
+        color: var(--primary-dark);
+        border-left: 5px solid var(--primary-blue);
+        border-radius: var(--border-radius);
+        padding: 15px;
+        text-align: center;
+    }
+
+        .stat-card-small .stat-number {
+            font-size: 1.8rem;
+        }
+
+        .stat-card-small .stat-label {
+            color: var(--text-light);
+            opacity: 1;
+        }
+
+        .stat-card-small.lactation {
+            border-left-color: #3a7ca5;
+        }
+
+        .stat-card-small.pregnant {
+            border-left-color: #8338ec;
+        }
+
+        .stat-card-small.dry {
+            border-left-color: #6c757d;
+        }
+
+        .stat-card-small.heifers {
+            border-left-color: #ffbe0b;
+        }
+
+        .stat-card-small.calves {
+            border-left-color: #fb5607;
+        }
+
+    /* Main Grid Layout */
     .dashboard-grid {
         display: grid;
         grid-template-columns: 1fr 1fr;
@@ -226,94 +359,13 @@
         align-items: start;
     }
 
-    /* Section Titles */
-    .section-title {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        font-size: 1.1rem;
-        color: #023047;
-        margin: 0 0 15px 0;
-        font-weight: 600;
-    }
-
-        .section-title i {
-            color: #3a7ca5;
-        }
-
-    /* Stats Section */
-    .stats-section {
-        background: white;
-        border-radius: 8px;
-        padding: 20px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        margin-bottom: 20px;
-    }
-
-    .stats-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-        gap: 12px;
-    }
-
-    .stat-card {
-        background: #3a7ca5;
-        border-radius: 6px;
-        padding: 15px;
-        color: white;
-        transition: all 0.2s ease;
-        cursor: pointer;
-    }
-
-        .stat-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-        }
-
-        .stat-card.lactation {
-            background: #3a7ca5;
-        }
-
-        .stat-card.calves {
-            background: #3a7ca5;
-        }
-
-        .stat-card.females {
-            background: #3a7ca5;
-        }
-
-        .stat-card.pregnant {
-            background: #3a7ca5;
-        }
-
-    .stat-content {
-        text-align: center;
-    }
-
-    .stat-number {
-        font-size: 1.8rem;
-        font-weight: 700;
-        line-height: 1;
-        margin-bottom: 5px;
-    }
-
-    .stat-label {
-        font-size: 0.85rem;
-        opacity: 0.9;
-        font-weight: 400;
-    }
-
-    .stat-icon {
-        display: none;
-    }
-
-    /* Alerts Section - Now with equal height and scroll */
-    .alerts-section {
-        background: white;
-        border-radius: 8px;
-        padding: 20px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        height: 400px;
+    /* Alerts Section */
+    .alerts-section, .production-section {
+        background: var(--white);
+        border-radius: var(--border-radius);
+        padding: 20px 25px;
+        box-shadow: var(--shadow);
+        min-height: 350px;
         display: flex;
         flex-direction: column;
     }
@@ -321,30 +373,8 @@
     .alerts-container {
         flex: 1;
         overflow-y: auto;
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
         padding-right: 8px;
     }
-
-        /* Custom scrollbar for alerts */
-        .alerts-container::-webkit-scrollbar {
-            width: 6px;
-        }
-
-        .alerts-container::-webkit-scrollbar-track {
-            background: #f1f1f1;
-            border-radius: 3px;
-        }
-
-        .alerts-container::-webkit-scrollbar-thumb {
-            background: #3a7ca5;
-            border-radius: 3px;
-        }
-
-            .alerts-container::-webkit-scrollbar-thumb:hover {
-                background: #2c5f7f;
-            }
 
     .alert-item {
         display: flex;
@@ -357,18 +387,12 @@
         color: #721c24;
         font-weight: 500;
         font-size: 0.9rem;
-        flex-shrink: 0;
+        margin-bottom: 10px;
     }
 
         .alert-item i {
             color: #dc3545;
-            font-size: 1rem;
             margin-top: 2px;
-            flex-shrink: 0;
-        }
-
-        .alert-item span {
-            line-height: 1.4;
         }
 
     .no-alerts {
@@ -376,73 +400,30 @@
         align-items: center;
         justify-content: center;
         gap: 10px;
-        background: #e0f2f1;
-        padding: 30px 15px;
+        height: 100%;
+        background: #f8f9fa;
         border-radius: 6px;
-        border-left: 4px solid #3a7ca5;
-        color: #023047;
-        font-weight: 500;
-        font-size: 0.9rem;
-        text-align: center;
-        flex: 1;
+        color: var(--text-light);
     }
 
-        .no-alerts i {
-            color: #3a7ca5;
-            font-size: 1.2rem;
-        }
-
-    /* Production Section - Now with equal height */
-    .production-section {
-        background: white;
-        border-radius: 8px;
-        padding: 20px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        height: 400px;
-        display: flex;
-        flex-direction: column;
-    }
-
+    /* Production Section */
     .production-grid {
         flex: 1;
         display: flex;
         flex-direction: column;
         gap: 12px;
-        overflow: hidden;
     }
 
     .production-card {
         background: #f1f8ff;
-        border-radius: 6px;
+        border-radius: var(--border-radius);
         padding: 15px;
-        transition: all 0.2s ease;
-        border-left: 4px solid #3a7ca5;
+        border-left: 4px solid var(--primary-blue);
         flex: 1;
         display: flex;
         flex-direction: column;
         justify-content: center;
-        min-height: 0;
     }
-
-        .production-card:hover {
-            background: #e8f4f8;
-            transform: translateY(-2px);
-        }
-
-        .production-card.today {
-            border-left-color: #3a7ca5;
-            background: #f1f8ff;
-        }
-
-        .production-card.month {
-            border-left-color: #3a7ca5;
-            background: #f1f8ff;
-        }
-
-        .production-card.average {
-            border-left-color: #3a7ca5;
-            background: #f1f8ff;
-        }
 
     .production-header {
         display: flex;
@@ -451,12 +432,8 @@
         margin-bottom: 8px;
     }
 
-        .production-header i {
-            color: #666;
-        }
-
         .production-header h4 {
-            color: #023047;
+            color: var(--primary-dark);
             margin: 0;
             font-size: 1rem;
             font-weight: 600;
@@ -465,16 +442,14 @@
     .production-value {
         font-size: 1.8rem;
         font-weight: 700;
-        color: #023047;
-        display: flex;
-        align-items: baseline;
-        gap: 6px;
+        color: var(--primary-dark);
     }
 
         .production-value .unit {
             font-size: 1rem;
-            color: #666;
+            color: var(--text-light);
             font-weight: 500;
+            margin-left: 5px;
         }
 
     /* Loading State */
@@ -483,7 +458,7 @@
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        min-height: 50vh;
+        min-height: 80vh;
         gap: 20px;
     }
 
@@ -491,24 +466,69 @@
         width: 40px;
         height: 40px;
         border: 4px solid #f3f3f3;
-        border-top: 4px solid #3a7ca5;
+        border-top: 4px solid var(--primary-blue);
         border-radius: 50%;
         animation: spin 1s linear infinite;
+    }
+
+    @@keyframes spin {
+        0%
+
+    {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+
+    }
+
+    /* Responsive */
+    @@media (max-width: 992px) {
+        .dashboard-grid
+
+    {
+        grid-template-columns: 1fr;
+    }
+
+    }
+
+    @@media (max-width: 768px) {
+        .header-content
+
+    {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .welcome-section h1 {
+        font-size: 1.8rem;
+    }
+
     }
 </style>
 
 @code {
     private Propriedade propriedade;
-    private int totalAnimais = 0;
-    private int animaisLactantes = 0;
-    private int totalBezerros = 0;
-    private int totalFemeas = 0;
-    private int totalPrenhas = 0;
+    private List<Animal> animais;
 
+    // Estatísticas do Rebanho (variáveis renomeadas para clareza)
+    private int totalAnimais = 0;
+    private int totalFemeas = 0;
+    private int totalMachos = 0;
+    private int femeasLactantes = 0;
+    private int femeasPrenhas = 0;
+    private int vacasSecas = 0;
+    private int novilhasPrePrimeiraCria = 0; 
+    private int bezerras = 0;
+
+    // Estatísticas de Produção
     private double producaoHoje = 0;
     private double producaoTotalMes = 0;
     private double mediaProducaoDiaria = 0;
 
+    // Alertas
     private List<string> alertas = new();
 
     protected override async Task OnInitializedAsync()
@@ -522,44 +542,56 @@
 
         if (propriedade != null)
         {
-            var animais = await AnimalService.ObterAnimaisDaPropriedadeAsync(propriedade.Id);
+            animais = await AnimalService.ObterAnimaisDaPropriedadeAsync(propriedade.Id);
+            var animaisAtivos = animais.Where(a => a.Status == "Ativo").ToList();
 
-            totalAnimais = animais.Count;
-            animaisLactantes = animais.Count(a => a.Lactante);
-            totalBezerros = animais.Count(a => a.CategoriaAnimal == "Bezerro");
-            totalFemeas = animais.Count(a => a.Sexo == "Fêmea");
-            totalPrenhas = animais.Count(a => a.Prenha);
+            // Calcular Resumo do Rebanho
+            totalAnimais = animaisAtivos.Count;
+            totalFemeas = animaisAtivos.Count(a => a.Sexo == "Fêmea");
+            totalMachos = totalAnimais - totalFemeas;
 
+            // Detalhamento das Fêmeas
+            // Detalhamento das Fêmeas (lógica com variáveis renomeadas)
+            femeasLactantes = animaisAtivos.Count(a => a.Sexo == "Fêmea" && a.Lactante);
+            femeasPrenhas = animaisAtivos.Count(a => a.Sexo == "Fêmea" && a.Prenha);
+            vacasSecas = animaisAtivos.Count(a => a.Sexo == "Fêmea" && !a.Lactante && a.CategoriaAnimal == "Vaca");
+            novilhasPrePrimeiraCria = animaisAtivos.Count(a => a.Sexo == "Fêmea" && a.CategoriaAnimal == "Novilha");
+            bezerras = animaisAtivos.Count(a => a.Sexo == "Fêmea" && a.CategoriaAnimal == "Bezerra");
+
+            // Calcular Produção
             var hoje = DateTime.Today;
             var primeiroDiaDoMes = new DateTime(hoje.Year, hoje.Month, 1);
-
             var producoes = await ProducaoLeiteiraService.ObterPorPropriedadeAsync(propriedade.Id);
 
             producaoHoje = producoes.Where(p => p.Data.Date == hoje).Sum(p => p.Quantidade);
-            producaoTotalMes = producoes.Where(p => p.Data >= primeiroDiaDoMes).Sum(p => p.Quantidade);
+            producaoTotalMes = producoes.Where(p => p.Data.Date >= primeiroDiaDoMes && p.Data.Date <= hoje).Sum(p => p.Quantidade);
 
-            int diasComProducao = producoes
-                .Where(p => p.Data >= primeiroDiaDoMes)
-                .Select(p => p.Data.Date)
-                .Distinct()
-                .Count();
-
-            mediaProducaoDiaria = diasComProducao > 0
-                ? Math.Round(producaoTotalMes / diasComProducao, 2)
+            int diasNoMesAteHoje = hoje.Day;
+            mediaProducaoDiaria = diasNoMesAteHoje > 0
+                ? producaoTotalMes / diasNoMesAteHoje
                 : 0;
 
-            // Alertas simples (exemplo)
-            var idsLactantes = animais.Where(a => a.Lactante).Select(a => a.Id).ToList();
-            var dataLimite = hoje.AddDays(-3);
-            foreach (var id in idsLactantes)
+            // Gerar Alertas
+            GerarAlertas(animaisAtivos, producoes, hoje);
+        }
+        StateHasChanged();
+    }
+
+    private void GerarAlertas(List<Animal> animaisAtivos, List<ProducaoLeiteira> producoes, DateTime hoje)
+    {
+        alertas.Clear();
+        var dataLimite = hoje.AddDays(-3);
+
+        var animaisEmLactacao = animaisAtivos.Where(a => a.Lactante).ToList();
+
+        foreach (var animal in animaisEmLactacao)
+        {
+            bool produziuRecentemente = producoes.Any(p => p.AnimalId == animal.Id && p.Data.Date >= dataLimite);
+            if (!produziuRecentemente)
             {
-                bool produziuUltimosDias = producoes.Any(p => p.AnimalId == id && p.Data >= dataLimite);
-                if (!produziuUltimosDias)
-                {
-                    var nome = animais.First(a => a.Id == id).NomeAnimal;
-                    alertas.Add($"Animal {nome} não possui produção nos últimos 3 dias.");
-                }
+                alertas.Add($"A vaca '{animal.NomeAnimal}' está em lactação mas não tem registro de produção há 3 dias ou mais.");
             }
         }
+        // Adicione mais lógicas de alerta aqui conforme necessário
     }
 }
