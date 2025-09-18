@@ -5,6 +5,8 @@
 @inject IAnimalService AnimalService
 @inject IPropriedadeService PropriedadeService
 @inject IRacaService RacaService
+@inject IProducaoLeiteiraService ProducaoLeiteiraService
+@inject ILactacaoService LactacaoService
 @inject NavigationManager NavigationManager
 
 <div class="page-container">
@@ -83,28 +85,15 @@
 
     @if (carregandoDados)
     {
-        <div class="loading-overlay">
-            <div class="spinner"></div>
-            <p>Carregando dados...</p>
-        </div>
+        <div class="loading-overlay"><div class="spinner"></div><p>Carregando dados...</p></div>
     }
     else if (!animais.Any())
     {
-        <div class="empty-message-container">
-            <div class="empty-message">
-                <i class="fas fa-paw"></i>
-                <p>Nenhum animal cadastrado ainda.</p>
-            </div>
-        </div>
+        <div class="empty-message-container"><div class="empty-message"><i class="fas fa-paw"></i><p>Nenhum animal cadastrado ainda.</p></div></div>
     }
     else if (!animaisFiltrados.Any())
     {
-        <div class="empty-message-container">
-            <div class="empty-message">
-                <i class="fas fa-search"></i>
-                <p>Nenhum animal encontrado para os filtros selecionados.</p>
-            </div>
-        </div>
+        <div class="empty-message-container"><div class="empty-message"><i class="fas fa-search"></i><p>Nenhum animal encontrado para os filtros selecionados.</p></div></div>
     }
     else
     {
@@ -118,37 +107,112 @@
                     </div>
 
                     <div class="card-details">
-                        <div class="detail-item">
-                            <span class="detail-label">Raça:</span>
-                            <span class="detail-value">@(animal.Raca?.NomeRaca ?? "Não informada")</span>
-                        </div>
-                        <div class="detail-item">
-                            <span class="detail-label">Categoria:</span>
-                            <span class="detail-value">@animal.CategoriaAnimal</span>
-                        </div>
-                        <div class="detail-item">
-                            <span class="detail-label">Nascimento:</span>
-                            <span class="detail-value">@animal.DataNascimento?.ToString("dd/MM/yyyy")</span>
-                        </div>
-                        <div class="detail-item">
-                            <span class="detail-label">Sexo:</span>
-                            <span class="detail-value">@animal.Sexo</span>
-                        </div>
+                        <div class="detail-item"><span class="detail-label">Raça:</span> <span class="detail-value">@(animal.Raca?.NomeRaca ?? "Não informada")</span></div>
+                        <div class="detail-item"><span class="detail-label">Categoria:</span> <span class="detail-value">@animal.CategoriaAnimal</span></div>
+                        <div class="detail-item"><span class="detail-label">Nascimento:</span> <span class="detail-value">@animal.DataNascimento?.ToString("dd/MM/yyyy")</span></div>
+                        <div class="detail-item"><span class="detail-label">Sexo:</span> <span class="detail-value">@animal.Sexo</span></div>
                     </div>
 
                     <div class="card-actions">
-                        <button class="btn-action genealogia"
-                                @onclick="() => AbrirModalProgênie(animal)"
-                                disabled="@(animal.CategoriaAnimal != "Vaca" && animal.CategoriaAnimal != "Touro")"
-                                title="@((animal.CategoriaAnimal != "Vaca" && animal.CategoriaAnimal != "Touro") ? "Disponível apenas para Vacas e Touros" : "Ver Progênie")">
-                            <i class="fas fa-sitemap"></i> Progênie
-                        </button>
-                        <button class="btn-action editar" @onclick="() => AbrirModalEditar(animal)">
-                            <i class="fas fa-edit"></i> Editar
+                        <button class="btn-action detalhes" @onclick="() => AbrirModalDetalhes(animal)">
+                            <i class="fas fa-eye"></i> Ver Detalhes
                         </button>
                     </div>
                 </div>
             }
+        </div>
+    }
+
+    @* Modal de DETALHES DO ANIMAL (Layout Horizontal) *@
+    @if (exibirModalDetalhes)
+    {
+        <div class="modal-overlay" @onclick="FecharModalDetalhes">
+            <div class="modal-content modal-detalhes" @onclick:stopPropagation>
+                @if (animalSelecionado != null)
+                {
+                    <h3>Detalhes de @animalSelecionado.NomeAnimal</h3>
+
+                    <div class="details-container">
+                        <div class="details-left-column">
+                            <div class="form-section-title">Informações Básicas</div>
+                            <div class="details-basic-info">
+                                <div><strong>Brinco/RFID:</strong> @animalSelecionado.NumeroIdentificador</div>
+                                <div><strong>Status:</strong> @animalSelecionado.Status</div>
+                                <div><strong>Raça:</strong> @(animalSelecionado.Raca?.NomeRaca ?? "Não informada")</div>
+                                <div><strong>Nascimento:</strong> @animalSelecionado.DataNascimento?.ToString("dd/MM/yyyy")</div>
+                            </div>
+
+                            @if (animalSelecionado.CategoriaAnimal == "Vaca")
+                            {
+                                <div class="form-section-title">Histórico de Lactações</div>
+                                @if (lactacoesSumario != null && lactacoesSumario.Any())
+                                {
+                                    <div class="table-responsive">
+                                        <table class="table table-striped table-hover mt-2">
+                                            <thead>
+                                                <tr>
+                                                    <th>Início</th>
+                                                    <th>Fim</th>
+                                                    <th>Duração</th>
+                                                    <th>Total (L)</th>
+                                                    <th>Média (L/dia)</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach (var sumario in lactacoesSumario)
+                                                {
+                                                    <tr>
+                                                        <td>@sumario.DataInicio.ToString("dd/MM/yy")</td>
+                                                        <td>@(sumario.DataFim?.ToString("dd/MM/yy") ?? "Ativa")</td>
+                                                        <td>@sumario.DuracaoDias d</td>
+                                                        <td>@sumario.ProducaoTotal.ToString("F1")</td>
+                                                        <td>@sumario.MediaDiaria.ToString("F1")</td>
+                                                    </tr>
+                                                }
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="text-muted text-center p-3">Nenhum histórico de lactação encontrado.</div>
+                                }
+                            }
+                        </div>
+
+                        <div class="details-right-column">
+                            <div class="form-section-title">Árvore Genealógica</div>
+                            <div class="genealogy-tree">
+                                <div class="level">
+                                    <div class="node parent">@(pai?.NomeAnimal ?? "Pai Desconhecido")</div>
+                                    <div class="node parent">@(mae?.NomeAnimal ?? "Mãe Desconhecida")</div>
+                                </div>
+
+                                <div class="level">
+                                    <div class="node animal">@animalSelecionado.NomeAnimal</div>
+                                </div>
+
+                                @if (proleDoAnimalSelecionado != null && proleDoAnimalSelecionado.Any())
+                                {
+                                    <div class="level children-level">
+                                        @foreach (var cria in proleDoAnimalSelecionado)
+                                        {
+                                            <div class="node child">@cria.NomeAnimal</div>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="footer-actions">
+                        <button type="button" class="btn btn-secondary" @onclick="FecharModalDetalhes">Fechar</button>
+                        <button type="button" class="btn btn-info" @onclick="AbrirModalEdicaoDoDetalhe">
+                            <i class="fas fa-edit"></i> Editar Animal
+                        </button>
+                    </div>
+                }
+            </div>
         </div>
     }
 
@@ -161,111 +225,66 @@
 
                 <EditForm Model="animal" OnValidSubmit="SalvarAnimal">
                     <DataAnnotationsValidator />
-
                     <div class="form-section-title">Dados Básicos</div>
                     <div class="form-grid">
-                        <div class="form-group">
-                            <label for="nomeAnimal">Nome do Animal</label>
-                            <InputText id="nomeAnimal" @bind-Value="animal.NomeAnimal" class="form-control" placeholder="Digite o nome..." />
-                            <ValidationMessage For="@(() => animal.NomeAnimal)" />
-                        </div>
-                        <div class="form-group">
-                            <label for="numeroIdentificador">Brinco / RFID</label>
-                            <InputText id="numeroIdentificador" @bind-Value="animal.NumeroIdentificador" class="form-control" placeholder="Digite o número..." />
-                            <ValidationMessage For="@(() => animal.NumeroIdentificador)" />
-                        </div>
+                        <div class="form-group"><label for="nomeAnimal">Nome</label><InputText id="nomeAnimal" @bind-Value="animal.NomeAnimal" class="form-control" /><ValidationMessage For="@(() => animal.NomeAnimal)" /></div>
+                        <div class="form-group"><label for="numeroIdentificador">Brinco</label><InputText id="numeroIdentificador" @bind-Value="animal.NumeroIdentificador" class="form-control" /><ValidationMessage For="@(() => animal.NumeroIdentificador)" /></div>
                     </div>
                     <div class="form-grid-2-col">
+                        <div class="form-group"><label for="dataNascimento">Nascimento</label><InputDate id="dataNascimento" @bind-Value="animal.DataNascimento" class="form-control" /><ValidationMessage For="@(() => animal.DataNascimento)" /></div>
                         <div class="form-group">
-                            <label for="dataNascimento">Data de Nascimento</label>
-                            <InputDate id="dataNascimento" @bind-Value="animal.DataNascimento" class="form-control" />
-                            <ValidationMessage For="@(() => animal.DataNascimento)" />
-                        </div>
-                        <div class="form-group">
-                            <label for="racaId">Raça</label>
-                            <InputSelect id="racaId" @bind-Value="animal.RacaId" class="form-control">
-                                <option value="0" disabled selected>Selecione uma raça...</option>
-                                @foreach (var raca in racas)
+                            <label for="racaId">Raça</label><InputSelect id="racaId" @bind-Value="animal.RacaId" class="form-control"><option value="0" disabled selected>Selecione</option>@foreach (var raca in racas)
                                 {
                                     <option value="@raca.Id">@raca.NomeRaca</option>
-                                }
-                            </InputSelect>
-                            <ValidationMessage For="@(() => animal.RacaId)" />
+                                }</InputSelect><ValidationMessage For="@(() => animal.RacaId)" />
+                            </div>
                         </div>
-                    </div>
-                    <div class="form-grid-2-col">
-                        <div class="form-group">
-                            <label for="sexo">Sexo</label>
-                            <InputSelect id="sexo" @bind-Value="animal.Sexo" @onchange="(e) => OnSexoChanged(e.Value.ToString())" class="form-control">
-                                <option value="" disabled selected>Selecione o sexo...</option>
-                                <option value="Macho">Macho</option>
-                                <option value="Fêmea">Fêmea</option>
-                            </InputSelect>
-                            <ValidationMessage For="@(() => animal.Sexo)" />
-                        </div>
-                        <div class="form-group">
-                            <label for="categoriaAnimal">Categoria</label>
-                            <InputSelect id="categoriaAnimal" @bind-Value="animal.CategoriaAnimal" class="form-control" disabled="@(string.IsNullOrEmpty(animal.Sexo))">
-                                <option value="" disabled selected>Selecione a categoria...</option>
-                                @if (animal.Sexo == "Macho")
+                        <div class="form-grid-2-col">
+                            <div class="form-group">
+                                <label for="sexo">Sexo</label><InputSelect id="sexo" @bind-Value="animal.Sexo" @onchange="(e) => OnSexoChanged(e.Value.ToString())" class="form-control"><option value="" disabled selected>Selecione</option><option value="Macho">Macho</option><option value="Fêmea">Fêmea</option></InputSelect><ValidationMessage For="@(() => animal.Sexo)" />
+                            </div>
+                            <div class="form-group">
+                                <label for="categoriaAnimal">Categoria</label><InputSelect id="categoriaAnimal" @bind-Value="animal.CategoriaAnimal" class="form-control" disabled="@(string.IsNullOrEmpty(animal.Sexo))"><option value="" disabled selected>Selecione</option>@if (animal.Sexo == "Macho")
                                 {
                                     <option value="Bezerro">Bezerro</option>
+
                                     <option value="Novilho">Novilho</option>
+
                                     <option value="Touro">Touro</option>
                                 }
                                 else if (animal.Sexo == "Fêmea")
                                 {
                                     <option value="Bezerra">Bezerra</option>
-                                    <option value="Novilha">Novilha</option>
-                                    <option value="Vaca">Vaca</option>
-                                }
-                            </InputSelect>
-                            <ValidationMessage For="@(() => animal.CategoriaAnimal)" />
-                        </div>
-                    </div>
 
-                    <div class="form-section-title">Vínculos Familiares</div>
-                    <div class="vincular-animal-section">
-                        <div class="form-group">
-                            <label>Mãe</label>
-                            <InputSelect @bind-Value="animal.MaeId" class="form-control" disabled="@(animal.MaeId > 0 && animal.Id != 0)">
-                                <option value="0">Não informada / Desconhecida</option>
-                                @foreach (var femea in animais.Where(a => a.Sexo == "Fêmea" && a.Id != animal.Id))
+                                    <option value="Novilha">Novilha</option>
+
+                                    <option value="Vaca">Vaca</option>
+                                }</InputSelect><ValidationMessage For="@(() => animal.CategoriaAnimal)" />
+                            </div>
+                        </div>
+                        <div class="form-section-title">Vínculos Familiares</div>
+                        <div class="vincular-animal-section">
+                            <div class="form-group">
+                                <label>Mãe</label><InputSelect @bind-Value="animal.MaeId" class="form-control" disabled="@(animal.MaeId > 0 && animal.Id != 0)"><option value="0">Desconhecida</option>@foreach (var femea in animais.Where(a => a.Sexo == "Fêmea" && a.Id != animal.Id))
                                 {
                                     <option value="@femea.Id">@femea.NomeAnimal (@femea.NumeroIdentificador)</option>
-                                }
-                            </InputSelect>
-                        </div>
-                        <div class="form-group">
-                            <label>Pai</label>
-                            <InputSelect @bind-Value="animal.PaiId" class="form-control" disabled="@(animal.PaiId > 0 && animal.Id != 0)">
-                                <option value="0">Não informado / Desconhecido</option>
-                                @foreach (var macho in animais.Where(a => a.Sexo == "Macho" && a.Id != animal.Id))
+                                }</InputSelect>
+                            </div>
+                            <div class="form-group">
+                                <label>Pai</label><InputSelect @bind-Value="animal.PaiId" class="form-control" disabled="@(animal.PaiId > 0 && animal.Id != 0)"><option value="0">Desconhecido</option>@foreach (var macho in animais.Where(a => a.Sexo == "Macho" && a.Id != animal.Id))
                                 {
                                     <option value="@macho.Id">@macho.NomeAnimal (@macho.NumeroIdentificador)</option>
-                                }
-                            </InputSelect>
+                                }</InputSelect>
+                            </div>
                         </div>
-                    </div>
-
-                    <div class="form-section-title">Status do Animal</div>
-                    <div class="form-group" style="max-width: 250px;">
-                        <label for="status">Status</label>
-                        <InputSelect id="status" @bind-Value="animal.Status" class="form-control">
-                            <option value="Ativo">Ativo</option>
-                            <option value="Vendido">Vendido</option>
-                            <option value="Morto">Morto</option>
-                        </InputSelect>
-                        <ValidationMessage For="@(() => animal.Status)" />
-                    </div>
-
-                    <div class="footer-actions">
-                        <button type="button" class="btn btn-secondary" @onclick="FecharModal">Cancelar</button>
-                        <button type="submit" class="btn btn-primary">Salvar</button>
-                    </div>
-                </EditForm>
+                        <div class="form-section-title">Status do Animal</div>
+                        <div class="form-group" style="max-width: 250px;">
+                            <label for="status">Status</label><InputSelect id="status" @bind-Value="animal.Status" class="form-control"><option value="Ativo">Ativo</option><option value="Vendido">Vendido</option><option value="Morto">Morto</option></InputSelect><ValidationMessage For="@(() => animal.Status)" />
+                        </div>
+                        <div class="footer-actions"><button type="button" class="btn btn-secondary" @onclick="FecharModal">Cancelar</button><button type="submit" class="btn btn-primary">Salvar</button></div>
+                    </EditForm>
+                </div>
             </div>
-        </div>
     }
 
     @* Modal de Filtros (Mobile) *@
@@ -274,128 +293,22 @@
         <div class="modal-overlay" @onclick="FecharModalFiltros">
             <div class="modal-content" @onclick:stopPropagation>
                 <h3>Filtrar e Ordenar</h3>
-                <div class="form-group">
-                    <label for="filtro-nome-modal">Buscar por Nome ou Brinco</label>
-                    <input id="filtro-nome-modal" type="text" class="form-control" placeholder="Digite para buscar..."
-                           @bind="filtroNome" />
-                </div>
-                <div class="form-group">
-                    <label for="filtro-status-modal">Status</label>
-                    <select id="filtro-status-modal" class="form-control" @bind="filtroStatus">
-                        <option value="Todos">Todos</option>
-                        <option value="Ativo">Ativo</option>
-                        <option value="Vendido">Vendido</option>
-                        <option value="Morto">Morto</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="filtro-categoria-modal">Categoria</label>
-                    <select id="filtro-categoria-modal" class="form-control" @bind="filtroCategoria">
-                        <option value="Todos">Todas</option>
-                        <option value="Bezerro">Bezerro</option>
-                        <option value="Bezerra">Bezerra</option>
-                        <option value="Novilho">Novilho</option>
-                        <option value="Novilha">Novilha</option>
-                        <option value="Vaca">Vaca</option>
-                        <option value="Touro">Touro</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="ordenacao-modal">Ordenar por</label>
-                    <select id="ordenacao-modal" class="form-control" @bind="ordenacaoSelecionada">
-                        <option value="nome_asc">Nome (A-Z)</option>
-                        <option value="data_desc">Mais Recentes (Nascimento)</option>
-                        <option value="data_asc">Mais Antigos (Nascimento)</option>
-                    </select>
-                </div>
-                <div class="footer-actions">
-                    <button type="button" class="btn btn-secondary" @onclick="FecharModalFiltros">Cancelar</button>
-                    <button type="button" class="btn btn-primary" @onclick="AplicarEFecharModalFiltros">Aplicar</button>
-                </div>
-            </div>
-        </div>
-    }
-
-    @* Modal de Progênie (Dinâmico para Vaca e Touro) *@
-    @if (exibirModalProgênie)
-    {
-        <div class="modal-overlay" @onclick="FecharModalProgênie">
-            <div class="modal-content modal-progenie" @onclick:stopPropagation style="max-width: 800px;">
-
-                @if (parentSelecionado != null)
-                {
-                    <h3>Progênie de @parentSelecionado.NomeAnimal (@parentSelecionado.NumeroIdentificador)</h3>
-
-                    <div class="alert alert-info">
-                        <strong>@parentSelecionado.CategoriaAnimal:</strong> @parentSelecionado.NomeAnimal <br>
-                        <strong>Data de Nasc.:</strong> @parentSelecionado.DataNascimento?.ToString("dd/MM/yyyy") <br>
-                        <strong>Status:</strong> @parentSelecionado.Status
-                    </div>
-
-                    <h5 class="mt-4">Crias Registradas:</h5>
-
-                    @if (prole != null && prole.Any())
-                    {
-                        <div class="table-responsive">
-                            <table class="table table-striped table-hover mt-3">
-                                <thead>
-                                    <tr>
-                                        <th>Nome da Cria</th>
-                                        <th>Brinco/RFID</th>
-                                        @if (parentSelecionado.Sexo == "Fêmea")
-                                        {
-                                            <th>Pai</th>
-                                        }
-                                        else
-                                        {
-                                            <th>Mãe</th>
-                                        }
-                                        <th>Data de Nasc.</th>
-                                        <th>Status</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach (var cria in prole)
-                                    {
-                                        <tr>
-                                            <td>@cria.NomeAnimal</td>
-                                            <td>@cria.NumeroIdentificador</td>
-                                            @if (parentSelecionado.Sexo == "Fêmea")
-                                            {
-                                                <td>@ObterNomeAnimal(cria.PaiId)</td>
-                                            }
-                                            else
-                                            {
-                                                <td>@ObterNomeAnimal(cria.MaeId)</td>
-                                            }
-                                            <td>@cria.DataNascimento?.ToString("dd/MM/yyyy")</td>
-                                            <td>@cria.Status</td>
-                                        </tr>
-                                    }
-                                </tbody>
-                            </table>
-                        </div>
-                    }
-                    else
-                    {
-                        <div class="empty-message-container mt-3">
-                            <div class="empty-message">
-                                <i class="fas fa-info-circle"></i>
-                                <p>Este animal não possui crias registradas no sistema.</p>
-                            </div>
-                        </div>
-                    }
-                }
-
-                <div class="footer-actions">
-                    <button type="button" class="btn btn-secondary" @onclick="FecharModalProgênie">Fechar</button>
-                </div>
+                <div class="form-group"><label for="filtro-nome-modal">Busca</label><input id="filtro-nome-modal" type="text" class="form-control" @bind="filtroNome" /></div>
+                <div class="form-group"><label for="filtro-status-modal">Status</label><select id="filtro-status-modal" class="form-control" @bind="filtroStatus"><option value="Todos">Todos</option><option value="Ativo">Ativo</option><option value="Vendido">Vendido</option><option value="Morto">Morto</option></select></div>
+                <div class="form-group"><label for="filtro-categoria-modal">Categoria</label><select id="filtro-categoria-modal" class="form-control" @bind="filtroCategoria"><option value="Todos">Todas</option><option value="Bezerro">Bezerro</option><option value="Bezerra">Bezerra</option><option value="Novilho">Novilho</option><option value="Novilha">Novilha</option><option value="Vaca">Vaca</option><option value="Touro">Touro</option></select></div>
+                <div class="form-group"><label for="ordenacao-modal">Ordenar por</label><select id="ordenacao-modal" class="form-control" @bind="ordenacaoSelecionada"><option value="nome_asc">Nome (A-Z)</option><option value="data_desc">Mais Recentes</option><option value="data_asc">Mais Antigos</option></select></div>
+                <div class="footer-actions"><button type="button" class="btn btn-secondary" @onclick="FecharModalFiltros">Cancelar</button><button type="button" class="btn btn-primary" @onclick="AplicarEFecharModalFiltros">Aplicar</button></div>
             </div>
         </div>
     }
 </div>
 
 <style>
+    :root {
+        --primary-dark: #023047;
+        --primary-blue: #3a7ca5;
+    }
+
     .page-container {
         max-width: 1200px;
         margin: 0 auto;
@@ -419,7 +332,7 @@
 
     .welcome-section h1 {
         font-size: 2.2rem;
-        color: #023047;
+        color: var(--primary-dark);
         margin: 0;
         font-weight: 700;
     }
@@ -469,10 +382,16 @@
         border-radius: 10px;
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         padding: 20px;
-        border-left: 4px solid #3a7ca5;
+        border-left: 4px solid var(--primary-blue);
         display: flex;
         flex-direction: column;
+        cursor: default;
     }
+
+        .animal-card:hover {
+            transform: none;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
 
     .card-header {
         display: flex;
@@ -492,7 +411,7 @@
     .animal-name {
         font-weight: bold;
         font-size: 18px;
-        color: #023047;
+        color: var(--primary-dark);
     }
 
     .status-badge {
@@ -569,14 +488,11 @@
             color: white;
         }
 
-        .btn-action.editar {
-            background-color: #17a2b8;
+        .btn-action.detalhes {
+            background-color: #34495e;
             color: white;
-        }
-
-        .btn-action.genealogia {
-            background-color: #34495e; /* Cor alterada para Azul Ardósia */
-            color: white;
+            width: 100%;
+            justify-content: center;
         }
 
         .btn-action:hover:not(:disabled) {
@@ -663,7 +579,7 @@
 
         .modal-content h3 {
             margin-top: 0;
-            color: #023047;
+            color: var(--primary-dark);
             font-size: 24px;
             font-weight: 600;
             padding-bottom: 20px;
@@ -671,15 +587,6 @@
             margin-bottom: 25px;
             text-align: center;
         }
-
-    .modal-progenie h3 {
-        border-bottom-color: #3a7ca5;
-    }
-
-    .modal-progenie .table thead {
-        background-color: #023047;
-        color: white;
-    }
 
     .form-grid, .form-grid-2-col {
         display: grid;
@@ -715,7 +622,7 @@
 
         .form-control:focus {
             outline: none;
-            border-color: #3a7ca5;
+            border-color: var(--primary-blue);
             background-color: #fff;
             box-shadow: 0 0 0 3px rgba(58, 124, 165, 0.15);
         }
@@ -741,12 +648,17 @@
     }
 
     .btn-primary {
-        background-color: #3a7ca5;
+        background-color: var(--primary-blue);
         color: white;
     }
 
     .btn-secondary {
         background-color: #6c757d;
+        color: white;
+    }
+
+    .btn-info {
+        background-color: #17a2b8;
         color: white;
     }
 
@@ -759,11 +671,11 @@
     .form-section-title {
         font-size: 1.1rem;
         font-weight: 600;
-        color: #023047;
+        color: var(--primary-dark);
         margin-top: 25px;
         margin-bottom: 20px;
         padding-bottom: 8px;
-        border-bottom: 2px solid #e0e7ee;
+        border-bottom: 2px solid var(--primary-blue);
     }
 
         .form-section-title:first-of-type {
@@ -777,24 +689,129 @@
         margin-bottom: 0;
     }
 
-    .alert.alert-info {
-        background-color: #e2f3f5;
-        border-color: #bdedf3;
-        color: #31708f;
-        padding: 15px;
-        border-radius: 8px;
-    }
-
     .table-responsive {
         overflow-x: auto;
+        max-height: 250px;
     }
 
     .mobile-actions-bar {
         display: none;
     }
 
-    @@media (max-width: 768px) {
+    .text-muted {
+        color: #6c757d;
+    }
 
+    .text-center {
+        text-align: center;
+    }
+
+    .p-3 {
+        padding: 1rem;
+    }
+
+    .mt-2 {
+        margin-top: 0.5rem;
+    }
+
+    .modal-detalhes {
+        max-width: 950px;
+    }
+
+    .details-container {
+        display: flex;
+        gap: 30px;
+    }
+
+    .details-left-column {
+        flex: 3;
+    }
+
+    .details-right-column {
+        flex: 2;
+        border-left: 1px solid #e0e7ee;
+        padding-left: 30px;
+    }
+
+    .details-basic-info {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px 20px;
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 15px;
+        border-left: 4px solid var(--primary-blue);
+    }
+
+    .genealogy-tree {
+        text-align: center;
+        padding: 10px 0;
+    }
+
+        .genealogy-tree .level {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+            .genealogy-tree .level:not(:last-child) {
+                margin-bottom: 20px;
+            }
+
+        .genealogy-tree .node {
+            padding: 8px 15px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            min-width: 120px;
+            max-width: 150px;
+            font-size: 13px;
+            background-color: #f8f9fa;
+            position: relative;
+            display: inline-block;
+            word-wrap: break-word;
+        }
+
+    .node.animal {
+        background-color: var(--primary-blue);
+        color: white;
+        border-color: #2c5f7f;
+        font-weight: bold;
+    }
+
+    .node.parent {
+        background-color: #e9ecef;
+        border-color: #ced4da;
+    }
+
+    .node.child {
+        background-color: #ffffff;
+        border-color: #adb5bd;
+    }
+
+    .table thead {
+        background-color: var(--primary-dark);
+        color: white;
+    }
+
+    .table-striped tbody tr:nth-of-type(odd) {
+        background-color: rgba(0, 0, 0, 0.03);
+    }
+
+    @@media (max-width: 992px) {
+        .details-container {
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .details-right-column {
+            border-left: none;
+            padding-left: 0;
+        }
+    }
+
+    @@media (max-width: 768px) {
         body, html {
             padding-top: 107px;
         }
@@ -894,7 +911,6 @@
         }
 
         .detail-item {
-            display: flex;
             flex-direction: column;
             align-items: flex-start;
             margin-bottom: 5px;
@@ -917,27 +933,20 @@
             margin-bottom: 1rem;
         }
 
-        .form-grid-2-col {
+        .form-grid-2-col, .vincular-animal-section, .details-basic-info {
             grid-template-columns: 1fr;
         }
 
         .form-section-title {
             font-size: 1.1rem;
-            font-weight: 600;
-            color: #023047;
             margin-top: 25px;
             margin-bottom: 15px;
             padding-bottom: 8px;
-            border-bottom: 2px solid #e0e7ee;
         }
 
             .form-section-title:first-of-type {
                 margin-top: 0;
             }
-
-        .vincular-animal-section {
-            grid-template-columns: 1fr;
-        }
     }
 </style>
 
@@ -957,10 +966,21 @@
     private string ordenacaoSelecionada = "nome_asc";
     private bool exibirModalFiltros = false;
 
-    // Variáveis para o modal de progênie
-    private bool exibirModalProgênie = false;
-    private Animal parentSelecionado;
-    private List<Animal> prole;
+    // --- VARIÁVEIS PARA O MODAL DE DETALHES ---
+    private bool exibirModalDetalhes = false;
+    private Animal animalSelecionado;
+    private Animal mae, pai;
+    private List<Animal> proleDoAnimalSelecionado;
+    private List<LactacaoSumario> lactacoesSumario;
+
+    public class LactacaoSumario
+    {
+        public DateTime DataInicio { get; set; }
+        public DateTime? DataFim { get; set; }
+        public int DuracaoDias { get; set; }
+        public double ProducaoTotal { get; set; }
+        public double MediaDiaria => DuracaoDias > 0 ? ProducaoTotal / DuracaoDias : 0;
+    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -1000,79 +1020,71 @@
     private void AplicarFiltrosEOrdenacao()
     {
         IEnumerable<Animal> query = animais;
-
-        if (!string.IsNullOrWhiteSpace(filtroNome))
-        {
-            query = query.Where(a =>
-                (a.NomeAnimal?.Contains(filtroNome, StringComparison.OrdinalIgnoreCase) ?? false) ||
-                (a.NumeroIdentificador?.Contains(filtroNome, StringComparison.OrdinalIgnoreCase) ?? false));
-        }
-
-        if (filtroStatus != "Todos")
-        {
-            query = query.Where(a => a.Status == filtroStatus);
-        }
-
-        if (filtroCategoria != "Todos")
-        {
-            query = query.Where(a => a.CategoriaAnimal == filtroCategoria);
-        }
-
+        if (!string.IsNullOrWhiteSpace(filtroNome)) { query = query.Where(a => (a.NomeAnimal?.Contains(filtroNome, StringComparison.OrdinalIgnoreCase) ?? false) || (a.NumeroIdentificador?.Contains(filtroNome, StringComparison.OrdinalIgnoreCase) ?? false)); }
+        if (filtroStatus != "Todos") { query = query.Where(a => a.Status == filtroStatus); }
+        if (filtroCategoria != "Todos") { query = query.Where(a => a.CategoriaAnimal == filtroCategoria); }
         switch (ordenacaoSelecionada)
         {
-            case "data_desc":
-                query = query.OrderByDescending(a => a.DataNascimento);
-                break;
-            case "data_asc":
-                query = query.OrderBy(a => a.DataNascimento);
-                break;
-            case "nome_asc":
-            default:
-                query = query.OrderBy(a => a.NomeAnimal);
-                break;
+            case "data_desc": query = query.OrderByDescending(a => a.DataNascimento); break;
+            case "data_asc": query = query.OrderBy(a => a.DataNascimento); break;
+            case "nome_asc": default: query = query.OrderBy(a => a.NomeAnimal); break;
         }
-
         animaisFiltrados = query.ToList();
     }
 
-    private void AbrirModalFiltros() => exibirModalFiltros = true;
-    private void FecharModalFiltros() => exibirModalFiltros = false;
-    private void AplicarEFecharModalFiltros()
+    private async Task AbrirModalDetalhes(Animal animal)
     {
-        AplicarFiltrosEOrdenacao();
-        FecharModalFiltros();
+        animalSelecionado = animal;
+        exibirModalDetalhes = true;
+        mae = pai = null;
+        proleDoAnimalSelecionado = new List<Animal>();
+        lactacoesSumario = new List<LactacaoSumario>();
+
+        pai = animais.FirstOrDefault(a => a.Id == animal.PaiId);
+        mae = animais.FirstOrDefault(a => a.Id == animal.MaeId);
+
+        if (animal.Sexo == "Fêmea") { proleDoAnimalSelecionado = animais.Where(cria => cria.MaeId == animal.Id).OrderByDescending(cria => cria.DataNascimento).ToList(); }
+        else if (animal.Sexo == "Macho") { proleDoAnimalSelecionado = animais.Where(cria => cria.PaiId == animal.Id).OrderByDescending(cria => cria.DataNascimento).ToList(); }
+
+        if (animal.CategoriaAnimal == "Vaca")
+        {
+            var lactacoes = await LactacaoService.ObterLactacoesPorAnimalAsync(animal.Id);
+            var producoes = await ProducaoLeiteiraService.ObterPorPropriedadeAsync(propriedadeId);
+            foreach (var lact in lactacoes.OrderByDescending(l => l.DataInicio))
+            {
+                var producoesDaLactacao = producoes.Where(p => p.LactacaoId == lact.Id).ToList();
+                var dataFim = lact.DataFim ?? DateTime.Today;
+                var duracao = (dataFim.Date - lact.DataInicio.Date).Days + 1;
+                lactacoesSumario.Add(new LactacaoSumario { DataInicio = lact.DataInicio, DataFim = lact.DataFim, DuracaoDias = duracao, ProducaoTotal = producoesDaLactacao.Sum(p => p.Quantidade) });
+            }
+        }
+        StateHasChanged();
+    }
+
+    private void FecharModalDetalhes()
+    {
+        exibirModalDetalhes = false;
+        animalSelecionado = null;
+    }
+
+    private void AbrirModalEdicaoDoDetalhe()
+    {
+        if (animalSelecionado != null)
+        {
+            AbrirModalEditar(animalSelecionado);
+            exibirModalDetalhes = false;
+        }
     }
 
     private void AbrirModalNovo()
     {
-        animal = new Animal
-            {
-                PropriedadeId = propriedadeId,
-                DataNascimento = DateTime.Today,
-                Status = "Ativo",
-                Sexo = "",
-                CategoriaAnimal = "",
-                RacaId = 0
-            };
+        animal = new Animal { PropriedadeId = propriedadeId, DataNascimento = DateTime.Today, Status = "Ativo", Sexo = "", CategoriaAnimal = "", RacaId = 0 };
         exibirModal = true;
     }
 
     private void AbrirModalEditar(Animal a)
     {
-        animal = new Animal
-            {
-                Id = a.Id,
-                NomeAnimal = a.NomeAnimal,
-                NumeroIdentificador = a.NumeroIdentificador,
-                RacaId = a.RacaId,
-                DataNascimento = a.DataNascimento,
-                Sexo = a.Sexo,
-                CategoriaAnimal = a.CategoriaAnimal,
-                Status = a.Status,
-                PropriedadeId = a.PropriedadeId,
-                MaeId = a.MaeId,
-                PaiId = a.PaiId
-            };
+        animal = new Animal { Id = a.Id, NomeAnimal = a.NomeAnimal, NumeroIdentificador = a.NumeroIdentificador, RacaId = a.RacaId, DataNascimento = a.DataNascimento, Sexo = a.Sexo, CategoriaAnimal = a.CategoriaAnimal, Status = a.Status, PropriedadeId = a.PropriedadeId, MaeId = a.MaeId, PaiId = a.PaiId };
         exibirModal = true;
     }
 
@@ -1082,15 +1094,9 @@
         {
             carregandoDados = true;
             exibirModal = false;
-
             if (animal.MaeId == 0) animal.MaeId = null;
             if (animal.PaiId == 0) animal.PaiId = null;
-
-            if (animal.Id == 0)
-                await AnimalService.CadastrarAnimalAsync(animal);
-            else
-                await AnimalService.AtualizarAnimalAsync(animal);
-
+            if (animal.Id == 0) await AnimalService.CadastrarAnimalAsync(animal); else await AnimalService.AtualizarAnimalAsync(animal);
             await CarregarAnimais();
         }
         catch (Exception ex)
@@ -1105,54 +1111,9 @@
         }
     }
 
-    private void OnSexoChanged(string value)
-    {
-        animal.Sexo = value;
-        animal.CategoriaAnimal = "";
-        StateHasChanged();
-    }
-
-    private void FecharModal()
-    {
-        exibirModal = false;
-    }
-
-    // --- MÉTODOS PARA O MODAL DE PROGÊNIE ---
-
-    private void AbrirModalProgênie(Animal parent)
-    {
-        parentSelecionado = parent;
-
-        if (parent.Sexo == "Fêmea")
-        {
-            prole = animais.Where(cria => cria.MaeId == parent.Id)
-                           .OrderByDescending(cria => cria.DataNascimento)
-                           .ToList();
-        }
-        else // Macho
-        {
-            prole = animais.Where(cria => cria.PaiId == parent.Id)
-                           .OrderByDescending(cria => cria.DataNascimento)
-                           .ToList();
-        }
-
-        exibirModalProgênie = true;
-    }
-
-    private void FecharModalProgênie()
-    {
-        exibirModalProgênie = false;
-        parentSelecionado = null;
-        prole = null;
-    }
-
-    private string ObterNomeAnimal(int? animalId)
-    {
-        if (!animalId.HasValue || animalId == 0)
-        {
-            return "Não informado";
-        }
-        var animalEncontrado = animais.FirstOrDefault(a => a.Id == animalId.Value);
-        return animalEncontrado != null ? $"{animalEncontrado.NomeAnimal} ({animalEncontrado.NumeroIdentificador})" : "Desconhecido";
-    }
+    private void FecharModal() { exibirModal = false; }
+    private void OnSexoChanged(string value) { animal.Sexo = value; animal.CategoriaAnimal = ""; StateHasChanged(); }
+    private void AbrirModalFiltros() => exibirModalFiltros = true;
+    private void FecharModalFiltros() => exibirModalFiltros = false;
+    private void AplicarEFecharModalFiltros() { AplicarFiltrosEOrdenacao(); FecharModalFiltros(); }
 }
