@@ -1,6 +1,7 @@
 ﻿using GestaoLeiteiraProjetoTCC.Models;
 using GestaoLeiteiraProjetoTCC.Repositories.Interfaces;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace GestaoLeiteiraProjetoTCC.Repositories
@@ -14,11 +15,14 @@ namespace GestaoLeiteiraProjetoTCC.Repositories
             _databaseService = databaseService;
         }
 
-        public async Task<List<Gestacao>> ObterGestoesAtivasPorPropriedadeDb(List<int> idsAnimaisDaPropriedade)
+        // This is the new, corrected method implementation
+        public async Task<List<Gestacao>> ObterCiclosAtivosPorPropriedadeDb(List<int> idsAnimaisDaPropriedade)
         {
             var db = await _databaseService.GetConnectionAsync();
+            var activeStatuses = new List<string> { "Em Cobertura", "Gestação Ativa" };
+
             return await db.Table<Gestacao>()
-                           .Where(g => g.Status == "Ativa" && idsAnimaisDaPropriedade.Contains(g.VacaId))
+                           .Where(g => activeStatuses.Contains(g.Status) && idsAnimaisDaPropriedade.Contains(g.VacaId))
                            .ToListAsync();
         }
 

@@ -3,31 +3,19 @@ using System;
 
 namespace GestaoLeiteiraProjetoTCC.Models
 {
-    // A única definição da classe Gestacao estará neste arquivo.
     public class Gestacao
     {
         [PrimaryKey, AutoIncrement]
         public int Id { get; set; }
 
-        // Chave estrangeira para o animal (a mãe). Essencial.
         public int VacaId { get; set; }
-
-        // Chave estrangeira para o animal (o pai). Opcional.
         public int? TouroId { get; set; }
-
-        // Data em que a gestação foi confirmada/iniciada.
-        public DateTime DataInicio { get; set; }
-
-        // Data do parto ou fim da gestação. Nula enquanto estiver ativa.
+        public DateTime DataInicio { get; set; } // Agora representa a Data da Cobertura (Monta/Inseminação)
+        public DateTime? DataConfirmacao { get; set; } // Data em que a gestação foi confirmada
         public DateTime? DataFim { get; set; }
-
-        // Status para controle do ciclo: "Ativa", "Finalizada - Parto", "Finalizada - Aborto".
-        public string Status { get; set; } = "Ativa";
-
-        // Chave estrangeira para a cria que nasceu desta gestação.
+        public string TipoCobertura { get; set; } // "Monta Natural" ou "Inseminação"
+        public string Status { get; set; } // "Em Cobertura", "Gestação Ativa", "Finalizada - Parto", etc.
         public int? CriaId { get; set; }
-
-        // Campo opcional para anotações sobre a gestação.
         public string Observacoes { get; set; }
 
         [Ignore]

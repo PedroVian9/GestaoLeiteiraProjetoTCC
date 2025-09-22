@@ -6,9 +6,10 @@ namespace GestaoLeiteiraProjetoTCC.Services.Interfaces
 {
     public interface IGestacaoService
     {
-        Task<List<Gestacao>> ObterGestoesAtivas(int propriedadeId);
-        Task<Gestacao> IniciarGestacaoAsync(Gestacao gestacao);
-        Task<Gestacao> AtualizarGestacaoAsync(Gestacao gestacao);
-        Task FinalizarGestacaoAsync(int gestacaoId, Animal cria);
+        Task<List<Gestacao>> ObterCiclosAtivos(int propriedadeId);
+        Task<Gestacao> IniciarCicloAsync(Gestacao ciclo);
+        Task<Gestacao> ConfirmarGestacaoAsync(int cicloId, DateTime dataConfirmacao);
+        Task FinalizarGestacaoComCriaVivaAsync(int cicloId, Animal cria);
+        Task FinalizarGestacaoSemCriaVivaAsync(int cicloId, string statusFinal);
     }
 }

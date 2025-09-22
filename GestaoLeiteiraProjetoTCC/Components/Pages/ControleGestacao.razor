@@ -10,8 +10,8 @@
     <div class="dashboard-header">
         <div class="header-content">
             <div class="welcome-section">
-                <h1>Controle de Gestações</h1>
-                <p class="property-owner">Monitore as gestações ativas do seu rebanho</p>
+                <h1>Controle Reprodutivo</h1>
+                <p class="property-owner">Monitore o ciclo reprodutivo e os partos do seu rebanho</p>
             </div>
             <div class="header-date-section">
                 <i class="fas fa-calendar-alt"></i>
@@ -22,8 +22,8 @@
             <button class="btn-mobile-action" @onclick="AbrirModalFiltros">
                 <i class="fas fa-filter"></i> Filtrar e Ordenar
             </button>
-            <button class="btn-mobile-action add" @onclick="AbrirModalNova">
-                <i class="fas fa-plus"></i> Iniciar Gestação
+            <button class="btn-mobile-action add" @onclick="AbrirModalNovoCiclo">
+                <i class="fas fa-plus"></i> Iniciar Ciclo
             </button>
         </div>
     </div>
@@ -35,12 +35,15 @@
             <p>Carregando dados...</p>
         </div>
     }
-    else if (!gestacoes.Any())
+    else if (!ciclos.Any())
     {
         <div class="empty-message-container">
             <div class="empty-message">
                 <i class="fas fa-heartbeat"></i>
-                <p>Nenhuma gestação ativa no momento.</p>
+                <p>Nenhum ciclo reprodutivo ativo no momento.</p>
+                <button class="btn-action add mt-3" @onclick="AbrirModalNovoCiclo">
+                    <span class="plus-icon">+</span> Iniciar primeiro ciclo
+                </button>
             </div>
         </div>
     }
@@ -59,60 +62,76 @@
                     <div class="form-group">
                         <label for="ordenacao">Ordenar por</label>
                         <select id="ordenacao" class="form-control" @bind="ordenacaoSelecionada" @bind:after="AplicarFiltrosEOrdenacao">
-                            <option value="data_desc">Mais Recentes</option>
+                            <option value="data_desc">Mais Recentes (Data de Prenhez)</option>
+                            <option value="parto_prox">Parto Mais Próximo</option>
                             <option value="nome_asc">Nome da Vaca (A-Z)</option>
-                            <option value="dias_desc">Mais Dias Corridos</option>
-                            <option value="dias_asc">Menos Dias Corridos</option>
                         </select>
                     </div>
                 </div>
             </div>
         </div>
         <div class="animal-actions desktop-only">
-            <button class="btn-action add" @onclick="AbrirModalNova">
-                <span class="plus-icon">+</span> Iniciar nova gestação
+            <button class="btn-action add" @onclick="AbrirModalNovoCiclo">
+                <span class="plus-icon">+</span> Iniciar novo ciclo
             </button>
         </div>
-        @if (!gestacoesFiltradas.Any())
+
+        @if (!ciclosFiltrados.Any())
         {
             <div class="empty-message-container">
                 <div class="empty-message">
                     <i class="fas fa-search"></i>
-                    <p>Nenhuma gestação encontrada para os filtros selecionados.</p>
+                    <p>Nenhum ciclo encontrado para os filtros selecionados.</p>
                 </div>
             </div>
         }
         else
         {
             <div class="animais-grid">
-                @foreach (var gestacao in gestacoesFiltradas)
+                @foreach (var ciclo in ciclosFiltrados)
                 {
-                    var diasCorridos = (DateTime.Today - gestacao.DataInicio).Days;
-
                     <div class="animal-card">
                         <div class="card-header">
-                            <span class="animal-name">@gestacao.Vaca?.NomeAnimal (@gestacao.Vaca?.NumeroIdentificador)</span>
+                            <span class="animal-name">@ciclo.Vaca?.NomeAnimal (@ciclo.Vaca?.NumeroIdentificador)</span>
+                            <span class="badge @(ciclo.Status == "Gestação Ativa" ? "badge-success" : "badge-warning")">@ciclo.Status</span>
                         </div>
 
-                        <div class="card-details">
-                            <div class="detail-item">
-                                <span class="detail-label">Touro:</span>
-                                <span class="detail-value">@(gestacao.Touro?.NomeAnimal ?? "Não informado")</span>
+                        @if (ciclo.Status == "Gestação Ativa")
+                        {
+                            var diasCorridos = (DateTime.Today - ciclo.DataConfirmacao.Value).Days;
+                            var dataProvavelParto = ciclo.DataConfirmacao.Value.AddDays(283);
+                            <div class="card-details">
+                                <div class="detail-item"><span class="detail-label">Confirmação Prenhez:</span> <span class="detail-value">@ciclo.DataConfirmacao?.ToString("dd/MM/yyyy")</span></div>
+                                <div class="detail-item"><span class="detail-label">Data Provável do Parto:</span> <span class="detail-value">@dataProvavelParto.ToString("dd/MM/yyyy")</span></div>
+                                <div class="detail-item"><span class="detail-label">Dias de Gestação:</span> <span class="detail-value">@diasCorridos dias</span></div>
+                                <div class="detail-item"><span class="detail-label">Touro:</span> <span class="detail-value">@(ciclo.Touro?.NomeAnimal ?? "Não informado")</span></div>
                             </div>
-                            <div class="detail-item">
-                                <span class="detail-label">Início da Gestação:</span>
-                                <span class="detail-value">@gestacao.DataInicio.ToString("dd/MM/yyyy")</span>
+                        }
+                        else // Status "Em Cobertura"
+                        {
+                            <div class="card-details">
+                                <div class="detail-item"><span class="detail-label">Data da Cobertura:</span> <span class="detail-value">@ciclo.DataInicio.ToString("dd/MM/yyyy")</span></div>
+                                <div class="detail-item"><span class="detail-label">Tipo:</span> <span class="detail-value">@ciclo.TipoCobertura</span></div>
+                                <div class="detail-item detail-item-full"><span class="detail-label">Touro:</span> <span class="detail-value">@(ciclo.Touro?.NomeAnimal ?? "Não informado")</span></div>
                             </div>
-                            <div class="detail-item">
-                                <span class="detail-label">Dias Corridos:</span>
-                                <span class="detail-value">@diasCorridos dias</span>
-                            </div>
-                        </div>
+                        }
 
                         <div class="card-actions">
-                            <button class="btn-action editar" @onclick="() => AbrirModalFinalizar(gestacao)">
-                                <i class="fas fa-check"></i> Finalizar Gestação
+                            <button class="btn-action info" @onclick="() => AbrirModalDetalhes(ciclo)">
+                                <i class="fas fa-info-circle"></i> Detalhes
                             </button>
+                            @if (ciclo.Status == "Em Cobertura")
+                            {
+                                <button class="btn-action success" @onclick="() => AbrirModalConfirmarGestacao(ciclo)">
+                                    <i class="fas fa-check"></i> Iniciar Gestação
+                                </button>
+                            }
+                            else
+                            {
+                                <button class="btn-action editar" @onclick="() => AbrirModalResultadoParto(ciclo)">
+                                    <i class="fas fa-baby"></i> Finalizar Gestação
+                                </button>
+                            }
                         </div>
                     </div>
                 }
@@ -120,32 +139,44 @@
         }
     }
 
-    @* Modal 1: Iniciar Nova Gestação *@
-    @if (exibirModalNovaGestacao)
+    @* Modal 1: Iniciar Novo Ciclo Reprodutivo *@
+    @if (exibirModalNovoCiclo)
     {
         <div class="modal-overlay" @onclick="FecharTodosModais">
             <div class="modal-content" @onclick:stopPropagation>
-                <h3>Iniciar Nova Gestação</h3>
-                <EditForm Model="novaGestacao" OnValidSubmit="SalvarNovaGestacao">
+                <h3>Iniciar Novo Ciclo Reprodutivo</h3>
+                <EditForm Model="novoCiclo" OnValidSubmit="SalvarNovoCiclo">
                     <DataAnnotationsValidator />
                     <div class="form-group">
                         <label for="vacaId">Vaca</label>
-                        <InputSelect id="vacaId" @bind-Value="novaGestacao.VacaId" class="form-control">
+                        <InputSelect id="vacaId" @bind-Value="novoCiclo.VacaId" class="form-control">
                             <option value="0" disabled selected>Selecione a vaca...</option>
                             @foreach (var vaca in vacasAptas)
                             {
                                 <option value="@vaca.Id">@vaca.NomeAnimal (@vaca.NumeroIdentificador)</option>
                             }
                         </InputSelect>
-                        <small class="form-text text-muted mt-2">
-                            Apenas vacas com status "Ativo" e que não possuem outra gestação em andamento são listadas.
-                        </small>
-                        <ValidationMessage For="@(() => novaGestacao.VacaId)" />
+                        <ValidationMessage For="@(() => novoCiclo.VacaId)" />
                     </div>
-
+                    <div class="form-grid-2-col">
+                        <div class="form-group">
+                            <label for="tipoCobertura">Tipo de Cobertura</label>
+                            <InputSelect id="tipoCobertura" @bind-Value="novoCiclo.TipoCobertura" class="form-control">
+                                <option value="" disabled selected>Selecione o tipo...</option>
+                                <option value="Monta Natural">Monta Natural</option>
+                                <option value="Inseminação">Inseminação Artificial</option>
+                            </InputSelect>
+                            <ValidationMessage For="@(() => novoCiclo.TipoCobertura)" />
+                        </div>
+                        <div class="form-group">
+                            <label for="dataInicio">Data da Cobertura</label>
+                            <InputDate id="dataInicio" @bind-Value="novoCiclo.DataInicio" class="form-control" />
+                            <ValidationMessage For="@(() => novoCiclo.DataInicio)" />
+                        </div>
+                    </div>
                     <div class="form-group mt-3">
                         <label for="touroId">Touro (Opcional)</label>
-                        <InputSelect id="touroId" @bind-Value="novaGestacao.TouroId" class="form-control">
+                        <InputSelect id="touroId" @bind-Value="novoCiclo.TouroId" class="form-control">
                             <option value="0">Nenhum / Não informado</option>
                             @foreach (var touro in tourosAtivos)
                             {
@@ -153,35 +184,133 @@
                             }
                         </InputSelect>
                     </div>
-
-                    <div class="form-group mt-3">
-                        <label for="dataInicio">Data de Início da Gestação</label>
-                        <InputDate id="dataInicio" @bind-Value="novaGestacao.DataInicio" class="form-control" />
-                        <ValidationMessage For="@(() => novaGestacao.DataInicio)" />
-                    </div>
-
                     <div class="footer-actions">
                         <button type="button" class="btn btn-secondary" @onclick="FecharTodosModais">Cancelar</button>
-                        <button type="submit" class="btn btn-primary">Salvar</button>
+                        <button type="submit" class="btn btn-primary">Salvar Ciclo</button>
                     </div>
                 </EditForm>
             </div>
         </div>
     }
 
-    @* Modal 2: Finalizar Gestação e Cadastrar Cria *@
-    @if (exibirModalFinalizar)
+    @* Modal 2: Histórico/Detalhes da Vaca *@
+    @if (exibirModalDetalhes)
+    {
+        var vaca = cicloParaAcao.Vaca;
+        <div class="modal-overlay" @onclick="FecharTodosModais">
+            <div class="modal-content" @onclick:stopPropagation>
+                <h3>Detalhes de @vaca.NomeAnimal</h3>
+                <div class="details-section">
+                    <h4><i class="fas fa-paw"></i> Ciclo Reprodutivo Atual</h4>
+                    <div class="details-list">
+                        <div><span>Status:</span> <strong>@cicloParaAcao.Status</strong></div>
+                        <div><span>Data da Cobertura:</span> <strong>@cicloParaAcao.DataInicio.ToString("dd/MM/yyyy")</strong></div>
+                        <div><span>Tipo:</span> <strong>@cicloParaAcao.TipoCobertura</strong></div>
+                        <div><span>Touro:</span> <strong>@(cicloParaAcao.Touro?.NomeAnimal ?? "Não informado")</strong></div>
+                        @if (cicloParaAcao.Status == "Gestação Ativa")
+                        {
+                            var diasGestacao = (DateTime.Today - cicloParaAcao.DataConfirmacao.Value).Days;
+                            var previsaoParto = cicloParaAcao.DataConfirmacao.Value.AddDays(283);
+                            var diasRestantes = (previsaoParto - DateTime.Today).Days;
+
+                            <div><span>Confirmação:</span> <strong>@cicloParaAcao.DataConfirmacao?.ToString("dd/MM/yyyy")</strong></div>
+                            <div><span>Dias de Gestação:</span> <strong>@diasGestacao dias</strong></div>
+                            <div><span>Previsão de Parto:</span> <strong>@previsaoParto.ToString("dd/MM/yyyy")</strong></div>
+                            <div><span>Dias Restantes (aprox.):</span> <strong>@(diasRestantes > 0 ? diasRestantes : 0) dias</strong></div>
+                        }
+                    </div>
+                </div>
+                <div class="details-section">
+                    <h4><i class="fas fa-history"></i> Histórico de Vida</h4>
+                    <div class="details-grid">
+                        <div class="detail-box">
+                            <span class="detail-box-value">@vaca.NumeroDePartos</span>
+                            <span class="detail-box-label">Partos Totais</span>
+                        </div>
+                        <div class="detail-box">
+                            <span class="detail-box-value">@vaca.NumeroDeNascimortos</span>
+                            <span class="detail-box-label">Nascidos Mortos</span>
+                        </div>
+                        <div class="detail-box">
+                            <span class="detail-box-value">@vaca.NumeroDeAbortos</span>
+                            <span class="detail-box-label">Abortos</span>
+                        </div>
+                    </div>
+                    <p class="detail-line"><strong>Último evento reprodutivo:</strong> @(vaca.DataUltimoParto?.ToString("dd/MM/yyyy") ?? "Nenhum registro")</p>
+                </div>
+                <div class="footer-actions" style="justify-content: center;">
+                    <button type="button" class="btn btn-primary" @onclick="FecharTodosModais">Fechar</button>
+                </div>
+            </div>
+        </div>
+    }
+
+    @* Modal 3: Confirmar Início da Gestação *@
+    @if (exibirModalConfirmarGestacao)
     {
         <div class="modal-overlay" @onclick="FecharTodosModais">
             <div class="modal-content" @onclick:stopPropagation>
-                <h3>Registrar Nascimento (Mãe: @gestacaoParaFinalizar.Vaca?.NomeAnimal)</h3>
-
-                <div class="alert alert-info" style="background-color: #e2f3f5; border-color: #bdedf3; color: #31708f;">
-                    <strong>Vínculos de Parentesco:</strong><br>
-                    Mãe: @gestacaoParaFinalizar.Vaca?.NomeAnimal (@gestacaoParaFinalizar.Vaca?.NumeroIdentificador)<br>
-                    Pai: @(gestacaoParaFinalizar.Touro?.NomeAnimal ?? "Não informado")
+                <h3>Confirmar Gestação</h3>
+                <p>Confirme a data em que a gestação de <strong>@cicloParaAcao.Vaca.NomeAnimal</strong> foi diagnosticada como positiva.</p>
+                <div class="form-group">
+                    <label for="dataConfirmacao">Data da Confirmação</label>
+                    <InputDate id="dataConfirmacao" @bind-Value="dataConfirmacao" class="form-control" />
                 </div>
+                <div class="footer-actions">
+                    <button type="button" class="btn btn-secondary" @onclick="FecharTodosModais">Cancelar</button>
+                    <button type="button" class="btn btn-primary" @onclick="ConfirmarGestacao">Confirmar</button>
+                </div>
+            </div>
+        </div>
+    }
 
+    @* Modal 4: Escolher Resultado do Parto *@
+    @if (exibirModalResultadoParto)
+    {
+        <div class="modal-overlay" @onclick="FecharTodosModais">
+            <div class="modal-content" @onclick:stopPropagation>
+                <h3>Qual foi o resultado da gestação?</h3>
+                <p class="text-center text-muted">Selecione uma das opções abaixo para a gestação de <strong>@cicloParaAcao.Vaca?.NomeAnimal</strong>.</p>
+                <div class="outcome-actions">
+                    <button class="btn-outcome" @onclick='() => PrepararConfirmacaoResultado("Vivo")'><i class="fas fa-check-circle"></i> Nascido Vivo</button>
+                    <button class="btn-outcome" @onclick='() => PrepararConfirmacaoResultado("Nascido Morto")'><i class="fas fa-heart-broken"></i> Nascido Morto</button>
+                    <button class="btn-outcome" @onclick='() => PrepararConfirmacaoResultado("Aborto")'><i class="fas fa-exclamation-triangle"></i> Aborto</button>
+                </div>
+                <div class="footer-actions" style="justify-content: center;">
+                    <button type="button" class="btn btn-secondary" @onclick="FecharTodosModais">Cancelar</button>
+                </div>
+            </div>
+        </div>
+    }
+
+    @* Modal 5: Confirmar Ação de Finalização *@
+    @if (exibirModalConfirmarResultado)
+    {
+        <div class="modal-overlay" @onclick="FecharTodosModais">
+            <div class="modal-content" @onclick:stopPropagation>
+                <h3>Confirmar Ação</h3>
+                <p class="text-center" style="font-size: 1.1rem; margin: 25px 0;">
+                    Você confirma que o resultado da gestação de <strong>@cicloParaAcao.Vaca?.NomeAnimal</strong> foi <strong>@resultadoPartoSelecionado</strong>?
+                </p>
+                <div class="footer-actions">
+                    <button type="button" class="btn btn-secondary" @onclick="FecharTodosModais">Cancelar</button>
+                    <button type="button" class="btn btn-primary" @onclick="ConfirmarResultado">Confirmar</button>
+                </div>
+            </div>
+        </div>
+    }
+
+    @* Modal 6: Finalizar Gestação e Cadastrar Cria *@
+    @if (exibirModalCadastroCria)
+    {
+        <div class="modal-overlay" @onclick="FecharTodosModais">
+            <div class="modal-content" @onclick:stopPropagation>
+                <h3>Registrar Nascimento (Mãe: @cicloParaAcao.Vaca?.NomeAnimal)</h3>
+                <div class="alert alert-info">
+                    <strong>Vínculos de Parentesco:</strong><br>
+                    Mãe: @cicloParaAcao.Vaca?.NomeAnimal (@cicloParaAcao.Vaca?.NumeroIdentificador)<br>
+                    Pai: @(cicloParaAcao.Touro?.NomeAnimal ?? "Não informado")
+                </div>
                 <EditForm Model="novaCria" OnValidSubmit="SalvarCriaEFinalizarGestacao">
                     <DataAnnotationsValidator />
                     <div class="form-grid">
@@ -212,6 +341,11 @@
                             <ValidationMessage For="@(() => novaCria.DataNascimento)" />
                         </div>
                     </div>
+                    <div class="form-group mt-3">
+                        <label for="pesoNascimentoCria">Peso ao Nascer (kg)</label>
+                        <InputNumber id="pesoNascimentoCria" @bind-Value="novaCria.PesoNascimento" class="form-control" placeholder="Ex: 35,5" />
+                        <ValidationMessage For="@(() => novaCria.PesoNascimento)" />
+                    </div>
                     <div class="footer-actions">
                         <button type="button" class="btn btn-secondary" @onclick="FecharTodosModais">Cancelar</button>
                         <button type="submit" class="btn btn-primary">Registrar Nascimento</button>
@@ -221,7 +355,23 @@
         </div>
     }
 
-    @* Modal 3: Filtros (Mobile) *@
+    @* Modal 7: Confirmação de Perda (Nascimorto/Aborto) *@
+    @if (exibirModalLamento)
+    {
+        <div class="modal-overlay" @onclick="FecharTodosModais">
+            <div class="modal-content" @onclick:stopPropagation>
+                <h3>Confirmação</h3>
+                <p class="text-center" style="font-size: 1.1rem; margin: 25px 0;">
+                    Lamentamos o ocorrido. A gestação de <strong>@cicloParaAcao.Vaca?.NomeAnimal</strong> será finalizada com o status selecionado.
+                </p>
+                <div class="footer-actions" style="justify-content: center;">
+                    <button type="button" class="btn btn-primary" @onclick="ConfirmarFinalizacaoSemCria">OK</button>
+                </div>
+            </div>
+        </div>
+    }
+
+    @* Modal 8: Filtros (Mobile) *@
     @if (exibirModalFiltros)
     {
         <div class="modal-overlay" @onclick="FecharModalFiltros">
@@ -229,16 +379,14 @@
                 <h3>Filtrar e Ordenar</h3>
                 <div class="form-group">
                     <label for="filtro-nome-modal">Buscar por Vaca</label>
-                    <input id="filtro-nome-modal" type="text" class="form-control" placeholder="Nome ou brinco..."
-                           @bind="filtroNome" />
+                    <input id="filtro-nome-modal" type="text" class="form-control" placeholder="Nome ou brinco..." @bind="filtroNome" />
                 </div>
                 <div class="form-group">
                     <label for="ordenacao-modal">Ordenar por</label>
                     <select id="ordenacao-modal" class="form-control" @bind="ordenacaoSelecionada">
                         <option value="data_desc">Mais Recentes</option>
+                        <option value="parto_prox">Parto Mais Próximo</option>
                         <option value="nome_asc">Nome da Vaca (A-Z)</option>
-                        <option value="dias_desc">Mais Dias Corridos</option>
-                        <option value="dias_asc">Menos Dias Corridos</option>
                     </select>
                 </div>
                 <div class="footer-actions">
@@ -249,6 +397,7 @@
         </div>
     }
 </div>
+
 <style>
     /* Estilos gerais */
     .page-container {
@@ -257,7 +406,6 @@
         padding: 20px;
     }
 
-    /* === ESTILOS DO NOVO CABEÇALHO === */
     .dashboard-header {
         background: white;
         border-radius: 8px;
@@ -299,13 +447,16 @@
         gap: 8px;
     }
 
+    .detail-item-full {
+        grid-column: 1 / -1;
+    }
+
     .animal-actions {
         margin-bottom: 20px;
         display: flex;
         justify-content: flex-end;
     }
 
-    /* === FILTERS CONTAINER STYLE === */
     .filters-container {
         background: white;
         padding: 15px 25px 5px 25px;
@@ -335,16 +486,18 @@
 
     .animais-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
         gap: 20px;
     }
 
     .animal-card {
         background: white;
         border-radius: 10px;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
         padding: 20px;
-        border-left: 4px solid #3a7ca5; /* Cor principal mantida */
+        border-left: 5px solid #3a7ca5;
+        display: flex;
+        flex-direction: column;
     }
 
     .card-header {
@@ -369,32 +522,34 @@
     }
 
     .card-details {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px 20px;
         margin-bottom: 15px;
     }
 
     .detail-item {
         display: flex;
         justify-content: space-between;
-        margin-bottom: 8px;
         flex-wrap: wrap;
     }
 
     .detail-label {
         font-weight: 500;
         color: #555;
-        min-width: 120px;
     }
 
     .detail-value {
         color: #333;
-        text-align: right;
-        flex: 1;
+        font-weight: 600;
     }
 
     .card-actions {
         display: flex;
         justify-content: flex-end;
-        margin-top: 15px;
+        gap: 10px;
+        margin-top: auto;
+        padding-top: 15px;
     }
 
     .btn-action {
@@ -407,6 +562,7 @@
         align-items: center;
         gap: 8px;
         font-weight: 500;
+        transition: opacity 0.2s;
     }
 
         .btn-action.add {
@@ -415,13 +571,64 @@
         }
 
         .btn-action.editar {
-            background-color: #17a2b8; /* Cor do botão Editar mantida */
+            background-color: #17a2b8;
+            color: white;
+        }
+
+        .btn-action.success {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .btn-action.info {
+            background-color: #6c757d;
             color: white;
         }
 
         .btn-action:hover {
             opacity: 0.9;
         }
+
+    .outcome-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        margin: 25px 0;
+    }
+
+    .btn-outcome {
+        padding: 18px 25px;
+        border: 1px solid #ccc;
+        background-color: #f8f9fa;
+        color: #333;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 16px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        transition: all 0.2s ease;
+    }
+
+        .btn-outcome:hover {
+            background-color: #e9ecef;
+            border-color: #adb5bd;
+            transform: translateY(-2px);
+        }
+
+        .btn-outcome i {
+            color: #6c757d;
+        }
+
+    .text-center {
+        text-align: center;
+    }
+
+    .text-muted {
+        color: #6c757d;
+    }
 
     .empty-message-container {
         background-color: white;
@@ -441,7 +648,6 @@
             margin-bottom: 15px;
             opacity: 0.5;
         }
-
 
     .loading-overlay {
         position: fixed;
@@ -467,19 +673,28 @@
         animation: spin 2s linear infinite;
         margin-bottom: 20px;
     }
-
     @@keyframes spin {
-        0% {
-            transform: rotate(0deg);
-        }
+        0%
 
-        100% {
-            transform: rotate(360deg);
-        }
+    {
+        transform: rotate(0deg);
     }
 
+    100% {
+        transform: rotate(360deg);
+    }
 
-    /* === MODAL & FORM STYLES === */
+    }
+
+    .alert.alert-info {
+        background-color: #e2f3f5;
+        border-color: #bdedf3;
+        color: #31708f;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+
     .modal-overlay {
         position: fixed;
         top: 0;
@@ -515,6 +730,41 @@
             text-align: center;
         }
 
+    .details-section {
+        margin-bottom: 25px;
+    }
+
+        .details-section h4 {
+            font-size: 1.1rem;
+            color: #3a7ca5;
+            border-bottom: 2px solid #3a7ca5;
+            padding-bottom: 8px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+    .details-list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        font-size: 1rem;
+    }
+
+        .details-list div {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .details-list span {
+            color: #6c757d;
+        }
+
+        .details-list strong {
+            color: #343a40;
+        }
+
     .form-group {
         display: flex;
         flex-direction: column;
@@ -545,6 +795,12 @@
             background-color: #fff;
             box-shadow: 0 0 0 3px rgba(58, 124, 165, 0.15);
         }
+
+    .form-grid, .form-grid-2-col {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+    }
 
     select.form-control {
         -webkit-appearance: none;
@@ -600,6 +856,54 @@
         margin-top: 4px;
     }
 
+    .badge {
+        padding: 5px 10px;
+        border-radius: 12px;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+
+    .badge-success {
+        background-color: #d4edda;
+        color: #155724;
+    }
+
+    .badge-warning {
+        background-color: #fff3cd;
+        color: #856404;
+    }
+
+    .details-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 15px;
+        margin-bottom: 20px;
+        text-align: center;
+    }
+
+    .detail-box {
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+    }
+
+    .detail-box-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #023047;
+        display: block;
+    }
+
+    .detail-box-label {
+        font-size: 0.9rem;
+        color: #6c757d;
+    }
+
+    .detail-line {
+        margin-top: 20px;
+        font-size: 1rem;
+    }
+
     .mobile-actions-bar {
         display: none;
     }
@@ -629,9 +933,6 @@
 
         .header-content {
             padding: 10px 15px;
-            flex-direction: row;
-            justify-content: space-between;
-            align-items: center;
         }
 
         .welcome-section h1 {
@@ -639,8 +940,7 @@
         }
 
         .property-owner {
-            display: flex;
-            font-size: 1.0rem;
+            display: none;
         }
 
         .header-date-section {
@@ -697,28 +997,21 @@
         }
 
         .card-details {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 5px 15px;
-            margin-bottom: 15px;
+            grid-template-columns: 1fr;
+            gap: 5px;
         }
 
         .detail-item {
-            display: flex;
             flex-direction: column;
             align-items: flex-start;
-            margin-bottom: 5px;
-            justify-content: space-between;
         }
 
         .detail-label {
             font-size: 0.8rem;
             color: #6c757d;
-            min-width: 0;
         }
 
         .detail-value {
-            text-align: left;
             font-weight: 600;
             font-size: 0.9rem;
         }
@@ -726,75 +1019,78 @@
         .modal-content .form-group {
             margin-bottom: 1rem;
         }
+
+        .form-grid, .form-grid-2-col {
+            grid-template-columns: 1fr;
+        }
+
+        .details-grid {
+            grid-template-columns: 1fr;
+        }
     }
 </style>
+
 @code {
-    private List<Gestacao> gestacoes = new();
-    private List<Gestacao> gestacoesFiltradas = new();
-
-    // Variáveis de estado para cada modal
-    private Gestacao novaGestacao = new();
-    private Gestacao gestacaoParaFinalizar;
+    private List<Gestacao> ciclos = new();
+    private List<Gestacao> ciclosFiltrados = new();
+    private Gestacao novoCiclo = new();
+    private Gestacao cicloParaAcao;
     private Animal novaCria = new();
-
     private List<Animal> todosAnimais = new();
     private List<Animal> vacasAptas = new();
     private List<Animal> tourosAtivos = new();
 
-    // Flags de controle para cada modal
-    private bool exibirModalNovaGestacao = false;
-    private bool exibirModalFinalizar = false;
+    private bool exibirModalNovoCiclo = false;
+    private bool exibirModalDetalhes = false;
+    private bool exibirModalConfirmarGestacao = false;
+    private bool exibirModalResultadoParto = false;
+    private bool exibirModalConfirmarResultado = false; // Flag for new confirmation modal
+    private bool exibirModalCadastroCria = false;
+    private bool exibirModalLamento = false;
     private bool exibirModalFiltros = false;
     private bool carregandoDados = true;
     private int propriedadeId;
 
-    // Variáveis de filtro e ordenação
     private string filtroNome = string.Empty;
     private string ordenacaoSelecionada = "data_desc";
+    private string statusFinalizacao = "";
+    private string resultadoPartoSelecionado = ""; // Stores the outcome before confirmation
+    private DateTime dataConfirmacao = DateTime.Today;
 
     protected override async Task OnInitializedAsync()
     {
         try
         {
             carregandoDados = true;
-            StateHasChanged();
-
             var propriedade = PropriedadeService.ObterPropriedadeLogada();
             propriedadeId = propriedade.Id;
-
             await CarregarDados();
         }
-        finally
-        {
-            carregandoDados = false;
-            StateHasChanged();
-        }
+        finally { carregandoDados = false; }
     }
 
     private async Task CarregarDados()
     {
         todosAnimais = await AnimalService.ObterAnimaisDaPropriedadeAsync(propriedadeId);
-        gestacoes = await GestacaoService.ObterGestoesAtivas(propriedadeId);
+        ciclos = await GestacaoService.ObterCiclosAtivos(propriedadeId);
 
-        foreach (var g in gestacoes)
+        foreach (var ciclo in ciclos)
         {
-            g.Vaca = todosAnimais.FirstOrDefault(a => a.Id == g.VacaId);
-            if (g.TouroId.HasValue)
+            ciclo.Vaca = todosAnimais.FirstOrDefault(a => a.Id == ciclo.VacaId);
+            if (ciclo.TouroId.HasValue)
             {
-                g.Touro = todosAnimais.FirstOrDefault(a => a.Id == g.TouroId);
+                ciclo.Touro = todosAnimais.FirstOrDefault(a => a.Id == ciclo.TouroId);
             }
         }
 
         vacasAptas = await AnimalService.ObterVacasAptasParaGestacao(propriedadeId);
         tourosAtivos = await AnimalService.ObterTourosAtivos(propriedadeId);
-
         AplicarFiltrosEOrdenacao();
     }
 
     private void AplicarFiltrosEOrdenacao()
     {
-        IEnumerable<Gestacao> query = gestacoes;
-
+        IEnumerable<Gestacao> query = ciclos;
         if (!string.IsNullOrWhiteSpace(filtroNome))
         {
             query = query.Where(g => g.Vaca != null &&
@@ -804,68 +1100,97 @@
 
         switch (ordenacaoSelecionada)
         {
-            case "nome_asc":
-                query = query.OrderBy(g => g.Vaca?.NomeAnimal);
-                break;
-            case "dias_desc":
-                query = query.OrderByDescending(g => (DateTime.Today - g.DataInicio).Days);
-                break;
-            case "dias_asc":
-                query = query.OrderBy(g => (DateTime.Today - g.DataInicio).Days);
-                break;
-            case "data_desc":
-            default:
-                query = query.OrderByDescending(g => g.DataInicio);
-                break;
+            case "nome_asc": query = query.OrderBy(g => g.Vaca?.NomeAnimal); break;
+            case "parto_prox": query = query.Where(g => g.Status == "Gestação Ativa" && g.DataConfirmacao.HasValue).OrderBy(g => g.DataConfirmacao.Value.AddDays(283)); break;
+            case "data_desc": default: query = query.OrderByDescending(g => g.DataInicio); break;
         }
-
-        gestacoesFiltradas = query.ToList();
+        ciclosFiltrados = query.ToList();
     }
 
-
-    private void AbrirModalNova()
+    private void AbrirModalNovoCiclo()
     {
-        novaGestacao = new Gestacao
-            {
-                DataInicio = DateTime.Today,
-                Status = "Ativa"
-            };
-        exibirModalNovaGestacao = true;
+        novoCiclo = new Gestacao { DataInicio = DateTime.Today };
+        exibirModalNovoCiclo = true;
     }
 
-    private async Task SalvarNovaGestacao()
+    private async Task SalvarNovoCiclo()
+    {
+        if (novoCiclo.VacaId == 0 || string.IsNullOrEmpty(novoCiclo.TipoCobertura)) return;
+        try
+        {
+            carregandoDados = true;
+            exibirModalNovoCiclo = false;
+            if (novoCiclo.TouroId == 0) novoCiclo.TouroId = null;
+            await GestacaoService.IniciarCicloAsync(novoCiclo);
+            await CarregarDados();
+        }
+        finally { carregandoDados = false; }
+    }
+
+    private void AbrirModalDetalhes(Gestacao ciclo)
+    {
+        cicloParaAcao = ciclo;
+        exibirModalDetalhes = true;
+    }
+
+    private void AbrirModalConfirmarGestacao(Gestacao ciclo)
+    {
+        cicloParaAcao = ciclo;
+        dataConfirmacao = DateTime.Today;
+        exibirModalConfirmarGestacao = true;
+    }
+
+    private async Task ConfirmarGestacao()
     {
         try
         {
             carregandoDados = true;
-            exibirModalNovaGestacao = false;
-            StateHasChanged();
-
-            if (novaGestacao.TouroId == 0) novaGestacao.TouroId = null;
-
-            await GestacaoService.IniciarGestacaoAsync(novaGestacao);
+            exibirModalConfirmarGestacao = false;
+            await GestacaoService.ConfirmarGestacaoAsync(cicloParaAcao.Id, dataConfirmacao);
             await CarregarDados();
         }
-        finally
-        {
-            carregandoDados = false;
-            StateHasChanged();
-        }
+        finally { carregandoDados = false; }
     }
 
-    private void AbrirModalFinalizar(Gestacao gestacao)
+    private void AbrirModalResultadoParto(Gestacao ciclo)
     {
-        gestacaoParaFinalizar = gestacao;
-        novaCria = new Animal
-            {
-                PropriedadeId = propriedadeId,
-                DataNascimento = DateTime.Today,
-                Status = "Ativo",
-                CategoriaAnimal = "Bezerro",
-                MaeId = gestacao.VacaId,
-                PaiId = gestacao.TouroId
-            };
-        exibirModalFinalizar = true;
+        cicloParaAcao = ciclo;
+        exibirModalResultadoParto = true;
+    }
+
+    private void PrepararConfirmacaoResultado(string resultado)
+    {
+        resultadoPartoSelecionado = resultado;
+        exibirModalResultadoParto = false;
+        exibirModalConfirmarResultado = true;
+    }
+
+    private void ConfirmarResultado()
+    {
+        exibirModalConfirmarResultado = false;
+        HandleResultadoParto(resultadoPartoSelecionado);
+    }
+
+    private void HandleResultadoParto(string resultado)
+    {
+        if (resultado == "Vivo")
+        {
+            novaCria = new Animal
+                {
+                    PropriedadeId = propriedadeId,
+                    DataNascimento = DateTime.Today,
+                    Status = "Ativo",
+                    CategoriaAnimal = "Bezerro",
+                    MaeId = cicloParaAcao.VacaId,
+                    PaiId = cicloParaAcao.TouroId
+                };
+            exibirModalCadastroCria = true;
+        }
+        else
+        {
+            statusFinalizacao = resultado;
+            exibirModalLamento = true;
+        }
     }
 
     private async Task SalvarCriaEFinalizarGestacao()
@@ -873,17 +1198,24 @@
         try
         {
             carregandoDados = true;
-            exibirModalFinalizar = false;
-            StateHasChanged();
-
-            await GestacaoService.FinalizarGestacaoAsync(gestacaoParaFinalizar.Id, novaCria);
+            exibirModalCadastroCria = false;
+            await GestacaoService.FinalizarGestacaoComCriaVivaAsync(cicloParaAcao.Id, novaCria);
             await CarregarDados();
         }
-        finally
+        finally { carregandoDados = false; }
+    }
+
+    private async Task ConfirmarFinalizacaoSemCria()
+    {
+        string statusFinal = statusFinalizacao == "Aborto" ? "Finalizada - Aborto" : "Finalizada - Nascimorto";
+        try
         {
-            carregandoDados = false;
-            StateHasChanged();
+            carregandoDados = true;
+            exibirModalLamento = false;
+            await GestacaoService.FinalizarGestacaoSemCriaVivaAsync(cicloParaAcao.Id, statusFinal);
+            await CarregarDados();
         }
+        finally { carregandoDados = false; }
     }
 
     private void AbrirModalFiltros() => exibirModalFiltros = true;
@@ -897,8 +1229,13 @@
 
     private void FecharTodosModais()
     {
-        exibirModalNovaGestacao = false;
-        exibirModalFinalizar = false;
+        exibirModalNovoCiclo = false;
+        exibirModalDetalhes = false;
+        exibirModalConfirmarGestacao = false;
+        exibirModalResultadoParto = false;
+        exibirModalConfirmarResultado = false;
+        exibirModalCadastroCria = false;
+        exibirModalLamento = false;
         exibirModalFiltros = false;
     }
 }

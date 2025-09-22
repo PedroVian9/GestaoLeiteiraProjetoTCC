@@ -3,7 +3,6 @@ using GestaoLeiteiraProjetoTCC.Repositories.Interfaces;
 using GestaoLeiteiraProjetoTCC.Services.Interfaces;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace GestaoLeiteiraProjetoTCC.Services
@@ -13,52 +12,84 @@ namespace GestaoLeiteiraProjetoTCC.Services
         private readonly IGestacaoRepository _gestacaoRepository;
         private readonly IAnimalRepository _animalRepository;
 
-        // O DatabaseService foi removido daqui. O serviço não precisa conhecê-lo.
         public GestacaoService(IGestacaoRepository gestacaoRepository, IAnimalRepository animalRepository)
         {
             _gestacaoRepository = gestacaoRepository;
             _animalRepository = animalRepository;
         }
 
-        public async Task<List<Gestacao>> ObterGestoesAtivas(int propriedadeId)
+        public async Task<List<Gestacao>> ObterCiclosAtivos(int propriedadeId)
         {
             var animaisDaPropriedade = await _animalRepository.ObterAnimaisPorPropriedadeIdDb(propriedadeId);
+
             var idsAnimais = animaisDaPropriedade.Select(a => a.Id).ToList();
-            return await _gestacaoRepository.ObterGestoesAtivasPorPropriedadeDb(idsAnimais);
+
+            return await _gestacaoRepository.ObterCiclosAtivosPorPropriedadeDb(idsAnimais);
         }
 
-        public async Task<Gestacao> IniciarGestacaoAsync(Gestacao gestacao)
+        public async Task<Gestacao> IniciarCicloAsync(Gestacao ciclo)
         {
-            return await _gestacaoRepository.IniciarGestacaoDb(gestacao);
+            ciclo.Status = "Em Cobertura";
+            return await _gestacaoRepository.IniciarGestacaoDb(ciclo);
         }
 
-        public async Task<Gestacao> AtualizarGestacaoAsync(Gestacao gestacao)
+        public async Task<Gestacao> ConfirmarGestacaoAsync(int cicloId, DateTime dataConfirmacao)
         {
-            return await _gestacaoRepository.AtualizarGestacaoDb(gestacao);
-        }
-
-        // MÉTODO COMPLETAMENTE REFATORADO
-        public async Task FinalizarGestacaoAsync(int gestacaoId, Animal cria)
-        {
-            // 1. Cadastra o novo animal (a cria) usando o repositório de animais
-            var criaCadastrada = await _animalRepository.CadastrarAnimalDb(cria);
-
-            // 2. Busca a gestação usando o repositório de gestações
-            var gestacao = await _gestacaoRepository.ObterGestacaoPorIdDb(gestacaoId);
-
-            if (gestacao != null)
+            var ciclo = await _gestacaoRepository.ObterGestacaoPorIdDb(cicloId);
+            if (ciclo != null)
             {
-                // 3. Atualiza os dados da gestação
-                gestacao.Status = "Finalizada - Parto";
-                gestacao.DataFim = DateTime.Today;
-                gestacao.CriaId = criaCadastrada.Id; // Vincula a cria à gestação
-                await _gestacaoRepository.AtualizarGestacaoDb(gestacao);
+                ciclo.Status = "Gestação Ativa";
+                ciclo.DataConfirmacao = dataConfirmacao;
+                return await _gestacaoRepository.AtualizarGestacaoDb(ciclo);
+            }
+            return null;
+        }
 
-                // 4. Atualiza o status da mãe para "Lactante"
-                var mae = await _animalRepository.ObterAnimalPorIdDb(gestacao.VacaId);
+        public async Task FinalizarGestacaoComCriaVivaAsync(int cicloId, Animal cria)
+        {
+            var criaCadastrada = await _animalRepository.CadastrarAnimalDb(cria);
+            var ciclo = await _gestacaoRepository.ObterGestacaoPorIdDb(cicloId);
+
+            if (ciclo != null)
+            {
+                ciclo.Status = "Finalizada - Parto";
+                ciclo.DataFim = cria.DataNascimento ?? DateTime.Today;
+                ciclo.CriaId = criaCadastrada.Id;
+                await _gestacaoRepository.AtualizarGestacaoDb(ciclo);
+
+                var mae = await _animalRepository.ObterAnimalPorIdDb(ciclo.VacaId);
                 if (mae != null)
                 {
                     mae.Lactante = true;
+                    mae.NumeroDePartos += 1;
+                    mae.DataUltimoParto = ciclo.DataFim;
+                    await _animalRepository.AtualizarAnimalDb(mae);
+                }
+            }
+        }
+
+        public async Task FinalizarGestacaoSemCriaVivaAsync(int cicloId, string statusFinal)
+        {
+            var ciclo = await _gestacaoRepository.ObterGestacaoPorIdDb(cicloId);
+            if (ciclo != null)
+            {
+                ciclo.Status = statusFinal;
+                ciclo.DataFim = DateTime.Today;
+                await _gestacaoRepository.AtualizarGestacaoDb(ciclo);
+
+                var mae = await _animalRepository.ObterAnimalPorIdDb(ciclo.VacaId);
+                if (mae != null)
+                {
+                    mae.DataUltimoParto = ciclo.DataFim;
+                    if (statusFinal.Contains("Nascimorto"))
+                    {
+                        mae.NumeroDePartos += 1;
+                        mae.NumeroDeNascimortos += 1;
+                    }
+                    else if (statusFinal.Contains("Aborto"))
+                    {
+                        mae.NumeroDeAbortos += 1;
+                    }
                     await _animalRepository.AtualizarAnimalDb(mae);
                 }
             }
