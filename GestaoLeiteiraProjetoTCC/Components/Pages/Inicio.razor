@@ -4,6 +4,7 @@
 @inject IPropriedadeService PropriedadeService
 @inject IAnimalService AnimalService
 @inject IProducaoLeiteiraService ProducaoLeiteiraService
+@inject IJSRuntime JSRuntime
 
 <div class="dashboard-wrapper">
     @if (propriedade != null && animais != null)
@@ -15,7 +16,7 @@
                 <p><strong>Localização:</strong> @propriedade.Localizacao</p>
                 <p>
                     <strong>Área Total:</strong> @propriedade.AreaTotal
-                    @(propriedade.TipoUnidade == 1 ? "Alqueires" : "Hectares")
+                    @(propriedade.TipoUnidade == 1 ? "Alqueire" : "Hectare")
                 </p>
             </div>
             <div class="property-total">
@@ -58,7 +59,6 @@
             </div>
         </div>
 
-
         <div class="main-grid">
             <div class="section-card">
                 <h3 class="section-title">Produção de Leite do Rebanho</h3>
@@ -91,9 +91,15 @@
                     </div>
                 </div>
                 <div class="chart-container">
-                    <div class="chart-placeholder">
-                        <span>Gráfico de produção dos últimos 7 dias (implementação futura)</span>
+                    <div class="chart-header">
+                        <h4 class="chart-title">Produção Diária</h4>
+                        <div class="chart-controls">
+                            <button class="chart-btn @(periodoSelecionado == 7 ? "active" : "")" @onclick="() => AlterarPeriodo(7)">7 dias</button>
+                            <button class="chart-btn @(periodoSelecionado == 15 ? "active" : "")" @onclick="() => AlterarPeriodo(15)">15 dias</button>
+                            <button class="chart-btn @(periodoSelecionado == 30 ? "active" : "")" @onclick="() => AlterarPeriodo(30)">30 dias</button>
+                        </div>
                     </div>
+                    <canvas id="producaoChart" width="400" height="200"></canvas>
                 </div>
             </div>
 
@@ -128,10 +134,113 @@
     }
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+
+<script>
+    let producaoChart = null;
+
+    window.criarGraficoProducao = function (labels, dados, mediaDiaria) {
+        const ctx = document.getElementById('producaoChart')?.getContext('2d');
+        if (!ctx) return; // Adiciona uma verificação de segurança
+
+        if (producaoChart) {
+            producaoChart.destroy();
+        }
+
+        const linhaMedia = new Array(labels.length).fill(mediaDiaria);
+
+        producaoChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Produção Diária (L)',
+                        data: dados,
+                        borderColor: '#023047',
+                        backgroundColor: 'rgba(2, 48, 71, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: '#023047',
+                        pointBorderColor: '#ffffff',
+                        pointBorderWidth: 2,
+                        pointRadius: 5,
+                        pointHoverRadius: 7
+                    },
+                    {
+                        label: 'Média do Período',
+                        data: linhaMedia,
+                        borderColor: '#dc3545',
+                        borderWidth: 2,
+                        borderDash: [5, 5],
+                        fill: false,
+                        pointRadius: 0,
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    intersect: false,
+                    mode: 'index'
+                },
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top',
+                        labels: {
+                            usePointStyle: true,
+                            padding: 20,
+                            font: { size: 12, weight: '500' }
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                        titleColor: '#333',
+                        bodyColor: '#333',
+                        borderColor: '#dee2e6',
+                        borderWidth: 1,
+                        cornerRadius: 8,
+                        displayColors: true,
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                if (context.parsed.y !== null) {
+                                    label += `${context.parsed.y.toFixed(1)} L`;
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { display: false },
+                        ticks: { font: { size: 11 }, color: '#6c757d' }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: 'rgba(0,0,0,0.05)' },
+                        ticks: {
+                            font: { size: 11 },
+                            color: '#6c757d',
+                            callback: function(value) {
+                                return value.toFixed(0) + 'L';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    };
+</script>
+
 <style>
-    /* ------------------- */
-    /* Variáveis e Globais */
-    /* ------------------- */
     :root {
         --primary-blue: #023047;
         --primary-dark-text: #343a40;
@@ -144,7 +253,6 @@
         --border-radius: 12px;
         --success-color: #198754;
         --danger-color: #dc3545;
-        --female-color: #d63384;
         --light-blue-bg: rgba(2, 48, 71, 0.05);
     }
 
@@ -177,13 +285,12 @@
         border-bottom: 1px solid var(--border-color);
     }
 
-    /* ------------------- */
-    /* Seção do Cabeçalho  */
-    /* ------------------- */
     .property-card {
         display: flex;
         justify-content: space-between;
         align-items: center;
+        flex-wrap: wrap;
+        gap: 20px;
         background: var(--white);
         border: 1px solid var(--border-color);
         border-radius: var(--border-radius);
@@ -225,46 +332,6 @@
             color: var(--text-light);
         }
 
-
-    /* -------------------------- */
-    /* Indicadores Principais (KPIs) */
-    /* -------------------------- */
-    .kpi-grid {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 20px;
-        margin-bottom: 24px;
-    }
-
-    .kpi-card {
-        background: var(--white);
-        border-radius: var(--border-radius);
-        padding: 20px;
-        border: 1px solid var(--border-color);
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
-
-        .kpi-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 6px 16px rgba(0,0,0,0.08);
-        }
-
-    .kpi-value {
-        font-size: 1.75rem;
-        font-weight: 700;
-        color: var(--primary-dark-text);
-        line-height: 1.1;
-    }
-
-    .kpi-label {
-        font-size: 0.9rem;
-        color: var(--text-light);
-        margin-top: 4px;
-    }
-
-    /* ---------------------------- */
-    /* Seção: Análise do Rebanho */
-    /* ---------------------------- */
     .animal-analysis-grid {
         display: grid;
         grid-template-columns: 1fr 1fr;
@@ -302,6 +369,7 @@
         display: flex;
         flex-direction: column;
         gap: 10px;
+        flex-grow: 1; /* Faz com que o card do macho tenha a mesma altura */
     }
 
     .animal-category-item {
@@ -322,7 +390,7 @@
         }
 
     .female-status-section {
-        margin-top: auto;
+        margin-top: 20px;
         padding-top: 16px;
         background-color: var(--light-blue-bg);
         border-radius: 8px;
@@ -356,18 +424,12 @@
         color: var(--primary-dark-text);
     }
 
-    /* -------------------------- */
-    /* Grid Principal (Prod/Alert)*/
-    /* -------------------------- */
     .main-grid {
         display: grid;
         grid-template-columns: 1.5fr 1fr;
         gap: 24px;
     }
 
-    /* ------------------- */
-    /* Seção de Produção   */
-    /* ------------------- */
     .production-content {
         display: flex;
         gap: 24px;
@@ -432,22 +494,56 @@
         margin-top: auto;
     }
 
-    .chart-placeholder {
+    .chart-header {
         display: flex;
+        justify-content: space-between;
         align-items: center;
-        justify-content: center;
-        height: 180px;
-        background: var(--light-bg);
-        border-radius: 8px;
-        color: var(--text-light);
-        text-align: center;
+        margin-bottom: 16px;
+        flex-wrap: wrap;
+        gap: 12px;
     }
 
-    /* ----------------- */
-    /* Seção de Alertas  */
-    /* ----------------- */
+    .chart-title {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--primary-dark-text);
+        margin: 0;
+    }
+
+    .chart-controls {
+        display: flex;
+        gap: 8px;
+    }
+
+    .chart-btn {
+        padding: 6px 12px;
+        border: 1px solid var(--border-color);
+        background: var(--white);
+        color: var(--text-dark);
+        border-radius: 6px;
+        font-size: 0.85rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+        .chart-btn:hover {
+            background: var(--light-bg);
+        }
+
+        .chart-btn.active {
+            background: var(--primary-blue);
+            color: var(--white);
+            border-color: var(--primary-blue);
+        }
+
+    #producaoChart {
+        width: 100% !important;
+        height: 250px !important;
+    }
+
     .alerts-container {
-        height: 350px;
+        min-height: 350px;
         overflow-y: auto;
         padding-right: 10px;
     }
@@ -472,15 +568,13 @@
         justify-content: center;
         gap: 10px;
         height: 100%;
+        min-height: 350px;
         color: var(--text-light);
         background: rgba(25, 135, 84, 0.05);
         border-left: 5px solid var(--success-color);
         border-radius: 8px;
     }
 
-    /* ----------------------- */
-    /* Estado de Carregamento  */
-    /* ----------------------- */
     .loading-container {
         display: flex;
         flex-direction: column;
@@ -509,9 +603,6 @@
         }
     }
 
-    /* ----------------- */
-    /* Responsividade    */
-    /* ----------------- */
     @@media (max-width: 1200px) {
         .main-grid {
             grid-template-columns: 1fr;
@@ -519,10 +610,6 @@
     }
 
     @@media (max-width: 992px) {
-        .kpi-grid {
-            grid-template-columns: repeat(2, 1fr);
-        }
-
         .animal-analysis-grid {
             grid-template-columns: 1fr;
         }
@@ -537,6 +624,22 @@
             padding-right: 0;
             padding-bottom: 24px;
         }
+
+        .chart-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+    }
+
+    @@media (max-width: 768px) {
+        .property-card {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .property-total {
+            margin-top: 16px;
+        }
     }
 
     @@media (max-width: 576px) {
@@ -544,113 +647,131 @@
             padding: 16px;
         }
 
-        .kpi-grid {
-            grid-template-columns: 1fr;
+        .chart-controls {
+            flex-wrap: wrap;
+            width: 100%;
+        }
+
+        .chart-btn {
+            flex: 1;
+            min-width: 70px;
+        }
+
+        #producaoChart {
+            height: 220px !important;
         }
     }
-
 </style>
 
 @code {
     private Propriedade propriedade;
     private List<Animal> animais;
-
-    // Estatísticas do Rebanho por categoria
-    private int totalAnimais = 0;
-    private int totalFemeas = 0;
-    private int totalMachos = 0;
-    private int bezerros = 0;
-    private int bezerras = 0;
-    private int novilhos = 0;
-    private int novilhas = 0;
-    private int vacas = 0;
-    private int touros = 0;
-
-    // Situação das Fêmeas
-    private int femeasLactantes = 0;
-    private int femeasPrenhas = 0;
-    private int vacasSecas = 0;
-
-    // Estatísticas de Produção
-    private double producaoHoje = 0;
-    private double producaoOntem = 0;
-    private double producaoTotalMes = 0;
-    private double producaoMesAnterior = 0;
-    private double mediaProducaoDiaria = 0;
-
-    // Alertas
+    private int totalAnimais, totalFemeas, totalMachos, bezerros, bezerras, novilhos, novilhas, vacas, touros;
+    private int femeasLactantes, femeasPrenhas, vacasSecas;
+    private double producaoHoje, producaoOntem, producaoTotalMes, producaoMesAnterior, mediaProducaoDiaria;
+    private int periodoSelecionado = 30;
+    private List<ProducaoLeiteira> todasProducoes = new();
     private List<string> alertas = new();
+    private bool graficoRenderizado = false;
 
     protected override async Task OnInitializedAsync()
     {
         await CarregarDados();
     }
 
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        // Garante que o gráfico seja renderizado apenas após os dados estarem prontos e o componente ter sido renderizado
+        if (!graficoRenderizado && todasProducoes.Any())
+        {
+            await AtualizarGrafico();
+            graficoRenderizado = true;
+        }
+    }
+
     private async Task CarregarDados()
     {
         propriedade = PropriedadeService.ObterPropriedadeLogada();
-
         if (propriedade != null)
         {
             animais = await AnimalService.ObterAnimaisDaPropriedadeAsync(propriedade.Id);
-            var animaisAtivos = animais.Where(a => a.Status == "Ativo").ToList();
+            todasProducoes = await ProducaoLeiteiraService.ObterPorPropriedadeAsync(propriedade.Id);
 
-            // Calcular Resumo do Rebanho
-            totalAnimais = animaisAtivos.Count;
-            totalFemeas = animaisAtivos.Count(a => a.Sexo == "Fêmea");
-            totalMachos = totalAnimais - totalFemeas;
-
-            // Estatísticas por categoria
-            bezerros = animaisAtivos.Count(a => a.Sexo == "Macho" && a.CategoriaAnimal == "Bezerro");
-            bezerras = animaisAtivos.Count(a => a.Sexo == "Fêmea" && a.CategoriaAnimal == "Bezerra");
-            novilhos = animaisAtivos.Count(a => a.CategoriaAnimal == "Novilho");
-            novilhas = animaisAtivos.Count(a => a.CategoriaAnimal == "Novilha");
-            vacas = animaisAtivos.Count(a => a.CategoriaAnimal == "Vaca");
-            touros = animaisAtivos.Count(a => a.CategoriaAnimal == "Touro");
-
-            // Situação das Fêmeas
-            femeasLactantes = animaisAtivos.Count(a => a.Sexo == "Fêmea" && a.Lactante);
-            femeasPrenhas = animaisAtivos.Count(a => a.Sexo == "Fêmea" && a.Prenha);
-            vacasSecas = animaisAtivos.Count(a => a.CategoriaAnimal == "Vaca" && !a.Lactante);
-
-            // Calcular Produção
-            var hoje = DateTime.Today;
-            var ontem = hoje.AddDays(-1);
-            var primeiroDiaDoMes = new DateTime(hoje.Year, hoje.Month, 1);
-            var mesAnterior = primeiroDiaDoMes.AddMonths(-1);
-            var ultimoDiaMesAnterior = primeiroDiaDoMes.AddDays(-1);
-
-            var producoes = await ProducaoLeiteiraService.ObterPorPropriedadeAsync(propriedade.Id);
-
-            // Produção atual
-            producaoHoje = producoes.Where(p => p.Data.Date == hoje).Sum(p => p.Quantidade);
-            producaoOntem = producoes.Where(p => p.Data.Date == ontem).Sum(p => p.Quantidade);
-            producaoTotalMes = producoes.Where(p => p.Data.Date >= primeiroDiaDoMes && p.Data.Date <= hoje).Sum(p => p.Quantidade);
-
-            // Produção mês anterior
-            producaoMesAnterior = producoes.Where(p => p.Data.Date >= mesAnterior && p.Data.Date <= ultimoDiaMesAnterior).Sum(p => p.Quantidade);
-
-            // Médias
-            int diasNoMesAteHoje = hoje.Day;
-            mediaProducaoDiaria = diasNoMesAteHoje > 0 ? producaoTotalMes / diasNoMesAteHoje : 0;
-
-            // Gerar Alertas
-            GerarAlertas(animaisAtivos, producoes, hoje);
+            CalcularEstatisticasAnimais();
+            CalcularEstatisticasProducao();
+            GerarAlertas(animais.Where(a => a.Status == "Ativo").ToList(), todasProducoes, DateTime.Today);
         }
         StateHasChanged();
+    }
+
+    private void CalcularEstatisticasAnimais()
+    {
+        var animaisAtivos = animais.Where(a => a.Status == "Ativo").ToList();
+        totalAnimais = animaisAtivos.Count;
+        totalFemeas = animaisAtivos.Count(a => a.Sexo == "Fêmea");
+        totalMachos = totalAnimais - totalFemeas;
+        bezerros = animaisAtivos.Count(a => a.Sexo == "Macho" && a.CategoriaAnimal == "Bezerro");
+        bezerras = animaisAtivos.Count(a => a.Sexo == "Fêmea" && a.CategoriaAnimal == "Bezerra");
+        novilhos = animaisAtivos.Count(a => a.CategoriaAnimal == "Novilho");
+        novilhas = animaisAtivos.Count(a => a.CategoriaAnimal == "Novilha");
+        vacas = animaisAtivos.Count(a => a.CategoriaAnimal == "Vaca");
+        touros = animaisAtivos.Count(a => a.CategoriaAnimal == "Touro");
+        femeasLactantes = animaisAtivos.Count(a => a.Sexo == "Fêmea" && a.Lactante);
+        femeasPrenhas = animaisAtivos.Count(a => a.Sexo == "Fêmea" && a.Prenha);
+        vacasSecas = animaisAtivos.Count(a => a.CategoriaAnimal == "Vaca" && !a.Lactante);
+    }
+
+    private void CalcularEstatisticasProducao()
+    {
+        var hoje = DateTime.Today;
+        var ontem = hoje.AddDays(-1);
+        var primeiroDiaDoMes = new DateTime(hoje.Year, hoje.Month, 1);
+        var mesAnterior = primeiroDiaDoMes.AddMonths(-1);
+        var ultimoDiaMesAnterior = primeiroDiaDoMes.AddDays(-1);
+
+        producaoHoje = todasProducoes.Where(p => p.Data.Date == hoje).Sum(p => p.Quantidade);
+        producaoOntem = todasProducoes.Where(p => p.Data.Date == ontem).Sum(p => p.Quantidade);
+        producaoTotalMes = todasProducoes.Where(p => p.Data.Date >= primeiroDiaDoMes && p.Data.Date <= hoje).Sum(p => p.Quantidade);
+        producaoMesAnterior = todasProducoes.Where(p => p.Data.Date >= mesAnterior && p.Data.Date <= ultimoDiaMesAnterior).Sum(p => p.Quantidade);
+        mediaProducaoDiaria = hoje.Day > 0 ? producaoTotalMes / hoje.Day : 0;
+    }
+
+    private async Task AlterarPeriodo(int novoPeriodo)
+    {
+        periodoSelecionado = novoPeriodo;
+        await AtualizarGrafico();
+    }
+
+    private async Task AtualizarGrafico()
+    {
+        if (todasProducoes == null || !todasProducoes.Any()) return;
+
+        var hoje = DateTime.Today;
+        var dataInicio = hoje.AddDays(-(periodoSelecionado - 1));
+        var labels = new List<string>();
+        var dados = new List<double>();
+
+        for (int i = 0; i < periodoSelecionado; i++)
+        {
+            var data = dataInicio.AddDays(i);
+            var producaoDia = todasProducoes.Where(p => p.Data.Date == data.Date).Sum(p => p.Quantidade);
+            labels.Add(data.ToString("dd/MM"));
+            dados.Add(producaoDia);
+        }
+
+        var mediaPeriodo = dados.Any() ? dados.Average() : 0;
+        await JSRuntime.InvokeVoidAsync("criarGraficoProducao", labels.ToArray(), dados.ToArray(), mediaPeriodo);
     }
 
     private void GerarAlertas(List<Animal> animaisAtivos, List<ProducaoLeiteira> producoes, DateTime hoje)
     {
         alertas.Clear();
         var dataLimite = hoje.AddDays(-3);
-
         var animaisEmLactacao = animaisAtivos.Where(a => a.Lactante).ToList();
 
         foreach (var animal in animaisEmLactacao)
         {
-            bool produziuRecentemente = producoes.Any(p => p.AnimalId == animal.Id && p.Data.Date >= dataLimite);
-            if (!produziuRecentemente)
+            if (!producoes.Any(p => p.AnimalId == animal.Id && p.Data.Date >= dataLimite))
             {
                 alertas.Add($"A vaca '{animal.NomeAnimal}' não tem registro de produção há 3 dias ou mais.");
             }
