@@ -122,7 +122,7 @@
         </div>
     }
 
-    @* Modal de DETALHES DO ANIMAL (Layout Horizontal) *@
+    @* Modal de DETALHES DO ANIMAL *@
     @if (exibirModalDetalhes)
     {
         <div class="modal-overlay" @onclick="FecharModalDetalhes">
@@ -139,7 +139,22 @@
                                 <div><strong>Status:</strong> @animalSelecionado.Status</div>
                                 <div><strong>Raça:</strong> @(animalSelecionado.Raca?.NomeRaca ?? "Não informada")</div>
                                 <div><strong>Nascimento:</strong> @animalSelecionado.DataNascimento?.ToString("dd/MM/yyyy")</div>
+                                @if (animalSelecionado.PesoNascimento > 0)
+                                {
+                                    <div><strong>Peso ao Nascer:</strong> @animalSelecionado.PesoNascimento.ToString("F1") Kg</div>
+                                }
                             </div>
+
+                            @if (animalSelecionado.Sexo == "Fêmea")
+                            {
+                                <div class="form-section-title">Histórico Reprodutivo</div>
+                                <div class="details-basic-info">
+                                    <div><strong>Partos:</strong> @animalSelecionado.NumeroDePartos</div>
+                                    <div><strong>Nascidos Mortos:</strong> @animalSelecionado.NumeroDeNascimortos</div>
+                                    <div><strong>Abortos:</strong> @animalSelecionado.NumeroDeAbortos</div>
+                                    <div><strong>Último Parto:</strong> @(animalSelecionado.DataUltimoParto?.ToString("dd/MM/yyyy") ?? "N/A")</div>
+                                </div>
+                            }
 
                             @if (animalSelecionado.CategoriaAnimal == "Vaca")
                             {
@@ -186,11 +201,9 @@
                                     <div class="node parent">@(pai?.NomeAnimal ?? "Pai Desconhecido")</div>
                                     <div class="node parent">@(mae?.NomeAnimal ?? "Mãe Desconhecida")</div>
                                 </div>
-
                                 <div class="level">
                                     <div class="node animal">@animalSelecionado.NomeAnimal</div>
                                 </div>
-
                                 @if (proleDoAnimalSelecionado != null && proleDoAnimalSelecionado.Any())
                                 {
                                     <div class="level children-level">
@@ -232,58 +245,71 @@
                     <div class="form-grid-2-col">
                         <div class="form-group"><label for="dataNascimento">Nascimento</label><InputDate id="dataNascimento" @bind-Value="animal.DataNascimento" class="form-control" /><ValidationMessage For="@(() => animal.DataNascimento)" /></div>
                         <div class="form-group">
-                            <label for="racaId">Raça</label><InputSelect id="racaId" @bind-Value="animal.RacaId" class="form-control"><option value="0" disabled selected>Selecione</option>@foreach (var raca in racas)
+                            <label for="racaId">Raça</label><InputSelect id="racaId" @bind-Value="animal.RacaId" class="form-control">
+                                <option value="0" disabled selected>Selecione</option>@foreach (var raca in racas)
                                 {
                                     <option value="@raca.Id">@raca.NomeRaca</option>
-                                }</InputSelect><ValidationMessage For="@(() => animal.RacaId)" />
-                            </div>
+                                }
+                            </InputSelect><ValidationMessage For="@(() => animal.RacaId)" />
                         </div>
-                        <div class="form-grid-2-col">
-                            <div class="form-group">
-                                <label for="sexo">Sexo</label><InputSelect id="sexo" @bind-Value="animal.Sexo" @onchange="(e) => OnSexoChanged(e.Value.ToString())" class="form-control"><option value="" disabled selected>Selecione</option><option value="Macho">Macho</option><option value="Fêmea">Fêmea</option></InputSelect><ValidationMessage For="@(() => animal.Sexo)" />
-                            </div>
-                            <div class="form-group">
-                                <label for="categoriaAnimal">Categoria</label><InputSelect id="categoriaAnimal" @bind-Value="animal.CategoriaAnimal" class="form-control" disabled="@(string.IsNullOrEmpty(animal.Sexo))"><option value="" disabled selected>Selecione</option>@if (animal.Sexo == "Macho")
+                    </div>
+                    <div class="form-grid-2-col">
+                        <div class="form-group">
+                            <label for="sexo">Sexo</label><InputSelect id="sexo" @bind-Value="animal.Sexo" @onchange="(e) => OnSexoChanged(e.Value.ToString())" class="form-control"><option value="" disabled selected>Selecione</option><option value="Macho">Macho</option><option value="Fêmea">Fêmea</option></InputSelect><ValidationMessage For="@(() => animal.Sexo)" />
+                        </div>
+                        <div class="form-group">
+                            <label for="categoriaAnimal">Categoria</label><InputSelect id="categoriaAnimal" @bind-Value="animal.CategoriaAnimal" class="form-control" disabled="@(string.IsNullOrEmpty(animal.Sexo))">
+                                <option value="" disabled selected>Selecione</option>@if (animal.Sexo == "Macho")
                                 {
                                     <option value="Bezerro">Bezerro</option>
-
                                     <option value="Novilho">Novilho</option>
-
                                     <option value="Touro">Touro</option>
                                 }
                                 else if (animal.Sexo == "Fêmea")
                                 {
                                     <option value="Bezerra">Bezerra</option>
-
                                     <option value="Novilha">Novilha</option>
-
                                     <option value="Vaca">Vaca</option>
-                                }</InputSelect><ValidationMessage For="@(() => animal.CategoriaAnimal)" />
-                            </div>
+                                }
+                            </InputSelect><ValidationMessage For="@(() => animal.CategoriaAnimal)" />
                         </div>
-                        <div class="form-section-title">Vínculos Familiares</div>
-                        <div class="vincular-animal-section">
-                            <div class="form-group">
-                                <label>Mãe</label><InputSelect @bind-Value="animal.MaeId" class="form-control" disabled="@(animal.MaeId > 0 && animal.Id != 0)"><option value="0">Desconhecida</option>@foreach (var femea in animais.Where(a => a.Sexo == "Fêmea" && a.Id != animal.Id))
+                    </div>
+
+                    @if (animal.CategoriaAnimal == "Bezerro" || animal.CategoriaAnimal == "Bezerra")
+                    {
+                        <div class="form-group" style="max-width: 250px;">
+                            <label for="pesoAoNascer">Peso ao Nascer (Kg)</label>
+                            <InputNumber id="pesoAoNascer" @bind-Value="animal.PesoNascimento" class="form-control" placeholder="Ex: 35.5" />
+                        </div>
+                    }
+
+                    <div class="form-section-title">Vínculos Familiares</div>
+                    <div class="vincular-animal-section">
+                        <div class="form-group">
+                            <label>Mãe</label><InputSelect @bind-Value="animal.MaeId" class="form-control" disabled="@(animal.MaeId > 0 && animal.Id != 0)">
+                                <option value="0">Desconhecida</option>@foreach (var femea in animais.Where(a => a.Sexo == "Fêmea" && a.Id != animal.Id))
                                 {
                                     <option value="@femea.Id">@femea.NomeAnimal (@femea.NumeroIdentificador)</option>
-                                }</InputSelect>
-                            </div>
-                            <div class="form-group">
-                                <label>Pai</label><InputSelect @bind-Value="animal.PaiId" class="form-control" disabled="@(animal.PaiId > 0 && animal.Id != 0)"><option value="0">Desconhecido</option>@foreach (var macho in animais.Where(a => a.Sexo == "Macho" && a.Id != animal.Id))
+                                }
+                            </InputSelect>
+                        </div>
+                        <div class="form-group">
+                            <label>Pai</label><InputSelect @bind-Value="animal.PaiId" class="form-control" disabled="@(animal.PaiId > 0 && animal.Id != 0)">
+                                <option value="0">Desconhecido</option>@foreach (var macho in animais.Where(a => a.Sexo == "Macho" && a.Id != animal.Id))
                                 {
                                     <option value="@macho.Id">@macho.NomeAnimal (@macho.NumeroIdentificador)</option>
-                                }</InputSelect>
-                            </div>
+                                }
+                            </InputSelect>
                         </div>
-                        <div class="form-section-title">Status do Animal</div>
-                        <div class="form-group" style="max-width: 250px;">
-                            <label for="status">Status</label><InputSelect id="status" @bind-Value="animal.Status" class="form-control"><option value="Ativo">Ativo</option><option value="Vendido">Vendido</option><option value="Morto">Morto</option></InputSelect><ValidationMessage For="@(() => animal.Status)" />
-                        </div>
-                        <div class="footer-actions"><button type="button" class="btn btn-secondary" @onclick="FecharModal">Cancelar</button><button type="submit" class="btn btn-primary">Salvar</button></div>
-                    </EditForm>
-                </div>
+                    </div>
+                    <div class="form-section-title">Status do Animal</div>
+                    <div class="form-group" style="max-width: 250px;">
+                        <label for="status">Status</label><InputSelect id="status" @bind-Value="animal.Status" class="form-control"><option value="Ativo">Ativo</option><option value="Vendido">Vendido</option><option value="Morto">Morto</option></InputSelect><ValidationMessage For="@(() => animal.Status)" />
+                    </div>
+                    <div class="footer-actions"><button type="button" class="btn btn-secondary" @onclick="FecharModal">Cancelar</button><button type="submit" class="btn btn-primary">Salvar</button></div>
+                </EditForm>
             </div>
+        </div>
     }
 
     @* Modal de Filtros (Mobile) *@
@@ -1083,7 +1109,7 @@
 
     private void AbrirModalEditar(Animal a)
     {
-        animal = new Animal { Id = a.Id, NomeAnimal = a.NomeAnimal, NumeroIdentificador = a.NumeroIdentificador, RacaId = a.RacaId, DataNascimento = a.DataNascimento, Sexo = a.Sexo, CategoriaAnimal = a.CategoriaAnimal, Status = a.Status, PropriedadeId = a.PropriedadeId, MaeId = a.MaeId, PaiId = a.PaiId };
+        animal = new Animal { Id = a.Id, NomeAnimal = a.NomeAnimal, NumeroIdentificador = a.NumeroIdentificador, RacaId = a.RacaId, DataNascimento = a.DataNascimento, Sexo = a.Sexo, CategoriaAnimal = a.CategoriaAnimal, Status = a.Status, PropriedadeId = a.PropriedadeId, MaeId = a.MaeId, PaiId = a.PaiId, PesoNascimento = a.PesoNascimento };
         exibirModal = true;
     }
 
