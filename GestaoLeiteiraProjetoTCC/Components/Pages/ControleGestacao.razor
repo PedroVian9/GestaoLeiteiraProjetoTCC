@@ -11,7 +11,7 @@
         <div class="header-content">
             <div class="welcome-section">
                 <h1>Controle Reprodutivo</h1>
-                <p class="property-owner">Monitore o ciclo reprodutivo e os partos do seu rebanho</p>
+                <p class="property-owner">Monitore o manejo reprodutivo e os partos do seu rebanho</p>
             </div>
             <div class="header-date-section">
                 <i class="fas fa-calendar-alt"></i>
@@ -23,7 +23,7 @@
                 <i class="fas fa-filter"></i> Filtrar e Ordenar
             </button>
             <button class="btn-mobile-action add" @onclick="AbrirModalNovoCiclo">
-                <i class="fas fa-plus"></i> Iniciar Ciclo
+                <i class="fas fa-plus"></i> Iniciar Manejo Reprodutivo
             </button>
         </div>
     </div>
@@ -40,9 +40,9 @@
         <div class="empty-message-container">
             <div class="empty-message">
                 <i class="fas fa-heartbeat"></i>
-                <p>Nenhum ciclo reprodutivo ativo no momento.</p>
+                <p>Nenhum manejo reprodutivo ativo no momento.</p>
                 <button class="btn-action add mt-3" @onclick="AbrirModalNovoCiclo">
-                    <span class="plus-icon">+</span> Iniciar primeiro ciclo
+                    <span class="plus-icon">+</span> Iniciar primeiro manejo reprodutivo
                 </button>
             </div>
         </div>
@@ -72,7 +72,7 @@
         </div>
         <div class="animal-actions desktop-only">
             <button class="btn-action add" @onclick="AbrirModalNovoCiclo">
-                <span class="plus-icon">+</span> Iniciar novo ciclo
+                <span class="plus-icon">+</span> Iniciar novo manejo
             </button>
         </div>
 
@@ -81,7 +81,7 @@
             <div class="empty-message-container">
                 <div class="empty-message">
                     <i class="fas fa-search"></i>
-                    <p>Nenhum ciclo encontrado para os filtros selecionados.</p>
+                    <p>Nenhum manejo encontrado para os filtros selecionados.</p>
                 </div>
             </div>
         }
@@ -139,12 +139,12 @@
         }
     }
 
-    @* Modal 1: Iniciar Novo Ciclo Reprodutivo *@
+    @* Modal 1: Iniciar Novo Manejo Reprodutivo *@
     @if (exibirModalNovoCiclo)
     {
         <div class="modal-overlay" @onclick="FecharTodosModais">
             <div class="modal-content" @onclick:stopPropagation>
-                <h3>Iniciar Novo Ciclo Reprodutivo</h3>
+                <h3>Iniciar Novo Manejo Reprodutivo</h3>
                 <EditForm Model="novoCiclo" OnValidSubmit="SalvarNovoCiclo">
                     <DataAnnotationsValidator />
                     <div class="form-group">
@@ -186,7 +186,7 @@
                     </div>
                     <div class="footer-actions">
                         <button type="button" class="btn btn-secondary" @onclick="FecharTodosModais">Cancelar</button>
-                        <button type="submit" class="btn btn-primary">Salvar Ciclo</button>
+                        <button type="submit" class="btn btn-primary">Salvar Manejo</button>
                     </div>
                 </EditForm>
             </div>
@@ -201,7 +201,7 @@
             <div class="modal-content" @onclick:stopPropagation>
                 <h3>Detalhes de @vaca.NomeAnimal</h3>
                 <div class="details-section">
-                    <h4><i class="fas fa-paw"></i> Ciclo Reprodutivo Atual</h4>
+                    <h4><i class="fas fa-paw"></i> Manejo Reprodutivo Atual</h4>
                     <div class="details-list">
                         <div><span>Status:</span> <strong>@cicloParaAcao.Status</strong></div>
                         <div><span>Data da Cobertura:</span> <strong>@cicloParaAcao.DataInicio.ToString("dd/MM/yyyy")</strong></div>
@@ -210,10 +210,10 @@
                         @if (cicloParaAcao.Status == "Gestação Ativa")
                         {
                             var diasGestacao = (DateTime.Today - cicloParaAcao.DataConfirmacao.Value).Days;
-                            var previsaoParto = cicloParaAcao.DataConfirmacao.Value.AddDays(283);
+                            var previsaoParto = cicloParaAcao.DataConfirmacao.Value.AddDays(270);
                             var diasRestantes = (previsaoParto - DateTime.Today).Days;
 
-                            <div><span>Confirmação:</span> <strong>@cicloParaAcao.DataConfirmacao?.ToString("dd/MM/yyyy")</strong></div>
+                            <div><span>Confirmação de Prenhez:</span> <strong>@cicloParaAcao.DataConfirmacao?.ToString("dd/MM/yyyy")</strong></div>
                             <div><span>Dias de Gestação:</span> <strong>@diasGestacao dias</strong></div>
                             <div><span>Previsão de Parto:</span> <strong>@previsaoParto.ToString("dd/MM/yyyy")</strong></div>
                             <div><span>Dias Restantes (aprox.):</span> <strong>@(diasRestantes > 0 ? diasRestantes : 0) dias</strong></div>
