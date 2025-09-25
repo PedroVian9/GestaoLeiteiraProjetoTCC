@@ -21,9 +21,7 @@ namespace GestaoLeiteiraProjetoTCC.Services
         public async Task<List<Gestacao>> ObterCiclosAtivos(int propriedadeId)
         {
             var animaisDaPropriedade = await _animalRepository.ObterAnimaisPorPropriedadeIdDb(propriedadeId);
-
             var idsAnimais = animaisDaPropriedade.Select(a => a.Id).ToList();
-
             return await _gestacaoRepository.ObterCiclosAtivosPorPropriedadeDb(idsAnimais);
         }
 
@@ -31,6 +29,22 @@ namespace GestaoLeiteiraProjetoTCC.Services
         {
             ciclo.Status = "Em Cobertura";
             return await _gestacaoRepository.IniciarGestacaoDb(ciclo);
+        }
+
+        public async Task RepetirCicloAsync(int cicloAntigoId, Gestacao novoCiclo)
+        {
+            // 1. Finaliza o ciclo antigo
+            var cicloAntigo = await _gestacaoRepository.ObterGestacaoPorIdDb(cicloAntigoId);
+            if (cicloAntigo != null)
+            {
+                cicloAntigo.Status = "Finalizada - Repetiu Cio";
+                cicloAntigo.DataFim = novoCiclo.DataInicio; // A data fim é a data da nova cobertura
+                await _gestacaoRepository.AtualizarGestacaoDb(cicloAntigo);
+            }
+
+            // 2. Inicia o novo ciclo
+            novoCiclo.Status = "Em Cobertura";
+            await _gestacaoRepository.IniciarGestacaoDb(novoCiclo);
         }
 
         public async Task<Gestacao> ConfirmarGestacaoAsync(int cicloId, DateTime dataConfirmacao)

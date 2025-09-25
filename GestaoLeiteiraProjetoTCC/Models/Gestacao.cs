@@ -10,11 +10,12 @@ namespace GestaoLeiteiraProjetoTCC.Models
 
         public int VacaId { get; set; }
         public int? TouroId { get; set; }
-        public DateTime DataInicio { get; set; } // Agora representa a Data da Cobertura (Monta/Inseminação)
+        public DateTime DataInicio { get; set; } // Data da Cobertura (Monta/Inseminação)
         public DateTime? DataConfirmacao { get; set; } // Data em que a gestação foi confirmada
         public DateTime? DataFim { get; set; }
         public string TipoCobertura { get; set; } // "Monta Natural" ou "Inseminação"
         public string Status { get; set; } // "Em Cobertura", "Gestação Ativa", "Finalizada - Parto", etc.
+        public double? ScoreCorporal { get; set; } //Escore de Condição Corporal (1-5)
         public int? CriaId { get; set; }
         public string Observacoes { get; set; }
 

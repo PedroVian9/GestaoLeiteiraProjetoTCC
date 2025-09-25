@@ -8,6 +8,7 @@ namespace GestaoLeiteiraProjetoTCC.Services.Interfaces
     {
         Task<List<Gestacao>> ObterCiclosAtivos(int propriedadeId);
         Task<Gestacao> IniciarCicloAsync(Gestacao ciclo);
+        Task RepetirCicloAsync(int cicloAntigoId, Gestacao novoCiclo);
         Task<Gestacao> ConfirmarGestacaoAsync(int cicloId, DateTime dataConfirmacao);
         Task FinalizarGestacaoComCriaVivaAsync(int cicloId, Animal cria);
         Task FinalizarGestacaoSemCriaVivaAsync(int cicloId, string statusFinal);

@@ -109,10 +109,12 @@
                         }
                         else // Status "Em Cobertura"
                         {
+                            var diasDesdeCobertura = (DateTime.Today - ciclo.DataInicio).Days;
                             <div class="card-details">
                                 <div class="detail-item"><span class="detail-label">Data da Cobertura:</span> <span class="detail-value">@ciclo.DataInicio.ToString("dd/MM/yyyy")</span></div>
+                                <div class="detail-item"><span class="detail-label">Dias em Cobertura:</span> <span class="detail-value">@diasDesdeCobertura dias</span></div>
                                 <div class="detail-item"><span class="detail-label">Tipo:</span> <span class="detail-value">@ciclo.TipoCobertura</span></div>
-                                <div class="detail-item detail-item-full"><span class="detail-label">Touro:</span> <span class="detail-value">@(ciclo.Touro?.NomeAnimal ?? "Não informado")</span></div>
+                                <div class="detail-item"><span class="detail-label">Touro:</span> <span class="detail-value">@(ciclo.Touro?.NomeAnimal ?? "Não informado")</span></div>
                             </div>
                         }
 
@@ -122,6 +124,9 @@
                             </button>
                             @if (ciclo.Status == "Em Cobertura")
                             {
+                                <button class="btn-action danger" @onclick="() => AbrirModalRepetirCio(ciclo)">
+                                    <i class="fas fa-sync-alt"></i> Repetir Cio
+                                </button>
                                 <button class="btn-action success" @onclick="() => AbrirModalConfirmarGestacao(ciclo)">
                                     <i class="fas fa-check"></i> Iniciar Gestação
                                 </button>
@@ -174,6 +179,18 @@
                             <ValidationMessage For="@(() => novoCiclo.DataInicio)" />
                         </div>
                     </div>
+                    <div class="form-group">
+                        <label for="scoreCorporal">Escore de Condição Corporal (1-5)</label>
+                        <InputSelect id="scoreCorporal" @bind-Value="novoCiclo.ScoreCorporal" class="form-control">
+                            <option value="" disabled selected>Selecione o escore...</option>
+                            <option value="1">1 (Muito Magra)</option>
+                            <option value="2">2 (Magra)</option>
+                            <option value="3">3 (Ideal)</option>
+                            <option value="4">4 (Gorda)</option>
+                            <option value="5">5 (Obesa)</option>
+                        </InputSelect>
+                        <ValidationMessage For="@(() => novoCiclo.ScoreCorporal)" />
+                    </div>
                     <div class="form-group mt-3">
                         <label for="touroId">Touro (Opcional)</label>
                         <InputSelect id="touroId" @bind-Value="novoCiclo.TouroId" class="form-control">
@@ -205,12 +222,13 @@
                     <div class="details-list">
                         <div><span>Status:</span> <strong>@cicloParaAcao.Status</strong></div>
                         <div><span>Data da Cobertura:</span> <strong>@cicloParaAcao.DataInicio.ToString("dd/MM/yyyy")</strong></div>
+                        <div><span>Escore Corporal (na cobertura):</span> <strong>@(cicloParaAcao.ScoreCorporal.HasValue ? cicloParaAcao.ScoreCorporal.Value.ToString("F0") : "Não informado")</strong></div>
                         <div><span>Tipo:</span> <strong>@cicloParaAcao.TipoCobertura</strong></div>
                         <div><span>Touro:</span> <strong>@(cicloParaAcao.Touro?.NomeAnimal ?? "Não informado")</strong></div>
                         @if (cicloParaAcao.Status == "Gestação Ativa")
                         {
                             var diasGestacao = (DateTime.Today - cicloParaAcao.DataConfirmacao.Value).Days;
-                            var previsaoParto = cicloParaAcao.DataConfirmacao.Value.AddDays(270);
+                            var previsaoParto = cicloParaAcao.DataConfirmacao.Value.AddDays(283);
                             var diasRestantes = (previsaoParto - DateTime.Today).Days;
 
                             <div><span>Confirmação de Prenhez:</span> <strong>@cicloParaAcao.DataConfirmacao?.ToString("dd/MM/yyyy")</strong></div>
@@ -393,6 +411,61 @@
                     <button type="button" class="btn btn-secondary" @onclick="FecharModalFiltros">Cancelar</button>
                     <button type="button" class="btn btn-primary" @onclick="AplicarEFecharModalFiltros">Aplicar</button>
                 </div>
+            </div>
+        </div>
+    }
+
+    @* Modal 9: Repetir Cio (NOVO MODAL) *@
+    @if (exibirModalRepetirCio)
+    {
+        <div class="modal-overlay" @onclick="FecharTodosModais">
+            <div class="modal-content" @onclick:stopPropagation>
+                <h3>Repetir Cobertura para @cicloParaAcao.Vaca?.NomeAnimal</h3>
+                <EditForm Model="cicloParaRepetir" OnValidSubmit="SalvarRepeticaoCio">
+                    <DataAnnotationsValidator />
+                    <div class="form-grid-2-col">
+                        <div class="form-group">
+                            <label for="tipoCoberturaRepetir">Tipo de Cobertura</label>
+                            <InputSelect id="tipoCoberturaRepetir" @bind-Value="cicloParaRepetir.TipoCobertura" class="form-control">
+                                <option value="" disabled selected>Selecione o tipo...</option>
+                                <option value="Monta Natural">Monta Natural</option>
+                                <option value="Inseminação">Inseminação Artificial</option>
+                            </InputSelect>
+                            <ValidationMessage For="@(() => cicloParaRepetir.TipoCobertura)" />
+                        </div>
+                        <div class="form-group">
+                            <label for="dataInicioRepetir">Nova Data da Cobertura</label>
+                            <InputDate id="dataInicioRepetir" @bind-Value="cicloParaRepetir.DataInicio" class="form-control" />
+                            <ValidationMessage For="@(() => cicloParaRepetir.DataInicio)" />
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="scoreCorporalRepetir">Escore de Condição Corporal (1-5)</label>
+                        <InputSelect id="scoreCorporalRepetir" @bind-Value="cicloParaRepetir.ScoreCorporal" class="form-control">
+                            <option value="" disabled selected>Selecione o escore...</option>
+                            <option value="1">1 (Muito Magra)</option>
+                            <option value="2">2 (Magra)</option>
+                            <option value="3">3 (Ideal)</option>
+                            <option value="4">4 (Gorda)</option>
+                            <option value="5">5 (Obesa)</option>
+                        </InputSelect>
+                        <ValidationMessage For="@(() => cicloParaRepetir.ScoreCorporal)" />
+                    </div>
+                    <div class="form-group mt-3">
+                        <label for="touroIdRepetir">Touro (Opcional)</label>
+                        <InputSelect id="touroIdRepetir" @bind-Value="cicloParaRepetir.TouroId" class="form-control">
+                            <option value="0">Nenhum / Não informado</option>
+                            @foreach (var touro in tourosAtivos)
+                            {
+                                <option value="@touro.Id">@touro.NomeAnimal (@touro.NumeroIdentificador)</option>
+                            }
+                        </InputSelect>
+                    </div>
+                    <div class="footer-actions">
+                        <button type="button" class="btn btn-secondary" @onclick="FecharTodosModais">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Salvar Nova Cobertura</button>
+                    </div>
+                </EditForm>
             </div>
         </div>
     }
@@ -585,6 +658,11 @@
             color: white;
         }
 
+        .btn-action.danger {
+            background-color: #ffc107;
+            color: #212529;
+        }
+
         .btn-action:hover {
             opacity: 0.9;
         }
@@ -660,7 +738,7 @@
         flex-direction: column;
         justify-content: center;
         align-items: center;
-        z-index: 1050;
+        z-index: 1060;
         color: white;
     }
 
@@ -673,17 +751,15 @@
         animation: spin 2s linear infinite;
         margin-bottom: 20px;
     }
+
     @@keyframes spin {
-        0%
+        0% {
+            transform: rotate(0deg);
+        }
 
-    {
-        transform: rotate(0deg);
-    }
-
-    100% {
-        transform: rotate(360deg);
-    }
-
+        100% {
+            transform: rotate(360deg);
+        }
     }
 
     .alert.alert-info {
@@ -1044,17 +1120,21 @@
     private bool exibirModalDetalhes = false;
     private bool exibirModalConfirmarGestacao = false;
     private bool exibirModalResultadoParto = false;
-    private bool exibirModalConfirmarResultado = false; // Flag for new confirmation modal
+    private bool exibirModalConfirmarResultado = false;
     private bool exibirModalCadastroCria = false;
     private bool exibirModalLamento = false;
     private bool exibirModalFiltros = false;
     private bool carregandoDados = true;
     private int propriedadeId;
 
+    // NOVAS VARIÁVEIS DE ESTADO
+    private bool exibirModalRepetirCio = false;
+    private Gestacao cicloParaRepetir = new();
+
     private string filtroNome = string.Empty;
     private string ordenacaoSelecionada = "data_desc";
     private string statusFinalizacao = "";
-    private string resultadoPartoSelecionado = ""; // Stores the outcome before confirmation
+    private string resultadoPartoSelecionado = "";
     private DateTime dataConfirmacao = DateTime.Today;
 
     protected override async Task OnInitializedAsync()
@@ -1094,8 +1174,8 @@
         if (!string.IsNullOrWhiteSpace(filtroNome))
         {
             query = query.Where(g => g.Vaca != null &&
-                (g.Vaca.NomeAnimal.Contains(filtroNome, StringComparison.OrdinalIgnoreCase) ||
-                 g.Vaca.NumeroIdentificador.Contains(filtroNome, StringComparison.OrdinalIgnoreCase)));
+              (g.Vaca.NomeAnimal.Contains(filtroNome, StringComparison.OrdinalIgnoreCase) ||
+               g.Vaca.NumeroIdentificador.Contains(filtroNome, StringComparison.OrdinalIgnoreCase)));
         }
 
         switch (ordenacaoSelecionada)
@@ -1180,7 +1260,6 @@
                     PropriedadeId = propriedadeId,
                     DataNascimento = DateTime.Today,
                     Status = "Ativo",
-                    CategoriaAnimal = "Bezerro",
                     MaeId = cicloParaAcao.VacaId,
                     PaiId = cicloParaAcao.TouroId
                 };
@@ -1199,6 +1278,10 @@
         {
             carregandoDados = true;
             exibirModalCadastroCria = false;
+
+            if (novaCria.Sexo == "Macho") { novaCria.CategoriaAnimal = "Bezerro"; }
+            else { novaCria.CategoriaAnimal = "Bezerra"; }
+
             await GestacaoService.FinalizarGestacaoComCriaVivaAsync(cicloParaAcao.Id, novaCria);
             await CarregarDados();
         }
@@ -1237,5 +1320,34 @@
         exibirModalCadastroCria = false;
         exibirModalLamento = false;
         exibirModalFiltros = false;
+        exibirModalRepetirCio = false; // Adicionado aqui
+    }
+
+    // NOVOS MÉTODOS PARA REPETIÇÃO DE CIO
+    private void AbrirModalRepetirCio(Gestacao ciclo)
+    {
+        cicloParaAcao = ciclo; // O ciclo antigo que será finalizado
+        cicloParaRepetir = new Gestacao
+            {
+                VacaId = ciclo.VacaId,
+                DataInicio = DateTime.Today,
+                ScoreCorporal = null
+            };
+        exibirModalRepetirCio = true;
+    }
+
+    private async Task SalvarRepeticaoCio()
+    {
+        if (cicloParaRepetir.VacaId == 0 || string.IsNullOrEmpty(cicloParaRepetir.TipoCobertura)) return;
+        try
+        {
+            carregandoDados = true;
+            exibirModalRepetirCio = false;
+            if (cicloParaRepetir.TouroId == 0) cicloParaRepetir.TouroId = null;
+
+            await GestacaoService.RepetirCicloAsync(cicloParaAcao.Id, cicloParaRepetir);
+            await CarregarDados();
+        }
+        finally { carregandoDados = false; }
     }
 }
