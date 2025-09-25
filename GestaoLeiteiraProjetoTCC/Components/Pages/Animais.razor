@@ -235,7 +235,7 @@
             <div class="modal-content" @onclick:stopPropagation>
                 <h3>@(animal.Id == 0 ? "Cadastrar Novo Animal" : "Editar Animal")</h3>
 
-                <EditForm Model="animal" OnValidSubmit="SalvarAnimal">
+                <EditForm Model="animal" OnValidSubmit="HandleSalvar">
                     <DataAnnotationsValidator />
                     <div class="form-section-title">Dados Básicos</div>
                     <div class="form-grid">
@@ -312,6 +312,25 @@
         </div>
     }
 
+    @* Modal de Confirmação para Salvar *@
+    @if (exibirModalConfirmacaoSalvar)
+    {
+        <div class="modal-overlay modal-confirmacao">
+            <div class="modal-content" @onclick:stopPropagation>
+                <h3>Confirmar Alterações</h3>
+                <p class="confirmation-text">
+                    <strong>Atenção:</strong> Confirme as alterações antes de salvar, algumas modificações não podem ser alterados posteriormente: Vínculo Parental.
+                    <br /><br />
+                    Deseja continuar?
+                </p>
+                <div class="footer-actions">
+                    <button type="button" class="btn btn-secondary" @onclick="() => exibirModalConfirmacaoSalvar = false">Cancelar</button>
+                    <button type="button" class="btn btn-primary" @onclick="ConfirmarSalvarAnimal">Sim, Salvar</button>
+                </div>
+            </div>
+        </div>
+    }
+
     @* Modal de Filtros (Mobile) *@
     @if (exibirModalFiltros)
     {
@@ -332,6 +351,17 @@
     :root {
         --primary-dark: #023047;
         --primary-blue: #3a7ca5;
+    }
+
+    .modal-confirmacao {
+        z-index: 1051;
+    }
+
+    .confirmation-text {
+        font-size: 1.1rem;
+        text-align: center;
+        margin: 25px 0;
+        line-height: 1.6;
     }
 
     .page-container {
@@ -998,6 +1028,9 @@
     private List<Animal> proleDoAnimalSelecionado;
     private List<LactacaoSumario> lactacoesSumario;
 
+    // --- NOVA VARIÁVEL DE ESTADO PARA O MODAL DE CONFIRMAÇÃO ---
+    private bool exibirModalConfirmacaoSalvar = false;
+
     public class LactacaoSumario
     {
         public DateTime DataInicio { get; set; }
@@ -1113,15 +1146,35 @@
         exibirModal = true;
     }
 
-    private async Task SalvarAnimal()
+    // --- MÉTODOS PARA O FLUXO DE CONFIRMAÇÃO ---
+
+    // 1. Chamado pelo OnValidSubmit do EditForm. Apenas abre o modal de confirmação.
+    private void HandleSalvar()
     {
+        exibirModalConfirmacaoSalvar = true;
+    }
+
+    // 2. Chamado pelo botão "Sim, Salvar" do modal de confirmação. Contém a lógica de salvamento.
+    private async Task ConfirmarSalvarAnimal()
+    {
+        exibirModalConfirmacaoSalvar = false;
+
         try
         {
             carregandoDados = true;
             exibirModal = false;
             if (animal.MaeId == 0) animal.MaeId = null;
             if (animal.PaiId == 0) animal.PaiId = null;
-            if (animal.Id == 0) await AnimalService.CadastrarAnimalAsync(animal); else await AnimalService.AtualizarAnimalAsync(animal);
+
+            if (animal.Id == 0)
+            {
+                await AnimalService.CadastrarAnimalAsync(animal);
+            }
+            else
+            {
+                await AnimalService.AtualizarAnimalAsync(animal);
+            }
+
             await CarregarAnimais();
         }
         catch (Exception ex)
