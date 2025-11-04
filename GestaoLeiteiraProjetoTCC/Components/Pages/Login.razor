@@ -319,6 +319,63 @@
         margin-top: 20px;
     }
 
+    @@media (max-width: 768px) {
+        .container-login {
+            padding: 16px;
+        }
+
+        .content-box {
+            padding: 32px 24px;
+        }
+
+        .title img {
+            width: 56px;
+            height: 56px;
+        }
+
+        .buttons {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 12px;
+        }
+
+        .buttons .btn-login,
+        .buttons .back-button {
+            width: 100%;
+            text-align: center;
+        }
+
+        .footer-actions {
+            flex-direction: column;
+        }
+
+        .footer-actions .btn {
+            width: 100%;
+        }
+
+        .propriedade-item {
+            font-size: 0.95rem;
+        }
+
+        .message {
+            text-align: center;
+        }
+    }
+
+    @@media (max-width: 480px) {
+        .content-box {
+            padding: 24px 18px;
+        }
+
+        .welcome-message {
+            font-size: 1.1rem;
+        }
+
+        .subtitle {
+            font-size: 1rem;
+        }
+    }
+
     .btn-login {
         min-width: 90px;
         display: flex;

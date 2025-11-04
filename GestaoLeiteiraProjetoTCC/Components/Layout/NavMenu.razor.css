@@ -345,4 +345,24 @@
     }
 }
 
+.mobile-menu-toggle .burger-icon {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.mobile-menu-toggle .burger-icon span {
+    display: block;
+    width: 26px;
+    height: 3px;
+    background-color: #ffffff;
+    border-radius: 2px;
+    transition: transform 0.2s ease;
+}
+
+.nav-item-logout {
+    margin-top: 2rem;
+}
 /* ---- FIM DO CÓDIGO ---- */

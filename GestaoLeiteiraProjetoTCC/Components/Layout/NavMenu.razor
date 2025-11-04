@@ -57,8 +57,12 @@
     </div>
 </div>
 
-<button class="mobile-menu-toggle" @onclick="ToggleMobileMenu">
-    <span>☰</span>
+<button class="mobile-menu-toggle" @onclick="ToggleMobileMenu" aria-label="Abrir menu de navegação">
+    <span class="burger-icon">
+        <span></span>
+        <span></span>
+        <span></span>
+    </span>
 </button>
 
 <div class="mobile-menu-overlay @(isMobileMenuOpen ? "active" : "")" @onclick="@((e) => HandleOverlayClick(e))">
@@ -67,18 +71,18 @@
             <img src="/Icons/drink64.png" width='40' height='40' />
             Gestão Leiteira
         </a>
-        <button class="mobile-menu-close" @onclick="CloseMobileMenu">
-            ×
+        <button class="mobile-menu-close" @onclick="CloseMobileMenu" aria-label="Fechar menu">
+            &times;
         </button>
     </div>
 
     <div class="mobile-menu-content" @onclick:stopPropagation="true">
         <nav class="flex-column">
-            @* <div class="nav-item">
+            <div class="nav-item">
                 <NavLink class="nav-link" href="inicio" Match="NavLinkMatch.All" @onclick="CloseMobileMenu">
                     <span class="bi bi-house-door-fill-nav-menu"></span> Início
                 </NavLink>
-            </div> *@
+            </div>
             <div class="nav-group-title">
                 <span class="bi bi-plus-square-animais"></span> Animais
             </div>
@@ -87,6 +91,9 @@
             </div>
             <div class="nav-item">
                 <NavLink class="nav-link" href="controle-de-racas" @onclick="CloseMobileMenu">Controle de Raças</NavLink>
+            </div>
+            <div class="nav-item">
+                <NavLink class="nav-link" href="gestacoes" @onclick="CloseMobileMenu">Controle Reprodutivo</NavLink>
             </div>
             <div class="nav-group-title">
                 <span class="bi bi-plus-square-milk"></span> Produção
@@ -97,16 +104,19 @@
             <div class="nav-item">
                 <NavLink class="nav-link" href="producao-leiteira" @onclick="CloseMobileMenu">Produção Leiteira</NavLink>
             </div>
-            @* <div class="nav-item">
+            <div class="nav-item">
                 <NavLink class="nav-link" href="historico-producao" @onclick="CloseMobileMenu">Histórico de Produção</NavLink>
+            </div>
+            <div class="nav-item">
+                <NavLink class="nav-link" href="comparativo-producao" @onclick="CloseMobileMenu">Comparativo Produção</NavLink>
             </div>
             <div class="nav-group-title">
                 <span class="bi bi-list-nested-nav-config"></span> Propriedade
             </div>
             <div class="nav-item">
                 <NavLink class="nav-link" href="configuracoes" @onclick="CloseMobileMenu">Configurações</NavLink>
-            </div> *@
-            <div class="nav-item" style="margin-top: 2rem;">
+            </div>
+            <div class="nav-item nav-item-logout">
                 <NavLink class="nav-link" @onclick="@(() => { Logout(); CloseMobileMenu(); })">
                     <span class="bi bi-box-arrow-right"></span> Sair
                 </NavLink>
@@ -114,7 +124,6 @@
         </nav>
     </div>
 </div>
-
 @code {
     private bool isMobileMenuOpen = false;
 
