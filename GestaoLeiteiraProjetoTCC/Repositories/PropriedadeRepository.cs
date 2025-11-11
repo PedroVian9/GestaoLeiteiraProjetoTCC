@@ -1,73 +1,106 @@
-﻿using GestaoLeiteiraProjetoTCC.Models;
+using GestaoLeiteiraProjetoTCC.Models;
 using GestaoLeiteiraProjetoTCC.Repositories.Interfaces;
-using SQLite;
+using GestaoLeiteiraProjetoTCC.Services.Interfaces;
+using GestaoLeiteiraProjetoTCC.Utils;
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace GestaoLeiteiraProjetoTCC.Repositories
 {
     public class PropriedadeRepository : IPropriedadeRepository
     {
-        private readonly SQLiteAsyncConnection _database;
+        private readonly DatabaseService _databaseService;
+        private readonly ISyncMetadataService _syncMetadataService;
 
-        public PropriedadeRepository(DatabaseService databaseService)
+        public PropriedadeRepository(DatabaseService databaseService, ISyncMetadataService syncMetadataService)
         {
-            _database = databaseService.GetConnectionAsync().Result;
+            _databaseService = databaseService;
+            _syncMetadataService = syncMetadataService;
         }
 
         public async Task<Propriedade> CadastrarPropriedadeDb(Propriedade propriedade)
         {
-            propriedade.DataCadastro = DateTime.Now;
-            await _database.InsertAsync(propriedade);
+            var db = await _databaseService.GetConnectionAsync();
+            propriedade.DataCadastro = DateTime.UtcNow;
+            SyncEntityHelper.Touch(propriedade, _syncMetadataService.GetDeviceId());
+            await db.InsertAsync(propriedade);
             return propriedade;
         }
 
         public async Task<List<Propriedade>> ObterTodasPropriedadesDb()
         {
-            return await _database.Table<Propriedade>().ToListAsync();
+            var db = await _databaseService.GetConnectionAsync();
+            return await db.Table<Propriedade>()
+                           .Where(p => !p.IsDeleted)
+                           .ToListAsync();
         }
 
         public async Task<Propriedade> ObterPropriedadePorIdDb(int id)
         {
-            return await _database.FindAsync<Propriedade>(id);
+            var db = await _databaseService.GetConnectionAsync();
+            return await db.Table<Propriedade>()
+                           .Where(p => p.Id == id && !p.IsDeleted)
+                           .FirstOrDefaultAsync();
         }
 
         public async Task<Propriedade> ValidarLoginDb(string nomeProprietario, string senha)
         {
-            return await _database.Table<Propriedade>()
-                .FirstOrDefaultAsync(p => p.NomeProprietario == nomeProprietario && p.Senha == senha);
+            var db = await _databaseService.GetConnectionAsync();
+            return await db.Table<Propriedade>()
+                           .FirstOrDefaultAsync(p => p.NomeProprietario == nomeProprietario &&
+                                                     p.Senha == senha &&
+                                                     !p.IsDeleted);
         }
 
         public async Task<List<Animal>> ObterAnimaisPorPropriedadeIdDb(int propriedadeId)
         {
-            return await _database.Table<Animal>()
-                .Where(a => a.PropriedadeId == propriedadeId)
-                .ToListAsync();
+            var db = await _databaseService.GetConnectionAsync();
+            return await db.Table<Animal>()
+                           .Where(a => a.PropriedadeId == propriedadeId && !a.IsDeleted)
+                           .ToListAsync();
         }
 
         public async Task<bool> EditarPropriedadeDb(Propriedade propriedade)
         {
-            var existente = await _database.FindAsync<Propriedade>(propriedade.Id);
-            if (existente == null) return false;
+            var db = await _databaseService.GetConnectionAsync();
+            var existente = await db.Table<Propriedade>()
+                                    .Where(p => p.Id == propriedade.Id && !p.IsDeleted)
+                                    .FirstOrDefaultAsync();
+
+            if (existente == null)
+            {
+                return false;
+            }
 
             existente.NomeProprietario = propriedade.NomeProprietario;
-            existente.NomeSocial = propriedade.NomeSocial; 
-            existente.Sexo = propriedade.Sexo;             
+            existente.NomeSocial = propriedade.NomeSocial;
+            existente.Sexo = propriedade.Sexo;
             existente.NomePropriedade = propriedade.NomePropriedade;
             existente.Localizacao = propriedade.Localizacao;
             existente.AreaTotal = propriedade.AreaTotal;
             existente.TipoUnidade = propriedade.TipoUnidade;
 
-            return await _database.UpdateAsync(existente) > 0;
+            SyncEntityHelper.Touch(existente, _syncMetadataService.GetDeviceId());
+            return await db.UpdateAsync(existente) > 0;
         }
 
         public async Task<bool> AlterarSenhaDb(int id, string novaSenha)
         {
-            var existente = await _database.FindAsync<Propriedade>(id);
-            if (existente == null) return false;
+            var db = await _databaseService.GetConnectionAsync();
+            var existente = await db.Table<Propriedade>()
+                                    .Where(p => p.Id == id && !p.IsDeleted)
+                                    .FirstOrDefaultAsync();
+
+            if (existente == null)
+            {
+                return false;
+            }
 
             existente.Senha = novaSenha;
-            return await _database.UpdateAsync(existente) > 0;
+            SyncEntityHelper.Touch(existente, _syncMetadataService.GetDeviceId());
+            return await db.UpdateAsync(existente) > 0;
         }
     }
 }

@@ -21,6 +21,8 @@ public static class MauiProgram
 
         // Registrar serviços
         builder.Services.AddSingleton<DatabaseService>();
+        builder.Services.AddSingleton<ISyncMetadataService, SyncMetadataService>();
+        builder.Services.AddSingleton<ISyncTransportService, SyncTransportService>();
 
         builder.Services.AddSingleton<IPropriedadeRepository, PropriedadeRepository>();
         builder.Services.AddSingleton<IAnimalRepository, AnimalRepository>();
@@ -37,6 +39,7 @@ public static class MauiProgram
         builder.Services.AddSingleton<IRacaService, RacaService>();
         builder.Services.AddSingleton<IQuantidadeOrdenhaService, QuantidadeOrdenhaService>();
         builder.Services.AddSingleton<IGestacaoService, GestacaoService>();
+        builder.Services.AddSingleton<ISyncService, SyncService>();
 
 #if DEBUG
         builder.Services.AddBlazorWebViewDeveloperTools();

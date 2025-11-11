@@ -2,7 +2,10 @@
 @using GestaoLeiteiraProjetoTCC.Models
 @using GestaoLeiteiraProjetoTCC.Services.Interfaces
 @inject IPropriedadeService PropriedadeService
-@inject IQuantidadeOrdenhaService QuantidadeOrdenhaService  // <<-- 1. SERVIÇO INJETADO
+@inject IQuantidadeOrdenhaService QuantidadeOrdenhaService
+@inject ISyncService SyncService
+@inject ISyncMetadataService SyncMetadataService
+@inject ISyncTransportService SyncTransportService
 
 <div class="page-container">
     <div class="dashboard-header">
@@ -140,6 +143,38 @@
                                 @mensagemErroOrdenha
                                      </div>
                         }
+                        </div>
+                    </div>
+
+                    <div class="config-card sync-card">
+                        <div class="card-header">
+                            <i class="fas fa-sync-alt"></i>
+                            <h4>Sincroniza��o Local</h4>
+                        </div>
+                        <div class="card-body">
+                            <p><strong>�ltima sincroniza��o:</strong> @ObterDescricaoUltimaSync()</p>
+                            <p><strong>ID do dispositivo:</strong> @deviceId</p>
+                            <p><strong>Pasta compartilhada:</strong> <span class="sync-path">@(!string.IsNullOrEmpty(sharedSyncFolder) ? sharedSyncFolder : "Crie a pasta GestaoLeiteiraSync no armazenamento USB")</span></p>
+
+                            @if (!string.IsNullOrEmpty(mensagemSync))
+                            {
+                                <div class="alert alert-info">
+                                    @mensagemSync
+                                </div>
+                            }
+
+                            @if (!string.IsNullOrEmpty(mensagemErroSync))
+                            {
+                                <div class="alert alert-danger">
+                                    @mensagemErroSync
+                                </div>
+                            }
+                        </div>
+                        <div class="card-footer sync-actions">
+                            <button class="btn btn-primary" disabled="@sincronizando" @onclick="SincronizarDados">
+                                <i class="fas fa-sync"></i>
+                                @(sincronizando ? "Sincronizando..." : "Sincronizar agora")
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -538,7 +573,24 @@
             padding: 20px;
         }
     }
-</style>
+        .sync-card .sync-path {
+            display: inline-block;
+            background: #f5f5f5;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-family: "Courier New", Courier, monospace;
+            font-size: 0.85rem;
+        }
+
+        .sync-card .sync-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .sync-card .alert {
+            margin-top: 10px;
+        }</style>
 
 @code {
     private Propriedade propriedade;
@@ -546,6 +598,13 @@
     private string confirmaSenha;
     private int quantidadeOrdenhas;
     private bool loading = true; 
+
+    private bool sincronizando;
+    private string mensagemErroSync;
+    private string mensagemSync;
+    private DateTime? ultimaSincronizacaoUtc;
+    private string sharedSyncFolder;
+    private string deviceId;
 
     private string mensagemErroPropriedade;
     private string mensagemErroSenha;
@@ -575,7 +634,48 @@
             quantidadeOrdenhas = 2;
         }
 
+
+        deviceId = SyncMetadataService.GetDeviceId();
+        ultimaSincronizacaoUtc = SyncMetadataService.GetLastSuccessfulSyncUtc();
+        sharedSyncFolder = await SyncTransportService.GetSharedFolderPathAsync();
         loading = false; // Finaliza o carregamento
+    }
+
+    private string ObterDescricaoUltimaSync()
+    {
+        return ultimaSincronizacaoUtc.HasValue
+            ? ultimaSincronizacaoUtc.Value.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
+            : "Nunca sincronizado";
+    }
+
+
+
+    private async Task SincronizarDados()
+    {
+        mensagemErroSync = string.Empty;
+        mensagemSync = string.Empty;
+        sincronizando = true;
+        StateHasChanged();
+        try
+        {
+            var resultado = await SyncService.SynchronizeAsync();
+            mensagemSync = $"{resultado.Message} (Exportado: {resultado.RecordsExported}, Importado: {resultado.RecordsImported})";
+            ultimaSincronizacaoUtc = SyncMetadataService.GetLastSuccessfulSyncUtc();
+            if (resultado.Success)
+            {
+                mensagemSucesso = "Sincroniza��o conclu�da";
+                exibirModalSucesso = true;
+            }
+        }
+        catch (Exception ex)
+        {
+            mensagemErroSync = $"Falha ao sincronizar: {ex.Message}";
+        }
+        finally
+        {
+            sincronizando = false;
+            StateHasChanged();
+        }
     }
 
     private async Task SalvarConfiguracaoOrdenha()
@@ -653,3 +753,8 @@
         exibirModalSucesso = false;
     }
 }
+
+
+
+
+

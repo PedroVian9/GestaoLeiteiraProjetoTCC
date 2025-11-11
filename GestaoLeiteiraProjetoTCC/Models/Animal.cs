@@ -1,57 +1,65 @@
-﻿using SQLite;
+using SQLite;
 using System;
 using System.ComponentModel.DataAnnotations;
 
 namespace GestaoLeiteiraProjetoTCC.Models
 {
-    public class Animal
+    public class Animal : ISyncEntity
     {
         [PrimaryKey, AutoIncrement]
         public int Id { get; set; }
 
-        [Required(ErrorMessage = "A raça do animal é obrigatória.")]
+        [Required(ErrorMessage = "A raca do animal e obrigatoria.")]
         public int RacaId { get; set; }
 
         [Ignore]
         public Raca Raca { get; set; }
 
-        [Required(ErrorMessage = "O nome do animal é obrigatório.")]
+        [Required(ErrorMessage = "O nome do animal e obrigatorio.")]
         public string NomeAnimal { get; set; }
 
-        [Required(ErrorMessage = "O número identificador é obrigatório.")]
+        [Required(ErrorMessage = "O numero identificador e obrigatorio.")]
         public string NumeroIdentificador { get; set; }
 
         public DateTime? DataNascimento { get; set; }
 
-        // --- NEW FIELD ADDED HERE ---
         public double PesoNascimento { get; set; }
 
         public string Sexo { get; set; }
 
-        [Required(ErrorMessage = "A categoria do animal é obrigatória.")]
+        [Required(ErrorMessage = "A categoria do animal e obrigatoria.")]
         public string CategoriaAnimal { get; set; }
 
-        public bool Lactante { get; set; } = false;
+        public bool Lactante { get; set; }
 
         [Ignore]
-        public bool Prenha { get; set; } = false;
+        public bool Prenha { get; set; }
 
-        [Required(ErrorMessage = "O status do animal é obrigatório.")]
+        [Required(ErrorMessage = "O status do animal e obrigatorio.")]
         public string Status { get; set; } = "Ativo";
 
         public DateTime? DataUltimoParto { get; set; }
 
-        public int NumeroDePartos { get; set; } = 0;
+        public int NumeroDePartos { get; set; }
 
-        public int NumeroDeAbortos { get; set; } = 0;
+        public int NumeroDeAbortos { get; set; }
 
-        public int NumeroDeNascimortos { get; set; } = 0;
+        public int NumeroDeNascimortos { get; set; }
 
         public int? MaeId { get; set; }
 
         public int? PaiId { get; set; }
 
-        [Required(ErrorMessage = "O id da propriedade é obrigatório.")]
+        [Required(ErrorMessage = "O id da propriedade e obrigatorio.")]
         public int PropriedadeId { get; set; }
+
+        [Indexed]
+        public Guid SyncId { get; set; } = Guid.NewGuid();
+
+        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+        public bool IsDeleted { get; set; }
+
+        public string LastChangedByDevice { get; set; } = string.Empty;
     }
 }

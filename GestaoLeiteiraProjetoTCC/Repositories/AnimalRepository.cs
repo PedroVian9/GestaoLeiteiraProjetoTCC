@@ -1,22 +1,28 @@
-﻿using GestaoLeiteiraProjetoTCC.Components.Pages;
 using GestaoLeiteiraProjetoTCC.Models;
 using GestaoLeiteiraProjetoTCC.Repositories.Interfaces;
+using GestaoLeiteiraProjetoTCC.Services.Interfaces;
+using GestaoLeiteiraProjetoTCC.Utils;
+using System.Linq;
 
 namespace GestaoLeiteiraProjetoTCC.Repositories
 {
     public class AnimalRepository : IAnimalRepository
     {
         private readonly DatabaseService _databaseService;
+        private readonly ISyncMetadataService _syncMetadataService;
 
-        public AnimalRepository(DatabaseService databaseService)
+        public AnimalRepository(DatabaseService databaseService, ISyncMetadataService syncMetadataService)
         {
             _databaseService = databaseService;
+            _syncMetadataService = syncMetadataService;
         }
 
         public async Task<List<Animal>> ObterAnimaisPorPropriedadeIdDb(int propriedadeId)
         {
             var db = await _databaseService.GetConnectionAsync();
-            return await db.Table<Animal>().Where(a => a.PropriedadeId == propriedadeId).ToListAsync();
+            return await db.Table<Animal>()
+                           .Where(a => a.PropriedadeId == propriedadeId && !a.IsDeleted)
+                           .ToListAsync();
         }
 
         public async Task<List<Animal>> ObterAnimaisValidosLactacaoDb(int propriedadeId)
@@ -26,18 +32,20 @@ namespace GestaoLeiteiraProjetoTCC.Repositories
             return await db.Table<Animal>()
                 .Where(a =>
                     a.PropriedadeId == propriedadeId &&
-                    a.Sexo == "Fêmea" &&
+                    a.Sexo == "F\u00EAmea" &&
                     a.CategoriaAnimal == "Vaca" &&
-                    a.Lactante == false &&
-                    a.Status == "Ativo")
+                    !a.Lactante &&
+                    a.Status == "Ativo" &&
+                    !a.IsDeleted)
                 .ToListAsync();
         }
+
         public async Task<List<Animal>> ObterAnimaisQueTiveramLactacaoDb(int propriedadeId)
         {
             var db = await _databaseService.GetConnectionAsync();
 
             var animaisDaPropriedade = await db.Table<Animal>()
-                .Where(a => a.PropriedadeId == propriedadeId)
+                .Where(a => a.PropriedadeId == propriedadeId && !a.IsDeleted)
                 .ToListAsync();
 
             var idsAnimaisPropriedade = animaisDaPropriedade.Select(a => a.Id).ToList();
@@ -57,10 +65,10 @@ namespace GestaoLeiteiraProjetoTCC.Repositories
                 .ToList();
         }
 
-
         public async Task<Animal> CadastrarAnimalDb(Animal animal)
         {
             var db = await _databaseService.GetConnectionAsync();
+            SyncEntityHelper.Touch(animal, _syncMetadataService.GetDeviceId());
             await db.InsertAsync(animal);
             return animal;
         }
@@ -68,6 +76,7 @@ namespace GestaoLeiteiraProjetoTCC.Repositories
         public async Task<Animal> AtualizarAnimalDb(Animal animal)
         {
             var db = await _databaseService.GetConnectionAsync();
+            SyncEntityHelper.Touch(animal, _syncMetadataService.GetDeviceId());
             await db.UpdateAsync(animal);
             return animal;
         }
@@ -75,15 +84,25 @@ namespace GestaoLeiteiraProjetoTCC.Repositories
         public async Task<bool> ExcluirAnimalDb(int id)
         {
             var db = await _databaseService.GetConnectionAsync();
-            var resultado = await db.DeleteAsync<Animal>(id);
-            return resultado > 0;
+            var animal = await db.Table<Animal>()
+                                 .Where(a => a.Id == id)
+                                 .FirstOrDefaultAsync();
+
+            if (animal == null)
+            {
+                return false;
+            }
+
+            SyncEntityHelper.MarkDeleted(animal, _syncMetadataService.GetDeviceId());
+            await db.UpdateAsync(animal);
+            return true;
         }
 
         public async Task<Animal> ObterAnimalPorIdDb(int id)
         {
             var db = await _databaseService.GetConnectionAsync();
             return await db.Table<Animal>()
-                           .Where(a => a.Id == id)
+                           .Where(a => a.Id == id && !a.IsDeleted)
                            .FirstOrDefaultAsync();
         }
 
@@ -91,16 +110,17 @@ namespace GestaoLeiteiraProjetoTCC.Repositories
         {
             var db = await _databaseService.GetConnectionAsync();
 
-            var idsVacasComGestacaoAtiva = (await db.Table<Models.Gestacao>()
-                .Where(g => g.Status == "Ativa")
+            var idsVacasComGestacaoAtiva = (await db.Table<Gestacao>()
+                .Where(g => g.Status == "Ativa" && !g.IsDeleted)
                 .ToListAsync())
                 .Select(g => g.VacaId);
 
             return await db.Table<Animal>()
                 .Where(a => a.PropriedadeId == propriedadeId &&
-                            a.Sexo == "Fêmea" &&
+                            a.Sexo == "F\u00EAmea" &&
                             a.CategoriaAnimal == "Vaca" &&
                             a.Status == "Ativo" &&
+                            !a.IsDeleted &&
                             !idsVacasComGestacaoAtiva.Contains(a.Id))
                 .OrderBy(a => a.NomeAnimal)
                 .ToListAsync();
@@ -112,7 +132,8 @@ namespace GestaoLeiteiraProjetoTCC.Repositories
             return await db.Table<Animal>()
                 .Where(a => a.PropriedadeId == propriedadeId &&
                             a.Sexo == "Macho" &&
-                            a.Status == "Ativo")
+                            a.Status == "Ativo" &&
+                            !a.IsDeleted)
                 .OrderBy(a => a.NomeAnimal)
                 .ToListAsync();
         }

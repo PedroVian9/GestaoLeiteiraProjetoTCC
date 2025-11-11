@@ -1,21 +1,26 @@
-﻿using SQLite;
+using SQLite;
 using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace GestaoLeiteiraProjetoTCC.Models
 {
-    public class QuantidadeOrdenha
+    public class QuantidadeOrdenha : ISyncEntity
     {
         [PrimaryKey, AutoIncrement]
         public int Id { get; set; }
 
-        [Required(ErrorMessage = "O quantidade deve ser iformada.")]
+        [Required(ErrorMessage = "A quantidade deve ser informada.")]
         public int Quantidade { get; set; } = 2;
 
-        public DateTime DataRegistro { get; set; } = DateTime.Now;
+        public DateTime DataRegistro { get; set; } = DateTime.UtcNow;
+
+        [Indexed]
+        public Guid SyncId { get; set; } = Guid.NewGuid();
+
+        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+        public bool IsDeleted { get; set; }
+
+        public string LastChangedByDevice { get; set; } = string.Empty;
     }
 }
