@@ -1,11 +1,12 @@
 ﻿@page "/configuracoes"
 @using GestaoLeiteiraProjetoTCC.Models
+@using GestaoLeiteiraProjetoTCC.Services
 @using GestaoLeiteiraProjetoTCC.Services.Interfaces
 @inject IPropriedadeService PropriedadeService
 @inject IQuantidadeOrdenhaService QuantidadeOrdenhaService
-@inject ISyncService SyncService
 @inject ISyncMetadataService SyncMetadataService
-@inject ISyncTransportService SyncTransportService
+@inject ISyncAutomationService SyncAutomationService
+@implements IDisposable
 
 <div class="page-container">
     <div class="dashboard-header">
@@ -149,32 +150,47 @@
                     <div class="config-card sync-card">
                         <div class="card-header">
                             <i class="fas fa-sync-alt"></i>
-                            <h4>Sincroniza��o Local</h4>
+                            <div class="sync-header">
+                                <h4>Sincroniza��o Autom��tica</h4>
+                                <span class="status-pill status-@syncStatus.State.ToString().ToLowerInvariant()">
+                                    @ObterDescricaoEstado()
+                                </span>
+                            </div>
                         </div>
                         <div class="card-body">
+                            <p><strong>Status:</strong> @syncStatus.Message</p>
                             <p><strong>�ltima sincroniza��o:</strong> @ObterDescricaoUltimaSync()</p>
                             <p><strong>ID do dispositivo:</strong> @deviceId</p>
-                            <p><strong>Pasta compartilhada:</strong> <span class="sync-path">@(!string.IsNullOrEmpty(sharedSyncFolder) ? sharedSyncFolder : "Crie a pasta GestaoLeiteiraSync no armazenamento USB")</span></p>
-
-                            @if (!string.IsNullOrEmpty(mensagemSync))
+                            <p><strong>Pasta compartilhada:</strong> <span class="sync-path">@ObterDescricaoPastaSync()</span></p>
+                            <p>
+                                <strong>Outro dispositivo:</strong>
+                                @(syncStatus.RemoteDeviceReady ? "Detectado e pronto" : "Aguardando conex�o e abertura do app")
+                            </p>
+                            @if (syncStatus.State == SyncAutomationState.NotConnected)
                             {
-                                <div class="alert alert-info">
-                                    @mensagemSync
-                                </div>
-                            }
-
-                            @if (!string.IsNullOrEmpty(mensagemErroSync))
-                            {
-                                <div class="alert alert-danger">
-                                    @mensagemErroSync
+                                <div class="alert alert-warning">
+                                    Conecte o celular via USB (modo Transfer�ncia de Arquivos) e clique em "Conectar dispositivo".
                                 </div>
                             }
                         </div>
                         <div class="card-footer sync-actions">
-                            <button class="btn btn-primary" disabled="@sincronizando" @onclick="SincronizarDados">
-                                <i class="fas fa-sync"></i>
-                                @(sincronizando ? "Sincronizando..." : "Sincronizar agora")
-                            </button>
+                            <div class="actions-left">
+                                <button class="btn btn-primary" disabled="@conectando" @onclick="ConectarDispositivo">
+                                    <i class="fas fa-plug"></i>
+                                    @(conectando
+                                        ? "Conectando..."
+                                        : syncStatus.State == SyncAutomationState.NotConnected
+                                            ? "Conectar dispositivo"
+                                            : "Reconectar dispositivo")
+                                </button>
+                                <button class="btn btn-secondary" disabled="@(!PodeForcarSincronizacao)" @onclick="SincronizarDados">
+                                    <i class="fas fa-sync"></i>
+                                    @(syncStatus.State == SyncAutomationState.SyncInProgress ? "Sincronizando..." : "For�ar sincroniza��o agora")
+                                </button>
+                                <small class="sync-hint">
+                                    A sincroniza��o roda automaticamente sempre que os dispositivos est�o conectados via USB e o app estiver aberto em ambos.
+                                </small>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -573,24 +589,78 @@
             padding: 20px;
         }
     }
-        .sync-card .sync-path {
-            display: inline-block;
-            background: #f5f5f5;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-family: "Courier New", Courier, monospace;
-            font-size: 0.85rem;
-        }
 
-        .sync-card .sync-actions {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
+    .sync-card .sync-path {
+        display: inline-block;
+        background: #f5f5f5;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-family: "Courier New", Courier, monospace;
+        font-size: 0.85rem;
+    }
 
-        .sync-card .alert {
-            margin-top: 10px;
-        }</style>
+    .sync-card .sync-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+    }
+
+    .status-pill {
+        padding: 4px 12px;
+        border-radius: 999px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+
+    .status-pill.status-initializing,
+    .status-pill.status-idle {
+        background: #e0f4ff;
+        color: #0c5688;
+    }
+
+    .status-pill.status-waitingfordevice {
+        background: #fff4e5;
+        color: #7a4b00;
+    }
+
+    .status-pill.status-syncinprogress {
+        background: #e8e5ff;
+        color: #3c2ca3;
+    }
+
+    .status-pill.status-error {
+        background: #fdecea;
+        color: #b72b1a;
+    }
+
+    .sync-card .sync-actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 16px;
+    }
+
+    .sync-card .actions-left {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        width: 100%;
+    }
+
+    .sync-card .actions-left .btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .sync-hint {
+        display: block;
+        margin-top: 8px;
+        color: #6c757d;
+        font-size: 0.85rem;
+    }
+</style>
 
 @code {
     private Propriedade propriedade;
@@ -598,13 +668,12 @@
     private string confirmaSenha;
     private int quantidadeOrdenhas;
     private bool loading = true; 
+    private bool conectando;
 
-    private bool sincronizando;
-    private string mensagemErroSync;
-    private string mensagemSync;
     private DateTime? ultimaSincronizacaoUtc;
-    private string sharedSyncFolder;
+    private string sharedSyncFolder = string.Empty;
     private string deviceId;
+    private SyncAutomationStatus syncStatus = SyncAutomationStatus.Initial("Inicializando sincronizacao automatica...");
 
     private string mensagemErroPropriedade;
     private string mensagemErroSenha;
@@ -636,46 +705,111 @@
 
 
         deviceId = SyncMetadataService.GetDeviceId();
-        ultimaSincronizacaoUtc = SyncMetadataService.GetLastSuccessfulSyncUtc();
-        sharedSyncFolder = await SyncTransportService.GetSharedFolderPathAsync();
+        AtualizarStatusSync(SyncAutomationService.CurrentStatus);
+        SyncAutomationService.StatusChanged += OnSyncStatusChanged;
+
         loading = false; // Finaliza o carregamento
     }
 
     private string ObterDescricaoUltimaSync()
     {
-        return ultimaSincronizacaoUtc.HasValue
-            ? ultimaSincronizacaoUtc.Value.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
+        var referencia = ultimaSincronizacaoUtc ?? syncStatus.LastSuccessfulSyncUtc;
+        return referencia.HasValue
+            ? referencia.Value.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
             : "Nunca sincronizado";
     }
 
 
 
-    private async Task SincronizarDados()
+    private async Task ConectarDispositivo()
     {
-        mensagemErroSync = string.Empty;
-        mensagemSync = string.Empty;
-        sincronizando = true;
-        StateHasChanged();
+        conectando = true;
         try
         {
-            var resultado = await SyncService.SynchronizeAsync();
-            mensagemSync = $"{resultado.Message} (Exportado: {resultado.RecordsExported}, Importado: {resultado.RecordsImported})";
-            ultimaSincronizacaoUtc = SyncMetadataService.GetLastSuccessfulSyncUtc();
-            if (resultado.Success)
-            {
-                mensagemSucesso = "Sincroniza��o conclu�da";
-                exibirModalSucesso = true;
-            }
+            var status = await SyncAutomationService.ConnectAsync("Solicitado pelo usuario");
+            AtualizarStatusSync(status);
         }
         catch (Exception ex)
         {
-            mensagemErroSync = $"Falha ao sincronizar: {ex.Message}";
+            syncStatus = new SyncAutomationStatus(
+                SyncAutomationState.Error,
+                $"Falha ao conectar: {ex.Message}",
+                syncStatus.LastSuccessfulSyncUtc,
+                syncStatus.LastAttemptUtc,
+                false,
+                false,
+                syncStatus.SharedFolderPath);
         }
         finally
         {
-            sincronizando = false;
+            conectando = false;
             StateHasChanged();
         }
+    }
+
+    private async Task SincronizarDados()
+    {
+        await SyncAutomationService.TriggerSyncNowAsync("Usuario forcou a sincronizacao na tela de configuracoes");
+    }
+
+    private string ObterDescricaoEstado()
+    {
+        return syncStatus.State switch
+        {
+            SyncAutomationState.NotConnected => "Nao conectado",
+            SyncAutomationState.WaitingForDevice => "Aguardando dispositivo",
+            SyncAutomationState.SyncInProgress => "Sincronizando",
+            SyncAutomationState.Error => "Erro",
+            SyncAutomationState.Idle => "Pronto",
+            _ => "Inicializando"
+        };
+    }
+
+    private string ObterDescricaoPastaSync()
+    {
+        if (!string.IsNullOrWhiteSpace(syncStatus.SharedFolderPath))
+        {
+            return syncStatus.SharedFolderPath;
+        }
+
+        if (!string.IsNullOrWhiteSpace(sharedSyncFolder))
+        {
+            return sharedSyncFolder;
+        }
+
+        return "Aguardando conexao USB com a pasta GestaoLeiteiraSync";
+    }
+
+    private bool PodeForcarSincronizacao =>
+        syncStatus.State != SyncAutomationState.SyncInProgress &&
+        syncStatus.State != SyncAutomationState.NotConnected &&
+        syncStatus.RemoteDeviceReady;
+
+    private void OnSyncStatusChanged(object? sender, SyncAutomationStatus status)
+    {
+        AtualizarStatusSync(status);
+    }
+
+    private void AtualizarStatusSync(SyncAutomationStatus status)
+    {
+        syncStatus = status;
+
+        if (status.LastSuccessfulSyncUtc.HasValue)
+        {
+            ultimaSincronizacaoUtc = status.LastSuccessfulSyncUtc;
+        }
+
+        if (!string.IsNullOrWhiteSpace(status.SharedFolderPath))
+        {
+            sharedSyncFolder = status.SharedFolderPath;
+        }
+
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        SyncAutomationService.StatusChanged -= OnSyncStatusChanged;
     }
 
     private async Task SalvarConfiguracaoOrdenha()
@@ -753,6 +887,13 @@
         exibirModalSucesso = false;
     }
 }
+
+
+
+
+
+
+
 
 
 

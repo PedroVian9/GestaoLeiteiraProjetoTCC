@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 #if WINDOWS
 using Windows.Storage;
@@ -13,43 +14,72 @@ namespace GestaoLeiteiraProjetoTCC.Services
 {
     public class SyncTransportService : ISyncTransportService
     {
-        private readonly string _sharedFolderPath;
+        private const string SyncFolderName = "GestaoLeiteiraSync";
+        private const string ReadyMarkerPrefix = "device_";
+        private const string ReadyMarkerExtension = ".ready";
 
-        public SyncTransportService()
-        {
-            _sharedFolderPath = ResolveSharedFolderPath();
-        }
+        private readonly SemaphoreSlim _pathSemaphore = new(1, 1);
+        private string? _cachedPath;
 
         public async Task EnsureSharedFolderExistsAsync()
         {
-            if (!Directory.Exists(_sharedFolderPath))
+            var path = await GetSharedFolderPathAsync();
+            if (!Directory.Exists(path))
             {
-                Directory.CreateDirectory(_sharedFolderPath);
+                Directory.CreateDirectory(path);
             }
-
-            await Task.CompletedTask;
         }
 
-        public Task<string> GetSharedFolderPathAsync()
+        public async Task<string?> TryGetSharedFolderPathAsync()
         {
-            return Task.FromResult(_sharedFolderPath);
+            try
+            {
+                return await ResolveSharedFolderPathAsync();
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        public async Task<string> GetSharedFolderPathAsync()
+        {
+            var path = await ResolveSharedFolderPathAsync();
+            if (string.IsNullOrWhiteSpace(path))
+            {
+                throw new InvalidOperationException("Pasta de sincronização indisponível.");
+            }
+
+            return path;
         }
 
         public async Task<string> WriteOutboundPayloadAsync(string fileName, string content)
         {
-            await EnsureSharedFolderExistsAsync();
-            var path = Path.Combine(_sharedFolderPath, fileName);
+            var folder = await GetSharedFolderPathAsync();
+            var path = Path.Combine(folder, fileName);
             await File.WriteAllTextAsync(path, content);
             return path;
         }
 
         public async Task<IReadOnlyList<string>> GetAvailablePayloadFilesAsync()
         {
-            await EnsureSharedFolderExistsAsync();
-            var files = Directory.GetFiles(_sharedFolderPath, "*.json")
-                                 .OrderByDescending(File.GetCreationTimeUtc)
-                                 .ToList();
-            return files;
+            var folder = await GetSharedFolderPathAsync();
+            if (!Directory.Exists(folder))
+            {
+                return Array.Empty<string>();
+            }
+
+            try
+            {
+                var files = Directory.GetFiles(folder, "*.json")
+                                     .OrderByDescending(File.GetCreationTimeUtc)
+                                     .ToList();
+                return files;
+            }
+            catch
+            {
+                return Array.Empty<string>();
+            }
         }
 
         public async Task<string?> ReadPayloadAsync(string filePath)
@@ -72,47 +102,98 @@ namespace GestaoLeiteiraProjetoTCC.Services
             return Task.CompletedTask;
         }
 
-        private static string ResolveSharedFolderPath()
+        public async Task WriteReadyMarkerAsync(string deviceId)
         {
-            string basePath;
+            var folder = await GetSharedFolderPathAsync();
+            Directory.CreateDirectory(folder);
+            var markerPath = Path.Combine(folder, $"{ReadyMarkerPrefix}{deviceId}{ReadyMarkerExtension}");
+            await File.WriteAllTextAsync(markerPath, DateTime.UtcNow.ToString("O"));
+        }
 
-#if ANDROID
-            basePath = Android.OS.Environment.ExternalStorageDirectory?.AbsolutePath ??
-                       FileSystem.AppDataDirectory;
-#elif WINDOWS
-            var removable = TryGetRemovableSyncFolder();
-            if (!string.IsNullOrEmpty(removable))
+        public async Task<bool> HasRemoteReadyMarkerAsync(string deviceId)
+        {
+            var folder = await GetSharedFolderPathAsync();
+            if (!Directory.Exists(folder))
             {
-                return removable;
+                return false;
             }
 
-            basePath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-#else
-            basePath = FileSystem.AppDataDirectory;
-#endif
+            var markers = Directory.GetFiles(folder, $"{ReadyMarkerPrefix}*{ReadyMarkerExtension}");
+            return markers.Any(marker =>
+            {
+                var name = Path.GetFileNameWithoutExtension(marker);
+                if (string.IsNullOrWhiteSpace(name))
+                {
+                    return false;
+                }
 
-            return Path.Combine(basePath, "GestaoLeiteiraSync");
+                var id = name.Replace(ReadyMarkerPrefix, string.Empty, StringComparison.OrdinalIgnoreCase);
+                return !string.Equals(id, deviceId, StringComparison.OrdinalIgnoreCase);
+            });
+        }
+
+        private async Task<string?> ResolveSharedFolderPathAsync()
+        {
+            if (_cachedPath != null && Directory.Exists(_cachedPath))
+            {
+                return _cachedPath;
+            }
+
+            await _pathSemaphore.WaitAsync();
+            try
+            {
+                if (_cachedPath != null && Directory.Exists(_cachedPath))
+                {
+                    return _cachedPath;
+                }
+
+                var resolved = await DiscoverSharedFolderPathAsync();
+                _cachedPath = resolved;
+                return resolved;
+            }
+            finally
+            {
+                _pathSemaphore.Release();
+            }
+        }
+
+        private Task<string?> DiscoverSharedFolderPathAsync()
+        {
+#if ANDROID
+            var basePath = Android.OS.Environment.ExternalStorageDirectory?.AbsolutePath;
+            if (string.IsNullOrWhiteSpace(basePath))
+            {
+                basePath = FileSystem.AppDataDirectory;
+            }
+
+            var fullPath = Path.Combine(basePath, SyncFolderName);
+            Directory.CreateDirectory(fullPath);
+            return Task.FromResult<string?>(fullPath);
+#elif WINDOWS
+            return DiscoverWindowsFolderAsync();
+#else
+            var fallback = Path.Combine(FileSystem.AppDataDirectory, SyncFolderName);
+            Directory.CreateDirectory(fallback);
+            return Task.FromResult<string?>(fallback);
+#endif
         }
 
 #if WINDOWS
-        private static string? TryGetRemovableSyncFolder()
+        private static async Task<string?> DiscoverWindowsFolderAsync()
         {
             try
             {
-                var removableRoot = KnownFolders.RemovableDevices;
-                var folders = removableRoot.GetFoldersAsync().AsTask().GetAwaiter().GetResult();
-                foreach (var folder in folders)
+                var removable = KnownFolders.RemovableDevices;
+                var folders = await removable.GetFoldersAsync();
+                foreach (var deviceFolder in folders)
                 {
-                    var syncFolder = folder.TryGetItemAsync("GestaoLeiteiraSync").AsTask().GetAwaiter().GetResult();
-                    if (syncFolder is StorageFolder storageFolder)
-                    {
-                        return storageFolder.Path;
-                    }
+                    var syncFolder = await deviceFolder.CreateFolderAsync(SyncFolderName, CreationCollisionOption.OpenIfExists);
+                    return syncFolder.Path;
                 }
             }
-            catch
+            catch (Exception ex)
             {
-                // Ignorar e usar fallback
+                System.Diagnostics.Debug.WriteLine($"SyncTransport Windows: {ex}");
             }
 
             return null;

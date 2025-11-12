@@ -40,6 +40,7 @@ public static class MauiProgram
         builder.Services.AddSingleton<IQuantidadeOrdenhaService, QuantidadeOrdenhaService>();
         builder.Services.AddSingleton<IGestacaoService, GestacaoService>();
         builder.Services.AddSingleton<ISyncService, SyncService>();
+        builder.Services.AddSingleton<ISyncAutomationService, SyncAutomationService>();
 
 #if DEBUG
         builder.Services.AddBlazorWebViewDeveloperTools();
@@ -70,4 +71,5 @@ public static class MauiProgram
             throw;
         }
     }
+
 }
